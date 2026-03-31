@@ -5,6 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KI-Readiness-Check für Handwerksbetriebe | Synclaro</title>
   <meta name="description" content="In 3 Minuten erfahren Sie, wo Ihr größtes KI-Potenzial liegt. Kostenlos und unverbindlich. Für Handwerksbetriebe.">
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23FF4F00'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>S</text></svg>">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="KI-Readiness-Check für Handwerksbetriebe | Synclaro">
+  <meta property="og:description" content="In 3 Minuten erfahren Sie, wo Ihr größtes KI-Potenzial liegt. Kostenlos und unverbindlich.">
+  <meta property="og:url" content="https://ki-check.synclaro.de">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Synclaro">
+  <meta property="og:locale" content="de_DE">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="KI-Readiness-Check für Handwerksbetriebe | Synclaro">
+  <meta name="twitter:description" content="In 3 Minuten erfahren Sie, wo Ihr größtes KI-Potenzial liegt. Kostenlos und unverbindlich.">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
@@ -334,7 +351,8 @@
             &copy; 2026 Synclaro IT Service — Marco Heer
             <span class="block sm:inline sm:ml-2 text-gray-600">KI-Coaching für Handwerksbetriebe</span>
           </div>
-          <div class="flex items-center gap-6 text-sm">
+          <div class="flex flex-wrap items-center justify-center sm:justify-end gap-4 sm:gap-6 text-sm">
+            <a href="#navbar" class="text-gray-500 hover:text-gray-300 transition-colors">Zurück nach oben</a>
             <a href="https://synclaro.de/impressum" target="_blank" rel="noopener" class="text-gray-500 hover:text-gray-300 transition-colors">Impressum</a>
             <a href="https://synclaro.de/datenschutz" target="_blank" rel="noopener" class="text-gray-500 hover:text-gray-300 transition-colors">Datenschutz</a>
           </div>
@@ -1128,6 +1146,7 @@
                 <span class="block sm:inline sm:ml-2 text-gray-600">KI-Coaching für Handwerksbetriebe</span>
               </div>
               <div class="flex items-center gap-6 text-sm">
+                <a href="javascript:window.scrollTo({top:0,behavior:'smooth'})" class="text-gray-500 hover:text-gray-300 transition-colors">Zurück nach oben</a>
                 <a href="https://synclaro.de/impressum" target="_blank" rel="noopener" class="text-gray-500 hover:text-gray-300 transition-colors">Impressum</a>
                 <a href="https://synclaro.de/datenschutz" target="_blank" rel="noopener" class="text-gray-500 hover:text-gray-300 transition-colors">Datenschutz</a>
               </div>
@@ -1650,13 +1669,27 @@
       };
 
       try {
-        const response = await fetch('/.netlify/functions/order-premium', {
+        // Background function: returns 202 immediately, processes async
+        const response = await fetch('/.netlify/functions/order-premium-background', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(orderData),
+          body: JSON.stringify({
+            company: {
+              name: orderData.firma,
+              email: orderData.email,
+              ansprechpartner: orderData.name,
+              telefon: orderData.telefon,
+              strasse: orderData.strasse,
+              plz: orderData.plz,
+              ort: orderData.ort,
+            },
+            answers: collectedAnswers,
+            scores: analysisResult?.scores || analysisResult,
+          }),
         });
 
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        // Background functions return 202 Accepted
+        if (response.status !== 202 && !response.ok) throw new Error(`HTTP ${response.status}`);
 
         // Show confirmation
         document.getElementById('confirm-email').textContent = orderData.email;
@@ -1682,6 +1715,31 @@
         navbar.classList.remove('nav-scrolled');
       }
     }, { passive: true });
+
+    // === Cookie-free Page View Counter (non-blocking) ===
+    (function() {
+      try {
+        const payload = {
+          page: window.location.pathname,
+          referrer: document.referrer || '',
+          ts: new Date().toISOString(),
+          ua: navigator.userAgent,
+          screen: `${screen.width}x${screen.height}`,
+        };
+        fetch('/.netlify/functions/track-pageview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          keepalive: true,
+        }).catch(() => {});
+      } catch(e) {}
+    })();
   </script>
+
+  <!-- Powered by Synclaro KI Badge -->
+  <div class="fixed bottom-4 right-4 z-40 hidden sm:flex items-center gap-1.5 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-full px-3 py-1.5 shadow-sm hover:shadow-md transition-shadow duration-200">
+    <span class="w-2 h-2 rounded-full bg-swiss-orange animate-pulse"></span>
+    <span class="text-xs font-medium text-gray-500">Powered by <a href="https://synclaro.de" target="_blank" rel="noopener" class="text-swiss-orange hover:text-swiss-orange-hover transition-colors font-semibold">Synclaro KI</a></span>
+  </div>
 </body>
 </html>
