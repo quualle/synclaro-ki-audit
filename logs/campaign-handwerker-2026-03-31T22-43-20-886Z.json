@@ -1,0 +1,450 @@
+[
+  {
+    "status": "dry_run",
+    "name": "Luca Daume",
+    "email": "Luca.Daume@daume-online.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774997000887",
+    "timestamp": "2026-03-31T22:43:20.887Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Daniela Baisch",
+    "email": "daniela.baisch@holzbau-ott.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774997001390",
+    "timestamp": "2026-03-31T22:43:21.390Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Stefan Merz",
+    "email": "s.merz@hbmerz.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774997001891",
+    "timestamp": "2026-03-31T22:43:21.891Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Holger Neumann",
+    "email": "holger.neumann@neurealis.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774997002393",
+    "timestamp": "2026-03-31T22:43:22.393Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Andreas Stolarczyk",
+    "email": "andreas.stolarczyk@js-fenster.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774997002895",
+    "timestamp": "2026-03-31T22:43:22.895Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Karl Medvejsek",
+    "email": "info@meisterlichbedacht.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774997003397",
+    "timestamp": "2026-03-31T22:43:23.398Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Daniel Schmidmeier",
+    "email": "d.schmidmeier@insektless.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774997003900",
+    "timestamp": "2026-03-31T22:43:23.900Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Daniel Hölscher",
+    "email": "danielhoelscher@hoelscher-bau.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774997004401",
+    "timestamp": "2026-03-31T22:43:24.401Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Steffi Maaßen",
+    "email": "s.maassen@siggeruestbau.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774997004903",
+    "timestamp": "2026-03-31T22:43:24.903Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Evelyn Biesinger",
+    "email": "evelyn@moebeldesign-biesinger.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774997005405",
+    "timestamp": "2026-03-31T22:43:25.405Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Holger Dietrich",
+    "email": "dietrich@it-profibox.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774997005907",
+    "timestamp": "2026-03-31T22:43:25.908Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Sascha Zöller",
+    "email": "kontakt@digitale-durchstarter.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774997006409",
+    "timestamp": "2026-03-31T22:43:26.409Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Gülhan Dündar",
+    "email": "g.duendar@the-nextlevel.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774997006912",
+    "timestamp": "2026-03-31T22:43:26.912Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Gregor Dorsch",
+    "email": "gregor@teiledeinebotschaft.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774997007413",
+    "timestamp": "2026-03-31T22:43:27.413Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Olaf & Karo Richter",
+    "email": "richter-olaf@gmx.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774997007915",
+    "timestamp": "2026-03-31T22:43:27.915Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Marc Rau",
+    "email": "m.rau@the-nextlevel.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774997008418",
+    "timestamp": "2026-03-31T22:43:28.418Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Joachim Weiß",
+    "email": "j.weiss@weiss-und-partner.com",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774997008920",
+    "timestamp": "2026-03-31T22:43:28.920Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Marco",
+    "email": "marcoheer@live.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774997009422",
+    "timestamp": "2026-03-31T22:43:29.422Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Narcisa Sanda",
+    "email": "narcisa_sanda@yahoo.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774997009926",
+    "timestamp": "2026-03-31T22:43:29.926Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Mario Rösch",
+    "email": "m.roesch@goesta.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774997010428",
+    "timestamp": "2026-03-31T22:43:30.428Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Niklas Maximilian Scharf",
+    "email": "niklas.maximilian@icloud.com",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774997010930",
+    "timestamp": "2026-03-31T22:43:30.931Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Simeon",
+    "email": "s.t.weltzien@gmail.com",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774997011433",
+    "timestamp": "2026-03-31T22:43:31.433Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Oliver Strobel",
+    "email": "o.strobel@zitzelsberger.org",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774997011935",
+    "timestamp": "2026-03-31T22:43:31.935Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Christine Zitzelsberger",
+    "email": "c.zitzelsberger@zitzelsberger.org",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774997012437",
+    "timestamp": "2026-03-31T22:43:32.437Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Jonas Harrer",
+    "email": "harrerjonas2000@gmx.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774997012940",
+    "timestamp": "2026-03-31T22:43:32.940Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Luka Handke",
+    "email": "lukahandke@handinhandeg.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774997013441",
+    "timestamp": "2026-03-31T22:43:33.441Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Janine Klein",
+    "email": "klein@ibmolt.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774997013943",
+    "timestamp": "2026-03-31T22:43:33.943Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Marc Holzrichter",
+    "email": "M.Holzrichter@HAG-ProfiParkett.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774997014446",
+    "timestamp": "2026-03-31T22:43:34.446Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Norman Liersch",
+    "email": "gf@pflegehilfe-senioren.de",
+    "contact_type": "lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774997014948",
+    "timestamp": "2026-03-31T22:43:34.948Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Sabrina Wiedemann",
+    "email": "sawiedemann@baugeschaeft-wolf.com",
+    "contact_type": "lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774997015449",
+    "timestamp": "2026-03-31T22:43:35.449Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Raffael Braun",
+    "email": "raffael@planbar.team",
+    "contact_type": "lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774997015951",
+    "timestamp": "2026-03-31T22:43:35.951Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Lukas Guthke",
+    "email": "lg@dabesa.de",
+    "contact_type": "lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774997016454",
+    "timestamp": "2026-03-31T22:43:36.454Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Hans Bernd Grönewald",
+    "email": "grönewald@mte-bonn.de",
+    "contact_type": "lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774997016954",
+    "timestamp": "2026-03-31T22:43:36.954Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Matthias Dietl",
+    "email": "info@metallbau-dietl.de",
+    "contact_type": "lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774997017457",
+    "timestamp": "2026-03-31T22:43:37.457Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Birte Bringmann",
+    "email": "birte.bringmann@planbar.team",
+    "contact_type": "lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774997017959",
+    "timestamp": "2026-03-31T22:43:37.959Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Cornelia Patscheider",
+    "email": "Cornelia.patscheider@volksbankakademie.at",
+    "contact_type": "lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774997018461",
+    "timestamp": "2026-03-31T22:43:38.462Z"
+  },
+  {
+    "status": "skipped",
+    "name": "Alexander Deutsch",
+    "email": "015784859591",
+    "reason": "Keine gültige E-Mail",
+    "timestamp": "2026-03-31T22:43:38.964Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Steffen Hegemann",
+    "email": "steffen.hegemann@polygon-deutschland.de",
+    "contact_type": "lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774997018964",
+    "timestamp": "2026-03-31T22:43:38.964Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Herr Kondel",
+    "email": "ki73@outlook.de",
+    "contact_type": "lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774997019466",
+    "timestamp": "2026-03-31T22:43:39.467Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Andreas Käfer",
+    "email": "andreaskaefer@van-hauten.de",
+    "contact_type": "lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774997019969",
+    "timestamp": "2026-03-31T22:43:39.969Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Andreas Mack",
+    "email": "a.mack@nething.com",
+    "contact_type": "lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774997020470",
+    "timestamp": "2026-03-31T22:43:40.471Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "André Hamper",
+    "email": "andre.hamper@toelke-feuerfest.de",
+    "contact_type": "lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774997020973",
+    "timestamp": "2026-03-31T22:43:40.973Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Jörg Gnauert",
+    "email": "jgnauert@hup-bau.de",
+    "contact_type": "lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774997021475",
+    "timestamp": "2026-03-31T22:43:41.475Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Adrian Peritore",
+    "email": "adrian.peritore@brz.eu",
+    "contact_type": "lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774997021977",
+    "timestamp": "2026-03-31T22:43:41.978Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Maurice Schneider",
+    "email": "m.schneider@woerl-alarm.de",
+    "contact_type": "lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774997022480",
+    "timestamp": "2026-03-31T22:43:42.480Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Ralf Strickmann",
+    "email": "rs-aufmasstechnik@outlook.com",
+    "contact_type": "lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774997022982",
+    "timestamp": "2026-03-31T22:43:42.982Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Benjamin Brengartner",
+    "email": "brengartner@bombardi.eu",
+    "contact_type": "lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774997023483",
+    "timestamp": "2026-03-31T22:43:43.483Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Joachim Schledt",
+    "email": "schledt@truja.de",
+    "contact_type": "lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774997023986",
+    "timestamp": "2026-03-31T22:43:43.986Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Jana Treptau",
+    "email": "jana_treptau@kalku.de",
+    "contact_type": "lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774997024488",
+    "timestamp": "2026-03-31T22:43:44.488Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Raphael Lukas",
+    "email": "lukas@hetland.de",
+    "contact_type": "lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774997024990",
+    "timestamp": "2026-03-31T22:43:44.990Z"
+  }
+]

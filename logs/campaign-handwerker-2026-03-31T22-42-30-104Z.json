@@ -1,0 +1,902 @@
+[
+  {
+    "status": "dry_run",
+    "name": "Luca Daume",
+    "email": "Luca.Daume@daume-online.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774996950105",
+    "timestamp": "2026-03-31T22:42:30.105Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Daniela Baisch",
+    "email": "daniela.baisch@holzbau-ott.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774996950605",
+    "timestamp": "2026-03-31T22:42:30.605Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Stefan Merz",
+    "email": "s.merz@hbmerz.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774996951107",
+    "timestamp": "2026-03-31T22:42:31.108Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Holger Neumann",
+    "email": "holger.neumann@neurealis.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774996951609",
+    "timestamp": "2026-03-31T22:42:31.609Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Andreas Stolarczyk",
+    "email": "andreas.stolarczyk@js-fenster.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774996952111",
+    "timestamp": "2026-03-31T22:42:32.111Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Karl Medvejsek",
+    "email": "info@meisterlichbedacht.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774996952613",
+    "timestamp": "2026-03-31T22:42:32.614Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Walter",
+    "email": "381@gmx.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996953115",
+    "timestamp": "2026-03-31T22:42:33.115Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Achim Radtke",
+    "email": "achim.radtke@googlemail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996953617",
+    "timestamp": "2026-03-31T22:42:33.617Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Klara",
+    "email": "Admin@mintnerds.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996954120",
+    "timestamp": "2026-03-31T22:42:34.120Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Norman Liersch",
+    "email": "gf@pflegehilfe-senioren.de",
+    "contact_type": "lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996954622",
+    "timestamp": "2026-03-31T22:42:34.623Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Daniel Schmidmeier",
+    "email": "d.schmidmeier@insektless.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774996955124",
+    "timestamp": "2026-03-31T22:42:35.125Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Daniel Hölscher",
+    "email": "danielhoelscher@hoelscher-bau.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774996955627",
+    "timestamp": "2026-03-31T22:42:35.627Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Steffi Maaßen",
+    "email": "s.maassen@siggeruestbau.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774996956130",
+    "timestamp": "2026-03-31T22:42:36.130Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Andreas Fornefeld",
+    "email": "aforne@gmx.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996956632",
+    "timestamp": "2026-03-31T22:42:36.633Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Alfons Kleikamp",
+    "email": "ag.kleikamp@gmail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996957134",
+    "timestamp": "2026-03-31T22:42:37.135Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Marianne Baldauf",
+    "email": "akkordeon.baldauf@gmx.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996957636",
+    "timestamp": "2026-03-31T22:42:37.636Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Alex Ney",
+    "email": "alexxx2010@hotmail.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996958139",
+    "timestamp": "2026-03-31T22:42:38.139Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Alfons Jäger",
+    "email": "alfons@gasthof-jaeger.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996958639",
+    "timestamp": "2026-03-31T22:42:38.640Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Amie van Doornick",
+    "email": "amie_22@live.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996959142",
+    "timestamp": "2026-03-31T22:42:39.142Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Andreas Haase",
+    "email": "andreas_haase@gmx.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996959643",
+    "timestamp": "2026-03-31T22:42:39.644Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Andreas Bindernagel",
+    "email": "andreasbindetnagel71@gemail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996960145",
+    "timestamp": "2026-03-31T22:42:40.145Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Anna P.",
+    "email": "anp2013@wp.pl",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996960647",
+    "timestamp": "2026-03-31T22:42:40.647Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Emily Will",
+    "email": "arbeitonlinewill@magenta.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996961149",
+    "timestamp": "2026-03-31T22:42:41.150Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Arne Kümmel",
+    "email": "arne.kuemmel@web.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996961652",
+    "timestamp": "2026-03-31T22:42:41.652Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Asta",
+    "email": "asta-bertram@web.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996962152",
+    "timestamp": "2026-03-31T22:42:42.153Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Astrid Beck",
+    "email": "Astrid.Beck@hs-esslingen.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996962655",
+    "timestamp": "2026-03-31T22:42:42.655Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Tamer Ates",
+    "email": "atmr71@aol.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996963158",
+    "timestamp": "2026-03-31T22:42:43.158Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Smilja Bojic",
+    "email": "b.smilja@yahoo.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996963659",
+    "timestamp": "2026-03-31T22:42:43.659Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Thomas Barthelmeh",
+    "email": "barthelmeh@t-online.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996964160",
+    "timestamp": "2026-03-31T22:42:44.160Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "b dopi",
+    "email": "bdopi7@gmail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996964662",
+    "timestamp": "2026-03-31T22:42:44.662Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Beate Dötsch",
+    "email": "beate.doetsch@t-online.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996965165",
+    "timestamp": "2026-03-31T22:42:45.165Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Benjamin Petri",
+    "email": "Benjaminpetri.bp.bp@gmail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996965667",
+    "timestamp": "2026-03-31T22:42:45.668Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Net Nanny",
+    "email": "bernd.bienentreu@gmail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996966167",
+    "timestamp": "2026-03-31T22:42:46.168Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Bernd Lahann",
+    "email": "bernd.lahann3@gmail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996966670",
+    "timestamp": "2026-03-31T22:42:46.670Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Benjamin Katte",
+    "email": "Bgdk411@icloud.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996967172",
+    "timestamp": "2026-03-31T22:42:47.172Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Bettina",
+    "email": "bhs2@web.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996967674",
+    "timestamp": "2026-03-31T22:42:47.674Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "BILLE",
+    "email": "bille_martin@web.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996968176",
+    "timestamp": "2026-03-31T22:42:48.176Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Beau Bonne",
+    "email": "bonnbeau@ymail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996968678",
+    "timestamp": "2026-03-31T22:42:48.679Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Kai-Christian Balinski",
+    "email": "c.balinski@bhv-kiel.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996969181",
+    "timestamp": "2026-03-31T22:42:49.181Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Claus Herma",
+    "email": "clherma@web.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996969684",
+    "timestamp": "2026-03-31T22:42:49.684Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Coko Konen",
+    "email": "Coko.zija@gnail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996970187",
+    "timestamp": "2026-03-31T22:42:50.187Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Dag Dominik Herbort",
+    "email": "dag.herbort@web.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996970689",
+    "timestamp": "2026-03-31T22:42:50.689Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Dagmar Würfel",
+    "email": "dagmar.wuerfel@gmail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996971192",
+    "timestamp": "2026-03-31T22:42:51.192Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Daniel Schurig",
+    "email": "daniel6884sch3218@gmail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996971695",
+    "timestamp": "2026-03-31T22:42:51.695Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "David Mahoney",
+    "email": "David.mahoney@gmail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996972197",
+    "timestamp": "2026-03-31T22:42:52.197Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Reinhard Wilhelm",
+    "email": "dr.-reinhard.wilhelm@t-online.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996972699",
+    "timestamp": "2026-03-31T22:42:52.700Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Iwan Guntscheff",
+    "email": "Dr.Guntscheff@t-online.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996973201",
+    "timestamp": "2026-03-31T22:42:53.201Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Jens Dräger",
+    "email": "draeger.visselhoevede@t-online.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996973703",
+    "timestamp": "2026-03-31T22:42:53.703Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Konrad",
+    "email": "dsgvo.konform@gmail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996974206",
+    "timestamp": "2026-03-31T22:42:54.206Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Erwin Franke",
+    "email": "e.franke@projekt-malerei.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996974707",
+    "timestamp": "2026-03-31T22:42:54.707Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Eberhard Zeidler",
+    "email": "e.zeidler@zeidler-glas.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996975209",
+    "timestamp": "2026-03-31T22:42:55.209Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Andreas Ney",
+    "email": "Education@neys.biz",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996975711",
+    "timestamp": "2026-03-31T22:42:55.711Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Elahi Qureshi",
+    "email": "elahiqureshi51@gmail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996976214",
+    "timestamp": "2026-03-31T22:42:56.214Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Elisa Weiß",
+    "email": "elisa-weiss25@gmx.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996976716",
+    "timestamp": "2026-03-31T22:42:56.716Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Elke",
+    "email": "elke.brauner@gmx.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996977217",
+    "timestamp": "2026-03-31T22:42:57.217Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Jens Redmann",
+    "email": "eoljensredmann@gmail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996977719",
+    "timestamp": "2026-03-31T22:42:57.719Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Evelyn Leissner",
+    "email": "evele1712@gmail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996978221",
+    "timestamp": "2026-03-31T22:42:58.222Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Dr. Eveline Wagner",
+    "email": "evelinewagner@aol.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996978724",
+    "timestamp": "2026-03-31T22:42:58.724Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Fabrice Bloch",
+    "email": "fabrice.bloch1991@icloud.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996979226",
+    "timestamp": "2026-03-31T22:42:59.227Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Joachim Sander",
+    "email": "facebook@esander.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996979729",
+    "timestamp": "2026-03-31T22:42:59.729Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Ines",
+    "email": "famfatal@gmx.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996980231",
+    "timestamp": "2026-03-31T22:43:00.231Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Abdul          Madjid Faruqu i",
+    "email": "faruqui123@hotmail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996980733",
+    "timestamp": "2026-03-31T22:43:00.734Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Fernando Jahr",
+    "email": "fernando.jahr@web.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996981236",
+    "timestamp": "2026-03-31T22:43:01.236Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Fernando Nunes",
+    "email": "fernando.room4time@gmail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996981738",
+    "timestamp": "2026-03-31T22:43:01.739Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Zimmerei Wagner",
+    "email": "foronkelz@web.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996982241",
+    "timestamp": "2026-03-31T22:43:02.241Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Werner Franik",
+    "email": "franik.consult@gmail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996982743",
+    "timestamp": "2026-03-31T22:43:02.743Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Frank Hohenberg",
+    "email": "frankingkong@outlook.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996983245",
+    "timestamp": "2026-03-31T22:43:03.245Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Frank Time",
+    "email": "franktime.us@gmail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996983747",
+    "timestamp": "2026-03-31T22:43:03.747Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Manfred Haas",
+    "email": "Fuzzypalzem@t-online.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996984249",
+    "timestamp": "2026-03-31T22:43:04.249Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Gianfranco",
+    "email": "g.lessmann@valuemediaservice.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996984751",
+    "timestamp": "2026-03-31T22:43:04.751Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "G",
+    "email": "gako-spk@web.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996985253",
+    "timestamp": "2026-03-31T22:43:05.253Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Botis Gheorghe",
+    "email": "gbotis6@gmail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996985755",
+    "timestamp": "2026-03-31T22:43:05.756Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Mike Gonschorek",
+    "email": "gonschorek.autopflege@gmx.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996986256",
+    "timestamp": "2026-03-31T22:43:06.256Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Gracia Katharina",
+    "email": "gracia.katharina@gmail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996986758",
+    "timestamp": "2026-03-31T22:43:06.758Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "torben Kann",
+    "email": "hallo@torben.at",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996987260",
+    "timestamp": "2026-03-31T22:43:07.260Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Hamdi Michel",
+    "email": "hamdimichel44@gmail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996987763",
+    "timestamp": "2026-03-31T22:43:07.763Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Constanza Heer",
+    "email": "heer.constanza@gmail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996988264",
+    "timestamp": "2026-03-31T22:43:08.264Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Hejkal",
+    "email": "hejkal2011@gmail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996988767",
+    "timestamp": "2026-03-31T22:43:08.767Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Helga Wahl",
+    "email": "helga_wahl@yahoo.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996989268",
+    "timestamp": "2026-03-31T22:43:09.268Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Hermann Elfers",
+    "email": "hermannelfers@gmx.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996989770",
+    "timestamp": "2026-03-31T22:43:09.770Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Heinz Frenz",
+    "email": "hfrenz@t-online.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996990272",
+    "timestamp": "2026-03-31T22:43:10.273Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Saskia",
+    "email": "hockeytrulla@gmail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996990775",
+    "timestamp": "2026-03-31T22:43:10.775Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Helga",
+    "email": "Hp-helga-rietig@gmx.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996991277",
+    "timestamp": "2026-03-31T22:43:11.277Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "غريب العمر",
+    "email": "ibrahim22222ahmed@gmail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996991779",
+    "timestamp": "2026-03-31T22:43:11.779Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Marcel Sicken",
+    "email": "info@apex-education.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996992281",
+    "timestamp": "2026-03-31T22:43:12.281Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Jörg",
+    "email": "info@birdstrike.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996992783",
+    "timestamp": "2026-03-31T22:43:12.783Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Swen Riha",
+    "email": "info@byriha.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996993285",
+    "timestamp": "2026-03-31T22:43:13.286Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Oliver Grau",
+    "email": "info@olivergrau.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996993787",
+    "timestamp": "2026-03-31T22:43:13.787Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Mat Steinbecher",
+    "email": "Infost@gmx.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996994290",
+    "timestamp": "2026-03-31T22:43:14.290Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Klausnitzer",
+    "email": "isa_fleischer@hotmail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996994793",
+    "timestamp": "2026-03-31T22:43:14.793Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Ju Ge Ma",
+    "email": "j.g.maerz@gmx.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996995294",
+    "timestamp": "2026-03-31T22:43:15.294Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Jean Michel Brummel",
+    "email": "j.m.brummel@outlook.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996995797",
+    "timestamp": "2026-03-31T22:43:15.797Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Jan Bayer",
+    "email": "jb@aks81.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996996299",
+    "timestamp": "2026-03-31T22:43:16.299Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Joachim Brinkmann",
+    "email": "JBrinkmannAhaus@web.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996996801",
+    "timestamp": "2026-03-31T22:43:16.801Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Jörg Finger",
+    "email": "jfinger1967@gmail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996997302",
+    "timestamp": "2026-03-31T22:43:17.303Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Joachim Bauer",
+    "email": "Joachim.nl.bauer@gmail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996997805",
+    "timestamp": "2026-03-31T22:43:17.805Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Joerg",
+    "email": "joerg.scholl@venta-air.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996998308",
+    "timestamp": "2026-03-31T22:43:18.308Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Jörg Welter",
+    "email": "joergwelter@web.de",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996998810",
+    "timestamp": "2026-03-31T22:43:18.810Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "John Sellmann",
+    "email": "john.sellmann@googlemail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996999313",
+    "timestamp": "2026-03-31T22:43:19.313Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Lisa Kappesser",
+    "email": "kappesser45@gmail.com",
+    "contact_type": "webinar_lead",
+    "organisation": null,
+    "resend_id": "dry-run-1774996999815",
+    "timestamp": "2026-03-31T22:43:19.816Z"
+  }
+]

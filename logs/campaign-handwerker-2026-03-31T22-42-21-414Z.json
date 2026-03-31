@@ -1,0 +1,47 @@
+[
+  {
+    "status": "dry_run",
+    "name": "Luca Daume",
+    "email": "Luca.Daume@daume-online.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774996941415",
+    "timestamp": "2026-03-31T22:42:21.415Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Daniela Baisch",
+    "email": "daniela.baisch@holzbau-ott.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774996941918",
+    "timestamp": "2026-03-31T22:42:21.918Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Stefan Merz",
+    "email": "s.merz@hbmerz.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774996942419",
+    "timestamp": "2026-03-31T22:42:22.419Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Holger Neumann",
+    "email": "holger.neumann@neurealis.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774996942921",
+    "timestamp": "2026-03-31T22:42:22.921Z"
+  },
+  {
+    "status": "dry_run",
+    "name": "Andreas Stolarczyk",
+    "email": "andreas.stolarczyk@js-fenster.de",
+    "contact_type": "bestandskunde",
+    "organisation": null,
+    "resend_id": "dry-run-1774996943423",
+    "timestamp": "2026-03-31T22:42:23.423Z"
+  }
+]
