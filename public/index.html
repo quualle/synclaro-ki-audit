@@ -22,6 +22,45 @@
   <meta name="twitter:title" content="KI-Readiness-Check für Handwerksbetriebe | Synclaro">
   <meta name="twitter:description" content="In 3 Minuten erfahren Sie, wo Ihr größtes KI-Potenzial liegt. Kostenlos und unverbindlich.">
 
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://ki-check.synclaro.de/">
+
+  <!-- Structured Data (JSON-LD) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Synclaro KI-Readiness-Check",
+    "description": "Kostenloser KI-Readiness-Check für Handwerksbetriebe. In 3 Minuten erfahren Sie, wo Ihr größtes KI-Potenzial liegt.",
+    "url": "https://ki-check.synclaro.de",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "offers": [
+      {
+        "@type": "Offer",
+        "name": "Kostenloser KI-Check",
+        "price": "0",
+        "priceCurrency": "EUR"
+      },
+      {
+        "@type": "Offer",
+        "name": "Premium KI-Report",
+        "price": "29",
+        "priceCurrency": "EUR"
+      }
+    ],
+    "creator": {
+      "@type": "Organization",
+      "name": "Synclaro IT Service",
+      "url": "https://synclaro.de"
+    },
+    "audience": {
+      "@type": "Audience",
+      "audienceType": "Handwerksbetriebe, KMU"
+    }
+  }
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
@@ -1092,6 +1131,25 @@
             </div>
           </div>
 
+          <!-- Share Section -->
+          <div class="bg-warm-cream rounded-2xl p-6 sm:p-8 text-center my-8">
+            <p class="text-sm text-gray-500 mb-3">Teilen Sie Ihr Ergebnis mit Kollegen:</p>
+            <div class="flex justify-center gap-3">
+              <button onclick="shareResult('linkedin')" class="px-4 py-2 bg-[#0A66C2] text-white text-sm rounded-lg hover:opacity-90 transition">
+                LinkedIn
+              </button>
+              <button onclick="shareResult('whatsapp')" class="px-4 py-2 bg-[#25D366] text-white text-sm rounded-lg hover:opacity-90 transition">
+                WhatsApp
+              </button>
+              <button onclick="shareResult('email')" class="px-4 py-2 bg-gray-600 text-white text-sm rounded-lg hover:opacity-90 transition">
+                E-Mail
+              </button>
+              <button onclick="shareResult('copy')" class="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 transition" id="copy-link-btn">
+                Link kopieren
+              </button>
+            </div>
+          </div>
+
           <!-- Divider -->
           <hr class="border-gray-200 my-10">
 
@@ -1703,6 +1761,28 @@
         submitBtn.disabled = false;
         btnText.textContent = 'Jetzt bestellen — 29 € netto';
         btnSpinner.classList.add('hidden');
+      }
+    }
+
+    // === Share Results ===
+    function shareResult(platform) {
+      const score = document.getElementById('score-number')?.textContent || '?';
+      const level = document.getElementById('score-level')?.textContent || '';
+      const url = 'https://ki-check.synclaro.de';
+      const text = `Mein Handwerksbetrieb hat beim KI-Readiness-Check ${score} erreicht (${level}). Wie KI-ready ist euer Betrieb? Kostenlos in 3 Minuten:`;
+
+      if (platform === 'linkedin') {
+        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
+      } else if (platform === 'whatsapp') {
+        window.open(`https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`, '_blank');
+      } else if (platform === 'email') {
+        window.location.href = `mailto:?subject=${encodeURIComponent('KI-Readiness-Check für Handwerksbetriebe')}&body=${encodeURIComponent(text + '\n\n' + url)}`;
+      } else if (platform === 'copy') {
+        navigator.clipboard.writeText(url).then(() => {
+          const btn = document.getElementById('copy-link-btn');
+          btn.textContent = 'Kopiert!';
+          setTimeout(() => btn.textContent = 'Link kopieren', 2000);
+        });
       }
     }
 
