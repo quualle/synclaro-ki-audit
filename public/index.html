@@ -1,0 +1,1687 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KI-Readiness-Check für Handwerksbetriebe | Synclaro</title>
+  <meta name="description" content="In 3 Minuten erfahren Sie, wo Ihr größtes KI-Potenzial liegt. Kostenlos und unverbindlich. Für Handwerksbetriebe.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'swiss-orange': '#FF4F00',
+            'swiss-orange-hover': '#E04700',
+            charcoal: '#1A1A1A',
+            'warm-cream': '#FFFBF5',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    /* Animated gradient background */
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .hero-gradient {
+      background: linear-gradient(135deg, #FFFBF5 0%, #FFF5EB 25%, #FFF0E0 50%, #FFFBF5 75%, #FFF8F0 100%);
+      background-size: 400% 400%;
+      animation: gradientShift 12s ease infinite;
+    }
+
+    /* Screen transitions */
+    .screen {
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    .screen-hidden {
+      display: none;
+      opacity: 0;
+      transform: translateY(16px);
+    }
+
+    .screen-visible {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Step transitions */
+    .step-content {
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+
+    .step-entering {
+      opacity: 0;
+      transform: translateX(30px);
+    }
+
+    .step-leaving {
+      opacity: 0;
+      transform: translateX(-30px);
+    }
+
+    /* Score circle animation */
+    @keyframes scoreReveal {
+      from { stroke-dashoffset: 314; }
+    }
+
+    .score-circle-animated {
+      animation: scoreReveal 1.5s ease-out forwards;
+    }
+
+    /* Bar fill animation */
+    @keyframes barFill {
+      from { width: 0; }
+    }
+
+    .bar-animated {
+      animation: barFill 1.2s ease-out forwards;
+    }
+
+    /* Checkmark animation */
+    @keyframes checkPop {
+      0% { transform: scale(0); opacity: 0; }
+      60% { transform: scale(1.15); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .check-animated {
+      animation: checkPop 0.6s ease-out forwards;
+    }
+
+    /* Loading dots */
+    @keyframes dotPulse {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    .loading-dot:nth-child(1) { animation: dotPulse 1.4s infinite 0s; }
+    .loading-dot:nth-child(2) { animation: dotPulse 1.4s infinite 0.2s; }
+    .loading-dot:nth-child(3) { animation: dotPulse 1.4s infinite 0.4s; }
+
+    /* Smooth scroll */
+    html { scroll-behavior: smooth; }
+
+    /* Custom radio/checkbox styles */
+    .radio-option input:checked + .radio-label {
+      border-color: #FF4F00;
+      background-color: #FFF5EB;
+      box-shadow: 0 0 0 1px #FF4F00;
+    }
+
+    .radio-option input:checked + .radio-label .radio-dot {
+      background-color: #FF4F00;
+      box-shadow: inset 0 0 0 3px white;
+    }
+
+    .checkbox-option input:checked + .checkbox-label {
+      border-color: #FF4F00;
+      background-color: #FFF5EB;
+      box-shadow: 0 0 0 1px #FF4F00;
+    }
+
+    .checkbox-option input:checked + .checkbox-label .checkbox-box {
+      background-color: #FF4F00;
+      border-color: #FF4F00;
+    }
+
+    .checkbox-option input:checked + .checkbox-label .checkbox-box svg {
+      display: block;
+    }
+
+    /* Progress bar transition */
+    .progress-fill {
+      transition: width 0.5s ease;
+    }
+
+    /* Fade in for trust badges etc. */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-fade-in-up {
+      animation: fadeInUp 0.6s ease-out forwards;
+    }
+
+    .delay-100 { animation-delay: 0.1s; }
+    .delay-200 { animation-delay: 0.2s; }
+    .delay-300 { animation-delay: 0.3s; }
+    .delay-400 { animation-delay: 0.4s; }
+
+    /* Navbar shadow on scroll */
+    .nav-scrolled {
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+    }
+
+    /* Textarea focus */
+    textarea:focus, select:focus, input:focus {
+      outline: none;
+      border-color: #FF4F00;
+      box-shadow: 0 0 0 3px rgba(255, 79, 0, 0.1);
+    }
+  </style>
+</head>
+<body class="font-sans text-charcoal antialiased">
+
+  <!-- ==================== NAVBAR ==================== -->
+  <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm transition-shadow duration-300">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center gap-3">
+          <a href="/" class="font-display font-800 text-xl text-charcoal tracking-tight">Synclaro</a>
+          <span class="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-swiss-orange/10 text-swiss-orange border border-swiss-orange/20">
+            KI-Readiness-Check
+          </span>
+        </div>
+        <button onclick="startCheck()" class="bg-swiss-orange hover:bg-swiss-orange-hover text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors duration-200">
+          Jetzt starten
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ==================== SCREEN 1: LANDING ==================== -->
+  <div id="screen-landing" class="screen screen-visible">
+
+    <!-- Hero -->
+    <section class="hero-gradient min-h-screen flex items-center pt-16">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center py-20">
+        <h1 class="font-display font-800 text-4xl sm:text-5xl lg:text-6xl text-charcoal leading-tight mb-6 animate-fade-in-up">
+          Wie KI-ready ist Ihr<br class="hidden sm:block"> Handwerksbetrieb?
+        </h1>
+        <p class="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto mb-10 animate-fade-in-up delay-100">
+          In 3 Minuten erfahren Sie, wo Ihr größtes KI-Potenzial liegt — kostenlos und unverbindlich.
+        </p>
+        <div class="animate-fade-in-up delay-200">
+          <button onclick="startCheck()" class="inline-flex items-center bg-swiss-orange hover:bg-swiss-orange-hover text-white text-lg font-semibold px-8 py-4 rounded-xl transition-all duration-200 shadow-lg shadow-swiss-orange/25 hover:shadow-xl hover:shadow-swiss-orange/30 hover:-translate-y-0.5">
+            Kostenlosen Check starten
+            <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+          </button>
+        </div>
+        <div class="mt-6 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-sm text-gray-500 animate-fade-in-up delay-300">
+          <span class="flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+            3 Minuten
+          </span>
+          <span class="flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+            Sofort-Ergebnis
+          </span>
+          <span class="flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+            Keine Anmeldung nötig
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Trust Section -->
+    <section class="bg-white py-16 border-t border-gray-100">
+      <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <p class="text-gray-500 text-sm font-medium uppercase tracking-wider mb-8">Bereits 200+ Handwerksbetriebe analysiert</p>
+        <div class="flex flex-wrap justify-center gap-6 sm:gap-10">
+          <div class="flex items-center gap-2.5 bg-warm-cream rounded-full px-5 py-2.5">
+            <span class="text-xl">🆓</span>
+            <span class="text-sm font-semibold text-charcoal">Kostenlos</span>
+          </div>
+          <div class="flex items-center gap-2.5 bg-warm-cream rounded-full px-5 py-2.5">
+            <span class="text-xl">🔒</span>
+            <span class="text-sm font-semibold text-charcoal">DSGVO-konform</span>
+          </div>
+          <div class="flex items-center gap-2.5 bg-warm-cream rounded-full px-5 py-2.5">
+            <span class="text-xl">🎯</span>
+            <span class="text-sm font-semibold text-charcoal">KI-Experten</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="bg-warm-cream py-20">
+      <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="font-display font-700 text-3xl sm:text-4xl text-center text-charcoal mb-14">So funktioniert's</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+          <div class="text-center">
+            <div class="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-5 text-3xl">📋</div>
+            <div class="text-xs font-bold text-swiss-orange uppercase tracking-wider mb-2">Schritt 1</div>
+            <h3 class="font-display font-700 text-lg text-charcoal mb-2">17 Fragen beantworten</h3>
+            <p class="text-gray-500 text-sm">Kurze, gezielte Fragen zu Ihrem Betrieb und Ihren Prozessen.</p>
+          </div>
+          <div class="text-center">
+            <div class="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-5 text-3xl">🧠</div>
+            <div class="text-xs font-bold text-swiss-orange uppercase tracking-wider mb-2">Schritt 2</div>
+            <h3 class="font-display font-700 text-lg text-charcoal mb-2">KI analysiert Ihr Potenzial</h3>
+            <p class="text-gray-500 text-sm">Unsere KI bewertet Ihren Digitalisierungsgrad und findet Optimierungspotenziale.</p>
+          </div>
+          <div class="text-center">
+            <div class="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-5 text-3xl">📊</div>
+            <div class="text-xs font-bold text-swiss-orange uppercase tracking-wider mb-2">Schritt 3</div>
+            <h3 class="font-display font-700 text-lg text-charcoal mb-2">Sofort Ihren Report erhalten</h3>
+            <p class="text-gray-500 text-sm">Ergebnisse, Benchmarks und erste Handlungsempfehlungen — direkt auf Ihrem Bildschirm.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Benefits -->
+    <section class="bg-white py-20">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="font-display font-700 text-3xl sm:text-4xl text-center text-charcoal mb-14">Was Sie erwartet</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div class="bg-warm-cream rounded-2xl p-6 border border-gray-100 hover:shadow-md transition-shadow duration-300">
+            <div class="w-10 h-10 bg-swiss-orange/10 rounded-xl flex items-center justify-center mb-4">
+              <svg class="w-5 h-5 text-swiss-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+            <h3 class="font-display font-700 text-base text-charcoal mb-2">Schwachstellen erkennen</h3>
+            <p class="text-gray-500 text-sm leading-relaxed">Finden Sie heraus, wo Sie durch Digitalisierung und KI am meisten Zeit und Geld sparen können.</p>
+          </div>
+          <div class="bg-warm-cream rounded-2xl p-6 border border-gray-100 hover:shadow-md transition-shadow duration-300">
+            <div class="w-10 h-10 bg-swiss-orange/10 rounded-xl flex items-center justify-center mb-4">
+              <svg class="w-5 h-5 text-swiss-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            </div>
+            <h3 class="font-display font-700 text-base text-charcoal mb-2">Benchmarking</h3>
+            <p class="text-gray-500 text-sm leading-relaxed">Vergleichen Sie Ihren Digitalisierungsstand mit anderen Betrieben Ihrer Branche.</p>
+          </div>
+          <div class="bg-warm-cream rounded-2xl p-6 border border-gray-100 hover:shadow-md transition-shadow duration-300">
+            <div class="w-10 h-10 bg-swiss-orange/10 rounded-xl flex items-center justify-center mb-4">
+              <svg class="w-5 h-5 text-swiss-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+            </div>
+            <h3 class="font-display font-700 text-base text-charcoal mb-2">Konkrete Handlungsempfehlungen</h3>
+            <p class="text-gray-500 text-sm leading-relaxed">Erhalten Sie sofort umsetzbare Tipps — keine theoretischen Berichte.</p>
+          </div>
+          <div class="bg-warm-cream rounded-2xl p-6 border border-gray-100 hover:shadow-md transition-shadow duration-300">
+            <div class="w-10 h-10 bg-swiss-orange/10 rounded-xl flex items-center justify-center mb-4">
+              <svg class="w-5 h-5 text-swiss-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <h3 class="font-display font-700 text-base text-charcoal mb-2">Förderung entdecken</h3>
+            <p class="text-gray-500 text-sm leading-relaxed">Erfahren Sie, wie bis zu 90% Ihrer Digitalisierungskosten gefördert werden können.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="bg-charcoal py-20">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h2 class="font-display font-700 text-3xl sm:text-4xl text-white mb-6">Bereit? Starten Sie Ihren kostenlosen KI-Check.</h2>
+        <p class="text-gray-400 mb-10 text-lg">Finden Sie in 3 Minuten heraus, wo Ihr Betrieb von KI profitieren kann.</p>
+        <button onclick="startCheck()" class="inline-flex items-center bg-swiss-orange hover:bg-swiss-orange-hover text-white text-lg font-semibold px-8 py-4 rounded-xl transition-all duration-200 shadow-lg shadow-swiss-orange/30 hover:shadow-xl hover:-translate-y-0.5">
+          Jetzt starten
+          <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-charcoal border-t border-gray-800 py-10">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="text-gray-500 text-sm text-center sm:text-left">
+            &copy; 2026 Synclaro IT Service — Marco Heer
+            <span class="block sm:inline sm:ml-2 text-gray-600">KI-Coaching für Handwerksbetriebe</span>
+          </div>
+          <div class="flex items-center gap-6 text-sm">
+            <a href="https://synclaro.de/impressum" target="_blank" rel="noopener" class="text-gray-500 hover:text-gray-300 transition-colors">Impressum</a>
+            <a href="https://synclaro.de/datenschutz" target="_blank" rel="noopener" class="text-gray-500 hover:text-gray-300 transition-colors">Datenschutz</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ==================== SCREEN 2: QUESTIONNAIRE ==================== -->
+  <div id="screen-questionnaire" class="screen screen-hidden">
+    <div class="min-h-screen bg-warm-cream pt-16">
+
+      <!-- Progress Bar -->
+      <div class="sticky top-16 z-40 bg-white border-b border-gray-100 shadow-sm">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div class="flex items-center justify-between text-sm text-gray-500 mb-2">
+            <span id="step-label">Schritt 1 von 5</span>
+            <span id="step-percent">0%</span>
+          </div>
+          <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div id="progress-bar" class="progress-fill h-full bg-swiss-orange rounded-full" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Steps Container -->
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+        <!-- Step 1: Ihr Unternehmen -->
+        <div id="step-1" class="step-content">
+          <div class="mb-8">
+            <h2 class="font-display font-700 text-2xl sm:text-3xl text-charcoal mb-2">Ihr Unternehmen</h2>
+            <p class="text-gray-500">Erzählen Sie uns etwas über Ihren Betrieb.</p>
+          </div>
+
+          <div class="space-y-8">
+            <!-- Branche -->
+            <div>
+              <label class="block text-sm font-semibold text-charcoal mb-2">In welcher Branche sind Sie tätig? <span class="text-swiss-orange">*</span></label>
+              <select id="q-branche" required class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-charcoal text-sm appearance-none cursor-pointer transition-all duration-200" style="background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20' fill='%236b7280'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'/%3E%3C/svg%3E&quot;); background-repeat: no-repeat; background-position: right 12px center;">
+                <option value="">Bitte wählen...</option>
+                <option value="Baugewerbe">Baugewerbe</option>
+                <option value="SHK">SHK (Sanitär/Heizung/Klima)</option>
+                <option value="Elektrohandwerk">Elektrohandwerk</option>
+                <option value="Maler & Lackierer">Maler & Lackierer</option>
+                <option value="Tischler/Schreiner">Tischler/Schreiner</option>
+                <option value="Metallbau">Metallbau</option>
+                <option value="Dachdeckerei">Dachdeckerei</option>
+                <option value="Zimmerei">Zimmerei</option>
+                <option value="Landschaftsbau">Landschaftsbau</option>
+                <option value="Gebäudereinigung">Gebäudereinigung</option>
+                <option value="KFZ-Gewerbe">KFZ-Gewerbe</option>
+                <option value="Sonstige">Sonstige</option>
+              </select>
+            </div>
+
+            <!-- Mitarbeiter -->
+            <div>
+              <label class="block text-sm font-semibold text-charcoal mb-3">Wie viele Mitarbeiter hat Ihr Betrieb? <span class="text-swiss-orange">*</span></label>
+              <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                <label class="radio-option">
+                  <input type="radio" name="q-mitarbeiter" value="1-5" class="sr-only" required>
+                  <div class="radio-label flex items-center gap-2.5 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">1–5</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-mitarbeiter" value="6-10" class="sr-only">
+                  <div class="radio-label flex items-center gap-2.5 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">6–10</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-mitarbeiter" value="11-20" class="sr-only">
+                  <div class="radio-label flex items-center gap-2.5 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">11–20</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-mitarbeiter" value="21-50" class="sr-only">
+                  <div class="radio-label flex items-center gap-2.5 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">21–50</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-mitarbeiter" value="50+" class="sr-only">
+                  <div class="radio-label flex items-center gap-2.5 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">50+</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Umsatz -->
+            <div>
+              <label class="block text-sm font-semibold text-charcoal mb-3">Ungefährer Jahresumsatz? <span class="text-swiss-orange">*</span></label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label class="radio-option">
+                  <input type="radio" name="q-umsatz" value="bis 250.000€" class="sr-only" required>
+                  <div class="radio-label flex items-center gap-2.5 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">bis 250.000 €</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-umsatz" value="250.000-500.000€" class="sr-only">
+                  <div class="radio-label flex items-center gap-2.5 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">250.000–500.000 €</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-umsatz" value="500.000-1Mio€" class="sr-only">
+                  <div class="radio-label flex items-center gap-2.5 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">500.000–1 Mio. €</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-umsatz" value="1-5Mio€" class="sr-only">
+                  <div class="radio-label flex items-center gap-2.5 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">1–5 Mio. €</span>
+                  </div>
+                </label>
+                <label class="radio-option sm:col-span-2">
+                  <input type="radio" name="q-umsatz" value="über 5Mio€" class="sr-only">
+                  <div class="radio-label flex items-center gap-2.5 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">über 5 Mio. €</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Digitalisierungsstand -->
+        <div id="step-2" class="step-content hidden">
+          <div class="mb-8">
+            <h2 class="font-display font-700 text-2xl sm:text-3xl text-charcoal mb-2">Digitalisierungsstand</h2>
+            <p class="text-gray-500">Wie digital arbeitet Ihr Betrieb heute?</p>
+          </div>
+
+          <div class="space-y-10">
+            <!-- Kundenanfragen -->
+            <div>
+              <label class="block text-sm font-semibold text-charcoal mb-3">Wie verwalten Sie Kundenanfragen? <span class="text-swiss-orange">*</span></label>
+              <div class="space-y-2.5">
+                <label class="radio-option">
+                  <input type="radio" name="q-kundenanfragen" value="1" class="sr-only" required>
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Telefon & Papier</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-kundenanfragen" value="2" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">E-Mail & Excel-Listen</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-kundenanfragen" value="3" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">CRM-Software (z.B. HubSpot, Pipedrive)</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-kundenanfragen" value="4" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Volldigitales System mit automatischer Nachverfolgung</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Angebote -->
+            <div>
+              <label class="block text-sm font-semibold text-charcoal mb-3">Wie erstellen Sie Angebote? <span class="text-swiss-orange">*</span></label>
+              <div class="space-y-2.5">
+                <label class="radio-option">
+                  <input type="radio" name="q-angebote" value="1" class="sr-only" required>
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Handschriftlich oder Word-Vorlagen</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-angebote" value="2" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Excel-Kalkulation</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-angebote" value="3" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Branchensoftware (z.B. Craftview, TopKontor)</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-angebote" value="4" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">KI-gestützte automatische Angebotserstellung</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Dokumentation -->
+            <div>
+              <label class="block text-sm font-semibold text-charcoal mb-3">Wie dokumentieren Sie Ihre Projekte? <span class="text-swiss-orange">*</span></label>
+              <div class="space-y-2.5">
+                <label class="radio-option">
+                  <input type="radio" name="q-dokumentation" value="1" class="sr-only" required>
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Notizblock & Aktenordner</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-dokumentation" value="2" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Fotos per WhatsApp & E-Mail</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-dokumentation" value="3" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Projektmanagement-Tool (z.B. Plancraft, Trello)</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-dokumentation" value="4" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Digitale Plattform mit automatischer Dokumentation</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Wissen -->
+            <div>
+              <label class="block text-sm font-semibold text-charcoal mb-3">Wie sichern Sie das Wissen Ihrer Mitarbeiter? <span class="text-swiss-orange">*</span></label>
+              <div class="space-y-2.5">
+                <label class="radio-option">
+                  <input type="radio" name="q-wissen" value="1" class="sr-only" required>
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Nur in den Köpfen der Mitarbeiter</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-wissen" value="2" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Ordner & Papierunterlagen</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-wissen" value="3" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Digitale Wissensdatenbank (Wiki, Sharepoint)</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-wissen" value="4" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">KI-gestütztes Wissensmanagement mit Suchfunktion</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Kommunikation & Prozesse -->
+        <div id="step-3" class="step-content hidden">
+          <div class="mb-8">
+            <h2 class="font-display font-700 text-2xl sm:text-3xl text-charcoal mb-2">Kommunikation & Prozesse</h2>
+            <p class="text-gray-500">Wie laufen die täglichen Abläufe in Ihrem Betrieb?</p>
+          </div>
+
+          <div class="space-y-10">
+            <!-- Kommunikation Büro/Baustelle -->
+            <div>
+              <label class="block text-sm font-semibold text-charcoal mb-3">Wie kommunizieren Büro und Baustelle? <span class="text-swiss-orange">*</span></label>
+              <div class="space-y-2.5">
+                <label class="radio-option">
+                  <input type="radio" name="q-kommunikation" value="1" class="sr-only" required>
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Hauptsächlich per Telefon</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-kommunikation" value="2" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">WhatsApp-Gruppen</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-kommunikation" value="3" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Planungs-App (z.B. Buildertrend, Fieldwire)</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-kommunikation" value="4" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Echtzeit-System mit digitaler Auftragssteuerung</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Arbeitszeiten -->
+            <div>
+              <label class="block text-sm font-semibold text-charcoal mb-3">Wie erfassen Sie Arbeitszeiten? <span class="text-swiss-orange">*</span></label>
+              <div class="space-y-2.5">
+                <label class="radio-option">
+                  <input type="radio" name="q-arbeitszeiten" value="1" class="sr-only" required>
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Handgeschriebene Stundenzettel</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-arbeitszeiten" value="2" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Excel-Tabellen</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-arbeitszeiten" value="3" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Digitale Zeiterfassungs-App</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-arbeitszeiten" value="4" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Automatische Erfassung mit GPS/NFC</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Rechnungsstellung -->
+            <div>
+              <label class="block text-sm font-semibold text-charcoal mb-3">Wie läuft Ihre Rechnungsstellung? <span class="text-swiss-orange">*</span></label>
+              <div class="space-y-2.5">
+                <label class="radio-option">
+                  <input type="radio" name="q-rechnungen" value="1" class="sr-only" required>
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Komplett manuell (Word/Excel)</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-rechnungen" value="2" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Teilautomatisiert (Branchensoftware)</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-rechnungen" value="3" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Automatisiert aus Zeiterfassung/Aufmaß</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-rechnungen" value="4" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Vollautomatisch mit KI-Unterstützung</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Materialbeschaffung -->
+            <div>
+              <label class="block text-sm font-semibold text-charcoal mb-3">Wie beschaffen Sie Material? <span class="text-swiss-orange">*</span></label>
+              <div class="space-y-2.5">
+                <label class="radio-option">
+                  <input type="radio" name="q-material" value="1" class="sr-only" required>
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Telefon, Fax oder persönlich beim Händler</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-material" value="2" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">E-Mail-Bestellungen</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-material" value="3" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Online-Shops & Vergleichsplattformen</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-material" value="4" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Automatisierte Bestellung basierend auf Projektdaten</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4: Ihre Herausforderungen -->
+        <div id="step-4" class="step-content hidden">
+          <div class="mb-8">
+            <h2 class="font-display font-700 text-2xl sm:text-3xl text-charcoal mb-2">Ihre Herausforderungen</h2>
+            <p class="text-gray-500">Was sind Ihre größten Schmerzpunkte im Alltag?</p>
+          </div>
+
+          <div class="space-y-10">
+            <!-- Zeitfresser -->
+            <div>
+              <label class="block text-sm font-semibold text-charcoal mb-2">Was ist Ihr größter Zeitfresser im Alltag? <span class="text-swiss-orange">*</span></label>
+              <textarea id="q-zeitfresser" required rows="3" class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-charcoal resize-none transition-all duration-200" placeholder="z.B. Angebote schreiben, E-Mails beantworten, Material bestellen..."></textarea>
+            </div>
+
+            <!-- Fehlerquellen (Checkboxes) -->
+            <div>
+              <label class="block text-sm font-semibold text-charcoal mb-3">Wo passieren die meisten Fehler? <span class="text-gray-400 font-normal">(Mehrfachauswahl)</span></label>
+              <div class="space-y-2.5">
+                <label class="checkbox-option">
+                  <input type="checkbox" name="q-fehler" value="Kommunikation zwischen Büro und Baustelle" class="sr-only">
+                  <div class="checkbox-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="checkbox-box w-4 h-4 rounded border-2 border-gray-300 flex-shrink-0 flex items-center justify-center transition-all duration-200">
+                      <svg class="w-2.5 h-2.5 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                    </span>
+                    <span class="text-sm text-charcoal">Kommunikation zwischen Büro und Baustelle</span>
+                  </div>
+                </label>
+                <label class="checkbox-option">
+                  <input type="checkbox" name="q-fehler" value="Angebots- und Rechnungserstellung" class="sr-only">
+                  <div class="checkbox-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="checkbox-box w-4 h-4 rounded border-2 border-gray-300 flex-shrink-0 flex items-center justify-center transition-all duration-200">
+                      <svg class="w-2.5 h-2.5 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                    </span>
+                    <span class="text-sm text-charcoal">Angebots- und Rechnungserstellung</span>
+                  </div>
+                </label>
+                <label class="checkbox-option">
+                  <input type="checkbox" name="q-fehler" value="Terminplanung und Koordination" class="sr-only">
+                  <div class="checkbox-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="checkbox-box w-4 h-4 rounded border-2 border-gray-300 flex-shrink-0 flex items-center justify-center transition-all duration-200">
+                      <svg class="w-2.5 h-2.5 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                    </span>
+                    <span class="text-sm text-charcoal">Terminplanung und Koordination</span>
+                  </div>
+                </label>
+                <label class="checkbox-option">
+                  <input type="checkbox" name="q-fehler" value="Materialbestellung und Lagerhaltung" class="sr-only">
+                  <div class="checkbox-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="checkbox-box w-4 h-4 rounded border-2 border-gray-300 flex-shrink-0 flex items-center justify-center transition-all duration-200">
+                      <svg class="w-2.5 h-2.5 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                    </span>
+                    <span class="text-sm text-charcoal">Materialbestellung und Lagerhaltung</span>
+                  </div>
+                </label>
+                <label class="checkbox-option">
+                  <input type="checkbox" name="q-fehler" value="Dokumentation und Nachweise" class="sr-only">
+                  <div class="checkbox-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="checkbox-box w-4 h-4 rounded border-2 border-gray-300 flex-shrink-0 flex items-center justify-center transition-all duration-200">
+                      <svg class="w-2.5 h-2.5 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                    </span>
+                    <span class="text-sm text-charcoal">Dokumentation und Nachweise</span>
+                  </div>
+                </label>
+                <label class="checkbox-option">
+                  <input type="checkbox" name="q-fehler" value="Kundenkommunikation und Nachverfolgung" class="sr-only">
+                  <div class="checkbox-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="checkbox-box w-4 h-4 rounded border-2 border-gray-300 flex-shrink-0 flex items-center justify-center transition-all duration-200">
+                      <svg class="w-2.5 h-2.5 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                    </span>
+                    <span class="text-sm text-charcoal">Kundenkommunikation und Nachverfolgung</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Automatisierung -->
+            <div>
+              <label class="block text-sm font-semibold text-charcoal mb-2">Was würden Sie sofort automatisieren, wenn es möglich wäre?</label>
+              <textarea id="q-automatisieren" rows="3" class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-charcoal resize-none transition-all duration-200" placeholder="z.B. Rechnungen schreiben, Terminplanung, Kundennachverfolgung..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 5: Ihre KI-Bereitschaft -->
+        <div id="step-5" class="step-content hidden">
+          <div class="mb-8">
+            <h2 class="font-display font-700 text-2xl sm:text-3xl text-charcoal mb-2">Ihre KI-Bereitschaft</h2>
+            <p class="text-gray-500">Wie bereit ist Ihr Betrieb für den nächsten Schritt?</p>
+          </div>
+
+          <div class="space-y-10">
+            <!-- KI-Erfahrung -->
+            <div>
+              <label class="block text-sm font-semibold text-charcoal mb-3">Wie viel Erfahrung haben Sie mit KI? <span class="text-swiss-orange">*</span></label>
+              <div class="space-y-2.5">
+                <label class="radio-option">
+                  <input type="radio" name="q-ki-erfahrung" value="1" class="sr-only" required>
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Keine — KI ist Neuland für mich</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-ki-erfahrung" value="2" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Habe ChatGPT oder ähnliches ausprobiert</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-ki-erfahrung" value="3" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Nutze KI regelmäßig für einzelne Aufgaben</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-ki-erfahrung" value="4" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Habe KI bereits in Geschäftsprozesse integriert</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Budget -->
+            <div>
+              <label class="block text-sm font-semibold text-charcoal mb-3">Welches Budget haben Sie für Digitalisierung/KI? <span class="text-swiss-orange">*</span></label>
+              <div class="space-y-2.5">
+                <label class="radio-option">
+                  <input type="radio" name="q-budget" value="1" class="sr-only" required>
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Aktuell kein Budget vorgesehen</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-budget" value="2" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Bis 500 € pro Monat</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-budget" value="3" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">500–2.000 € pro Monat</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-budget" value="4" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Über 2.000 € pro Monat</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Zeitrahmen -->
+            <div>
+              <label class="block text-sm font-semibold text-charcoal mb-3">Wie schnell möchten Sie starten? <span class="text-swiss-orange">*</span></label>
+              <div class="space-y-2.5">
+                <label class="radio-option">
+                  <input type="radio" name="q-zeitrahmen" value="1" class="sr-only" required>
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Erstmal nur informieren</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-zeitrahmen" value="2" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">In den nächsten 3 Monaten</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-zeitrahmen" value="3" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Innerhalb eines Monats</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-zeitrahmen" value="4" class="sr-only">
+                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Am liebsten sofort</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Validation Error -->
+        <div id="validation-error" class="hidden mt-4 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+          Bitte füllen Sie alle Pflichtfelder aus, bevor Sie fortfahren.
+        </div>
+
+        <!-- Navigation Buttons -->
+        <div class="flex items-center justify-between mt-10 pt-6 border-t border-gray-200">
+          <button id="btn-back" onclick="prevStep()" class="hidden items-center gap-2 text-gray-500 hover:text-charcoal font-medium text-sm transition-colors duration-200 px-4 py-2.5 rounded-lg hover:bg-white">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            Zurück
+          </button>
+          <div id="btn-back-spacer" class="w-1"></div>
+          <button id="btn-next" onclick="nextStep()" class="inline-flex items-center bg-swiss-orange hover:bg-swiss-orange-hover text-white font-semibold text-sm px-6 py-3 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md ml-auto">
+            Weiter
+            <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SCREEN 3: RESULTS ==================== -->
+  <div id="screen-results" class="screen screen-hidden">
+    <div class="min-h-screen bg-warm-cream pt-16">
+
+      <!-- Loading State -->
+      <div id="results-loading" class="flex flex-col items-center justify-center min-h-[60vh]">
+        <div class="w-16 h-16 border-4 border-gray-200 border-t-swiss-orange rounded-full animate-spin mb-6"></div>
+        <p class="text-lg font-semibold text-charcoal mb-2">Ihre KI-Analyse wird erstellt</p>
+        <div class="flex gap-1.5">
+          <span class="loading-dot w-2 h-2 rounded-full bg-swiss-orange"></span>
+          <span class="loading-dot w-2 h-2 rounded-full bg-swiss-orange"></span>
+          <span class="loading-dot w-2 h-2 rounded-full bg-swiss-orange"></span>
+        </div>
+      </div>
+
+      <!-- Results Content -->
+      <div id="results-content" class="hidden">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+          <h2 class="font-display font-700 text-2xl sm:text-3xl text-charcoal text-center mb-2">Ihr KI-Readiness-Ergebnis</h2>
+          <p class="text-gray-500 text-center mb-10">Basierend auf Ihren Antworten haben wir Ihren Digitalisierungsgrad analysiert.</p>
+
+          <!-- Score Circle -->
+          <div class="flex justify-center mb-12">
+            <div class="relative w-48 h-48">
+              <svg class="w-48 h-48 transform -rotate-90" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="50" fill="none" stroke="#F3F4F6" stroke-width="8"/>
+                <circle id="score-circle" cx="60" cy="60" r="50" fill="none" stroke="#FF4F00" stroke-width="8" stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="314" class="score-circle-animated"/>
+              </svg>
+              <div class="absolute inset-0 flex flex-col items-center justify-center">
+                <span id="score-number" class="font-display font-800 text-4xl text-charcoal">0%</span>
+                <span id="score-level" class="text-sm font-medium text-gray-500 mt-1"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Category Breakdown -->
+          <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-gray-100 mb-8">
+            <h3 class="font-display font-700 text-lg text-charcoal mb-6">Ihre Ergebnisse im Detail</h3>
+            <div class="space-y-5">
+              <div>
+                <div class="flex items-center justify-between text-sm mb-2">
+                  <span class="font-medium text-charcoal">Digitalisierungsstand</span>
+                  <span id="cat-digital-pct" class="font-semibold text-charcoal">0%</span>
+                </div>
+                <div class="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                  <div id="cat-digital-bar" class="bar-animated h-full bg-swiss-orange rounded-full" style="width: 0%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between text-sm mb-2">
+                  <span class="font-medium text-charcoal">Kommunikation & Prozesse</span>
+                  <span id="cat-komm-pct" class="font-semibold text-charcoal">0%</span>
+                </div>
+                <div class="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                  <div id="cat-komm-bar" class="bar-animated h-full bg-swiss-orange rounded-full" style="width: 0%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between text-sm mb-2">
+                  <span class="font-medium text-charcoal">KI-Bereitschaft</span>
+                  <span id="cat-ki-pct" class="font-semibold text-charcoal">0%</span>
+                </div>
+                <div class="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                  <div id="cat-ki-bar" class="bar-animated h-full bg-swiss-orange rounded-full" style="width: 0%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Wins -->
+          <div id="quick-wins" class="mb-10">
+            <h3 class="font-display font-700 text-lg text-charcoal mb-4">Ihre Top-Empfehlungen</h3>
+            <div id="quick-wins-list" class="space-y-4">
+              <!-- Filled dynamically -->
+            </div>
+          </div>
+
+          <!-- Divider -->
+          <hr class="border-gray-200 my-10">
+
+          <!-- Premium CTA -->
+          <div class="bg-charcoal rounded-2xl p-8 sm:p-10 text-center">
+            <h3 class="font-display font-700 text-2xl sm:text-3xl text-white mb-3">Wollen Sie den vollständigen Implementierungsplan?</h3>
+            <p class="text-gray-400 mb-8 max-w-lg mx-auto">Ihr kostenloser Check zeigt die Richtung. Der Premium-Report zeigt den Weg.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg mx-auto text-left mb-8">
+              <div class="flex items-start gap-2.5">
+                <svg class="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                <span class="text-sm text-gray-300">Detaillierte Analyse aller Unternehmensbereiche</span>
+              </div>
+              <div class="flex items-start gap-2.5">
+                <svg class="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                <span class="text-sm text-gray-300">5 branchenspezifische KI-Tool-Empfehlungen</span>
+              </div>
+              <div class="flex items-start gap-2.5">
+                <svg class="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                <span class="text-sm text-gray-300">3-6-12 Monats-Implementierungsplan</span>
+              </div>
+              <div class="flex items-start gap-2.5">
+                <svg class="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                <span class="text-sm text-gray-300">ROI-Projektion für Ihren Betrieb</span>
+              </div>
+              <div class="flex items-start gap-2.5">
+                <svg class="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                <span class="text-sm text-gray-300">10 sofort nutzbare KI-Prompt-Vorlagen</span>
+              </div>
+              <div class="flex items-start gap-2.5">
+                <svg class="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                <span class="text-sm text-gray-300">Förderungs-Check (bis zu 90% Kostenübernahme)</span>
+              </div>
+            </div>
+            <div class="mb-6">
+              <span class="font-display font-800 text-4xl text-white">29 €</span>
+              <span class="text-gray-400 text-sm ml-1">netto zzgl. MwSt.</span>
+            </div>
+            <button onclick="showScreen('screen-order')" class="inline-flex items-center bg-swiss-orange hover:bg-swiss-orange-hover text-white text-lg font-semibold px-8 py-4 rounded-xl transition-all duration-200 shadow-lg shadow-swiss-orange/30 hover:shadow-xl hover:-translate-y-0.5">
+              Premium Report bestellen
+              <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+            </button>
+            <p class="text-gray-500 text-xs mt-4">Sofortige Lieferung per E-Mail. Rechnung auf 14 Tage.</p>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="bg-charcoal border-t border-gray-800 py-10 mt-10">
+          <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div class="text-gray-500 text-sm text-center sm:text-left">
+                &copy; 2026 Synclaro IT Service — Marco Heer
+                <span class="block sm:inline sm:ml-2 text-gray-600">KI-Coaching für Handwerksbetriebe</span>
+              </div>
+              <div class="flex items-center gap-6 text-sm">
+                <a href="https://synclaro.de/impressum" target="_blank" rel="noopener" class="text-gray-500 hover:text-gray-300 transition-colors">Impressum</a>
+                <a href="https://synclaro.de/datenschutz" target="_blank" rel="noopener" class="text-gray-500 hover:text-gray-300 transition-colors">Datenschutz</a>
+              </div>
+            </div>
+          </div>
+        </footer>
+      </div>
+
+      <!-- Error State -->
+      <div id="results-error" class="hidden flex flex-col items-center justify-center min-h-[60vh] px-4">
+        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-6">
+          <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+        </div>
+        <p class="text-lg font-semibold text-charcoal mb-2">Ein Fehler ist aufgetreten</p>
+        <p class="text-gray-500 text-sm mb-6 text-center max-w-md">Die Analyse konnte leider nicht erstellt werden. Bitte versuchen Sie es erneut.</p>
+        <button onclick="submitQuestionnaire()" class="bg-swiss-orange hover:bg-swiss-orange-hover text-white font-semibold text-sm px-6 py-3 rounded-xl transition-colors duration-200">Erneut versuchen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SCREEN 4: ORDER FORM ==================== -->
+  <div id="screen-order" class="screen screen-hidden">
+    <div class="min-h-screen bg-warm-cream pt-16">
+      <div class="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+        <div class="text-center mb-10">
+          <h2 class="font-display font-700 text-2xl sm:text-3xl text-charcoal mb-2">Premium Report bestellen</h2>
+          <p class="text-gray-500">Ihr persönlicher KI-Implementierungsplan für <span class="font-semibold text-charcoal">29 € netto</span></p>
+        </div>
+
+        <form id="order-form" onsubmit="submitOrder(event)" class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-gray-100">
+          <div class="space-y-5">
+            <div>
+              <label class="block text-sm font-semibold text-charcoal mb-1.5">Firmenname <span class="text-swiss-orange">*</span></label>
+              <input type="text" id="order-firma" required class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-charcoal transition-all duration-200" placeholder="Muster GmbH">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-charcoal mb-1.5">Ansprechpartner <span class="text-swiss-orange">*</span></label>
+              <input type="text" id="order-name" required class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-charcoal transition-all duration-200" placeholder="Max Mustermann">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-charcoal mb-1.5">E-Mail-Adresse <span class="text-swiss-orange">*</span></label>
+              <input type="email" id="order-email" required class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-charcoal transition-all duration-200" placeholder="info@firma.de">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-charcoal mb-1.5">Telefon <span class="text-gray-400 font-normal">(optional)</span></label>
+              <input type="tel" id="order-telefon" class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-charcoal transition-all duration-200" placeholder="+49 123 456 789">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-charcoal mb-1.5">Straße + Hausnummer <span class="text-swiss-orange">*</span></label>
+              <input type="text" id="order-strasse" required class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-charcoal transition-all duration-200" placeholder="Musterstraße 1">
+            </div>
+            <div class="grid grid-cols-3 gap-4">
+              <div>
+                <label class="block text-sm font-semibold text-charcoal mb-1.5">PLZ <span class="text-swiss-orange">*</span></label>
+                <input type="text" id="order-plz" required pattern="[0-9]{5}" maxlength="5" class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-charcoal transition-all duration-200" placeholder="12345">
+              </div>
+              <div class="col-span-2">
+                <label class="block text-sm font-semibold text-charcoal mb-1.5">Ort <span class="text-swiss-orange">*</span></label>
+                <input type="text" id="order-ort" required class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-charcoal transition-all duration-200" placeholder="Musterstadt">
+              </div>
+            </div>
+            <div class="pt-2">
+              <label class="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" id="order-agb" required class="mt-1 w-4 h-4 rounded border-gray-300 text-swiss-orange focus:ring-swiss-orange">
+                <span class="text-sm text-gray-600">Ich akzeptiere die <a href="https://synclaro.de/impressum" target="_blank" class="text-swiss-orange hover:underline">AGB</a> und <a href="https://synclaro.de/datenschutz" target="_blank" class="text-swiss-orange hover:underline">Datenschutzerklärung</a>. <span class="text-swiss-orange">*</span></span>
+              </label>
+            </div>
+          </div>
+
+          <div id="order-error" class="hidden mt-4 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700"></div>
+
+          <button type="submit" id="order-submit-btn" class="w-full mt-6 bg-swiss-orange hover:bg-swiss-orange-hover text-white font-semibold text-base px-6 py-4 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2">
+            <span id="order-btn-text">Jetzt bestellen — 29 € netto</span>
+            <div id="order-btn-spinner" class="hidden">
+              <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            </div>
+          </button>
+
+          <p class="text-xs text-gray-400 text-center mt-4">
+            Sie erhalten den Report sofort per E-Mail. Die Rechnung folgt separat.
+          </p>
+          <p class="text-xs text-gray-400 text-center mt-2">
+            Einzelunternehmen Synclaro IT Service, Bahnhofstr. 9, 92364 Deining
+          </p>
+        </form>
+
+        <button onclick="showScreen('screen-results')" class="mt-6 mx-auto flex items-center gap-2 text-gray-500 hover:text-charcoal text-sm font-medium transition-colors duration-200">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          Zurück zu den Ergebnissen
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SCREEN 5: CONFIRMATION ==================== -->
+  <div id="screen-confirmation" class="screen screen-hidden">
+    <div class="min-h-screen bg-warm-cream pt-16 flex items-center justify-center">
+      <div class="max-w-lg mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
+        <!-- Animated Checkmark -->
+        <div class="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-8 check-animated">
+          <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+        </div>
+
+        <h2 class="font-display font-700 text-2xl sm:text-3xl text-charcoal mb-4">Ihr Premium Report ist unterwegs!</h2>
+        <p class="text-gray-600 mb-2">
+          Wir haben Ihren persönlichen KI-Implementierungsplan an
+          <span id="confirm-email" class="font-semibold text-charcoal">Ihre E-Mail-Adresse</span> gesendet.
+        </p>
+        <p class="text-gray-500 text-sm mb-10">Die Rechnung erhalten Sie in Kürze per E-Mail.</p>
+
+        <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm mb-8">
+          <p class="text-gray-500 text-sm mb-4">Haben Sie Fragen? Buchen Sie ein kostenloses Erstgespräch:</p>
+          <a href="https://cal.com/synclaro/erstgespraech" target="_blank" rel="noopener" class="inline-flex items-center bg-swiss-orange hover:bg-swiss-orange-hover text-white font-semibold text-sm px-6 py-3 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md">
+            Kostenloses Erstgespräch buchen
+            <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+          </a>
+        </div>
+
+        <button onclick="window.location.reload()" class="text-gray-500 hover:text-charcoal text-sm font-medium transition-colors duration-200">
+          Zurück zur Startseite
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ==================== JAVASCRIPT ==================== -->
+  <script>
+    // === State ===
+    let currentStep = 1;
+    const totalSteps = 5;
+    let analysisResult = null;
+    let collectedAnswers = null;
+
+    // === Screen Management ===
+    function showScreen(screenId) {
+      const screens = document.querySelectorAll('.screen');
+      screens.forEach(s => {
+        s.classList.remove('screen-visible');
+        s.classList.add('screen-hidden');
+      });
+
+      const target = document.getElementById(screenId);
+      // Small delay to allow display:none to be set, then animate in
+      requestAnimationFrame(() => {
+        target.classList.remove('screen-hidden');
+        target.classList.add('screen-visible');
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      });
+    }
+
+    // === Start Check ===
+    function startCheck() {
+      currentStep = 1;
+      updateProgress();
+      showAllSteps();
+      showScreen('screen-questionnaire');
+    }
+
+    // === Step Management ===
+    function showAllSteps() {
+      for (let i = 1; i <= totalSteps; i++) {
+        const step = document.getElementById(`step-${i}`);
+        if (i === currentStep) {
+          step.classList.remove('hidden');
+          step.style.opacity = '1';
+          step.style.transform = 'translateX(0)';
+        } else {
+          step.classList.add('hidden');
+        }
+      }
+      updateNavButtons();
+    }
+
+    function updateProgress() {
+      const percent = Math.round(((currentStep - 1) / totalSteps) * 100);
+      document.getElementById('step-label').textContent = `Schritt ${currentStep} von ${totalSteps}`;
+      document.getElementById('step-percent').textContent = `${percent}%`;
+      document.getElementById('progress-bar').style.width = `${percent}%`;
+    }
+
+    function updateNavButtons() {
+      const backBtn = document.getElementById('btn-back');
+      const backSpacer = document.getElementById('btn-back-spacer');
+      const nextBtn = document.getElementById('btn-next');
+
+      if (currentStep === 1) {
+        backBtn.classList.add('hidden');
+        backBtn.classList.remove('inline-flex');
+        backSpacer.classList.remove('hidden');
+      } else {
+        backBtn.classList.remove('hidden');
+        backBtn.classList.add('inline-flex');
+        backSpacer.classList.add('hidden');
+      }
+
+      if (currentStep === totalSteps) {
+        nextBtn.innerHTML = `
+          Ergebnis anzeigen
+          <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        `;
+      } else {
+        nextBtn.innerHTML = `
+          Weiter
+          <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        `;
+      }
+    }
+
+    // === Validation ===
+    function validateStep(step) {
+      const errorEl = document.getElementById('validation-error');
+      errorEl.classList.add('hidden');
+
+      switch (step) {
+        case 1:
+          if (!document.getElementById('q-branche').value) return showValidationError();
+          if (!getRadioValue('q-mitarbeiter')) return showValidationError();
+          if (!getRadioValue('q-umsatz')) return showValidationError();
+          return true;
+
+        case 2:
+          if (!getRadioValue('q-kundenanfragen')) return showValidationError();
+          if (!getRadioValue('q-angebote')) return showValidationError();
+          if (!getRadioValue('q-dokumentation')) return showValidationError();
+          if (!getRadioValue('q-wissen')) return showValidationError();
+          return true;
+
+        case 3:
+          if (!getRadioValue('q-kommunikation')) return showValidationError();
+          if (!getRadioValue('q-arbeitszeiten')) return showValidationError();
+          if (!getRadioValue('q-rechnungen')) return showValidationError();
+          if (!getRadioValue('q-material')) return showValidationError();
+          return true;
+
+        case 4:
+          if (!document.getElementById('q-zeitfresser').value.trim()) return showValidationError();
+          return true;
+
+        case 5:
+          if (!getRadioValue('q-ki-erfahrung')) return showValidationError();
+          if (!getRadioValue('q-budget')) return showValidationError();
+          if (!getRadioValue('q-zeitrahmen')) return showValidationError();
+          return true;
+
+        default:
+          return true;
+      }
+    }
+
+    function showValidationError() {
+      const errorEl = document.getElementById('validation-error');
+      errorEl.classList.remove('hidden');
+      errorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    }
+
+    function getRadioValue(name) {
+      const el = document.querySelector(`input[name="${name}"]:checked`);
+      return el ? el.value : null;
+    }
+
+    function getCheckboxValues(name) {
+      const els = document.querySelectorAll(`input[name="${name}"]:checked`);
+      return Array.from(els).map(el => el.value);
+    }
+
+    // === Navigation ===
+    function nextStep() {
+      if (!validateStep(currentStep)) return;
+
+      if (currentStep === totalSteps) {
+        submitQuestionnaire();
+        return;
+      }
+
+      const currentEl = document.getElementById(`step-${currentStep}`);
+      currentEl.classList.add('step-leaving');
+
+      setTimeout(() => {
+        currentEl.classList.add('hidden');
+        currentEl.classList.remove('step-leaving');
+        currentStep++;
+        updateProgress();
+
+        const nextEl = document.getElementById(`step-${currentStep}`);
+        nextEl.classList.remove('hidden');
+        nextEl.classList.add('step-entering');
+        requestAnimationFrame(() => {
+          nextEl.classList.remove('step-entering');
+        });
+
+        updateNavButtons();
+        document.getElementById('validation-error').classList.add('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 200);
+    }
+
+    function prevStep() {
+      if (currentStep <= 1) return;
+
+      const currentEl = document.getElementById(`step-${currentStep}`);
+      currentEl.classList.add('hidden');
+
+      currentStep--;
+      updateProgress();
+
+      const prevEl = document.getElementById(`step-${currentStep}`);
+      prevEl.classList.remove('hidden');
+
+      updateNavButtons();
+      document.getElementById('validation-error').classList.add('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // === Collect Answers ===
+    function collectAnswers() {
+      const answers = {
+        unternehmen: {
+          branche: document.getElementById('q-branche').value,
+          mitarbeiter: getRadioValue('q-mitarbeiter'),
+          umsatz: getRadioValue('q-umsatz'),
+        },
+        digitalisierung: {
+          kundenanfragen: parseInt(getRadioValue('q-kundenanfragen')),
+          angebote: parseInt(getRadioValue('q-angebote')),
+          dokumentation: parseInt(getRadioValue('q-dokumentation')),
+          wissen: parseInt(getRadioValue('q-wissen')),
+        },
+        kommunikation: {
+          buero_baustelle: parseInt(getRadioValue('q-kommunikation')),
+          arbeitszeiten: parseInt(getRadioValue('q-arbeitszeiten')),
+          rechnungen: parseInt(getRadioValue('q-rechnungen')),
+          material: parseInt(getRadioValue('q-material')),
+        },
+        herausforderungen: {
+          zeitfresser: document.getElementById('q-zeitfresser').value.trim(),
+          fehler: getCheckboxValues('q-fehler'),
+          automatisieren: document.getElementById('q-automatisieren').value.trim(),
+        },
+        ki_bereitschaft: {
+          erfahrung: parseInt(getRadioValue('q-ki-erfahrung')),
+          budget: parseInt(getRadioValue('q-budget')),
+          zeitrahmen: parseInt(getRadioValue('q-zeitrahmen')),
+        },
+      };
+      return answers;
+    }
+
+    // === Submit Questionnaire ===
+    async function submitQuestionnaire() {
+      collectedAnswers = collectAnswers();
+
+      showScreen('screen-results');
+      document.getElementById('results-loading').classList.remove('hidden');
+      document.getElementById('results-content').classList.add('hidden');
+      document.getElementById('results-error').classList.add('hidden');
+
+      try {
+        const response = await fetch('/.netlify/functions/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(collectedAnswers),
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        analysisResult = await response.json();
+        displayResults(analysisResult);
+
+      } catch (error) {
+        console.error('Analyse-Fehler:', error);
+        document.getElementById('results-loading').classList.add('hidden');
+        document.getElementById('results-error').classList.remove('hidden');
+      }
+    }
+
+    // === Display Results ===
+    function displayResults(data) {
+      document.getElementById('results-loading').classList.add('hidden');
+      document.getElementById('results-content').classList.remove('hidden');
+
+      const totalScore = data.totalScore || 0;
+      const categories = data.categories || {};
+      const recommendations = data.recommendations || [];
+
+      // Determine level and color
+      let level = '';
+      let circleColor = '#FF4F00';
+      if (totalScore < 25) {
+        level = 'Analog-Betrieb';
+        circleColor = '#EF4444';
+      } else if (totalScore < 50) {
+        level = 'Digital-Grundlage';
+        circleColor = '#FF4F00';
+      } else if (totalScore < 75) {
+        level = 'Digitaler Fortgeschrittener';
+        circleColor = '#F59E0B';
+      } else {
+        level = 'KI-Pionier';
+        circleColor = '#10B981';
+      }
+
+      // Animate score circle
+      const circle = document.getElementById('score-circle');
+      const circumference = 314; // 2 * PI * 50
+      const offset = circumference - (circumference * totalScore / 100);
+      circle.style.stroke = circleColor;
+      circle.style.strokeDashoffset = offset;
+
+      // Counter animation for score number
+      animateCounter('score-number', totalScore, '%');
+      document.getElementById('score-level').textContent = level;
+
+      // Category bars
+      const digitalPct = categories.digitalisierung || 0;
+      const kommPct = categories.kommunikation || 0;
+      const kiPct = categories.ki_bereitschaft || 0;
+
+      setTimeout(() => {
+        document.getElementById('cat-digital-pct').textContent = `${digitalPct}%`;
+        document.getElementById('cat-digital-bar').style.width = `${digitalPct}%`;
+
+        document.getElementById('cat-komm-pct').textContent = `${kommPct}%`;
+        document.getElementById('cat-komm-bar').style.width = `${kommPct}%`;
+
+        document.getElementById('cat-ki-pct').textContent = `${kiPct}%`;
+        document.getElementById('cat-ki-bar').style.width = `${kiPct}%`;
+      }, 300);
+
+      // Quick wins
+      const winsList = document.getElementById('quick-wins-list');
+      winsList.innerHTML = '';
+      recommendations.forEach((rec, index) => {
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-xl p-5 border border-gray-100 shadow-sm animate-fade-in-up';
+        card.style.animationDelay = `${(index + 1) * 0.15}s`;
+        card.style.opacity = '0';
+        card.innerHTML = `
+          <div class="flex items-start gap-3">
+            <span class="text-xl mt-0.5">💡</span>
+            <div>
+              <h4 class="font-semibold text-charcoal text-sm mb-1">${rec.title || ''}</h4>
+              <p class="text-gray-500 text-sm leading-relaxed">${rec.description || ''}</p>
+            </div>
+          </div>
+        `;
+        winsList.appendChild(card);
+      });
+    }
+
+    // === Counter Animation ===
+    function animateCounter(elementId, target, suffix) {
+      const el = document.getElementById(elementId);
+      let current = 0;
+      const duration = 1500;
+      const step = target / (duration / 16);
+
+      function update() {
+        current += step;
+        if (current >= target) {
+          el.textContent = `${Math.round(target)}${suffix}`;
+          return;
+        }
+        el.textContent = `${Math.round(current)}${suffix}`;
+        requestAnimationFrame(update);
+      }
+      requestAnimationFrame(update);
+    }
+
+    // === Submit Order ===
+    async function submitOrder(event) {
+      event.preventDefault();
+
+      const form = document.getElementById('order-form');
+      const errorEl = document.getElementById('order-error');
+      const submitBtn = document.getElementById('order-submit-btn');
+      const btnText = document.getElementById('order-btn-text');
+      const btnSpinner = document.getElementById('order-btn-spinner');
+
+      errorEl.classList.add('hidden');
+
+      // Validate
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+
+      // PLZ validation
+      const plz = document.getElementById('order-plz').value;
+      if (!/^[0-9]{5}$/.test(plz)) {
+        errorEl.textContent = 'Bitte geben Sie eine gültige 5-stellige Postleitzahl ein.';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      // AGB check
+      if (!document.getElementById('order-agb').checked) {
+        errorEl.textContent = 'Bitte akzeptieren Sie die AGB und Datenschutzerklärung.';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      // Loading state
+      submitBtn.disabled = true;
+      btnText.textContent = 'Ihr Premium Report wird erstellt';
+      btnSpinner.classList.remove('hidden');
+
+      const orderData = {
+        firma: document.getElementById('order-firma').value.trim(),
+        name: document.getElementById('order-name').value.trim(),
+        email: document.getElementById('order-email').value.trim(),
+        telefon: document.getElementById('order-telefon').value.trim(),
+        strasse: document.getElementById('order-strasse').value.trim(),
+        plz: plz,
+        ort: document.getElementById('order-ort').value.trim(),
+        answers: collectedAnswers,
+        analysisResult: analysisResult,
+      };
+
+      try {
+        const response = await fetch('/.netlify/functions/order-premium', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(orderData),
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        // Show confirmation
+        document.getElementById('confirm-email').textContent = orderData.email;
+        showScreen('screen-confirmation');
+
+      } catch (error) {
+        console.error('Bestell-Fehler:', error);
+        errorEl.textContent = 'Die Bestellung konnte leider nicht verarbeitet werden. Bitte versuchen Sie es erneut oder kontaktieren Sie uns direkt.';
+        errorEl.classList.remove('hidden');
+      } finally {
+        submitBtn.disabled = false;
+        btnText.textContent = 'Jetzt bestellen — 29 € netto';
+        btnSpinner.classList.add('hidden');
+      }
+    }
+
+    // === Navbar Shadow on Scroll ===
+    window.addEventListener('scroll', () => {
+      const navbar = document.getElementById('navbar');
+      if (window.scrollY > 10) {
+        navbar.classList.add('nav-scrolled');
+      } else {
+        navbar.classList.remove('nav-scrolled');
+      }
+    }, { passive: true });
+  </script>
+</body>
+</html>
