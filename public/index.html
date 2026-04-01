@@ -1538,9 +1538,9 @@
         },
         kommunikation: {
           buero_baustelle: parseInt(getRadioValue('q-kommunikation')),
-          arbeitszeiten: parseInt(getRadioValue('q-arbeitszeiten')),
+          zeiterfassung: parseInt(getRadioValue('q-arbeitszeiten')),
           rechnungen: parseInt(getRadioValue('q-rechnungen')),
-          material: parseInt(getRadioValue('q-material')),
+          beschaffung: parseInt(getRadioValue('q-material')),
         },
         herausforderungen: {
           zeitfresser: document.getElementById('q-zeitfresser').value.trim(),
@@ -1589,8 +1589,8 @@
       document.getElementById('results-loading').classList.add('hidden');
       document.getElementById('results-content').classList.remove('hidden');
 
-      const totalScore = data.totalScore || 0;
-      const categories = data.categories || {};
+      const totalScore = (data.scores && data.scores.total && data.scores.total.percent) || 0;
+      const categories = data.scores || {};
       const recommendations = data.recommendations || [];
 
       // Determine level and color
@@ -1622,9 +1622,9 @@
       document.getElementById('score-level').textContent = level;
 
       // Category bars
-      const digitalPct = categories.digitalisierung || 0;
-      const kommPct = categories.kommunikation || 0;
-      const kiPct = categories.ki_bereitschaft || 0;
+      const digitalPct = (categories.digitalisierung && categories.digitalisierung.percent) || 0;
+      const kommPct = (categories.kommunikation && categories.kommunikation.percent) || 0;
+      const kiPct = (categories.ki_bereitschaft && categories.ki_bereitschaft.percent) || 0;
 
       setTimeout(() => {
         document.getElementById('cat-digital-pct').textContent = `${digitalPct}%`;
@@ -1650,7 +1650,7 @@
             <span class="text-xl mt-0.5">💡</span>
             <div>
               <h4 class="font-semibold text-charcoal text-sm mb-1">${rec.title || ''}</h4>
-              <p class="text-gray-500 text-sm leading-relaxed">${rec.description || ''}</p>
+              <p class="text-gray-500 text-sm leading-relaxed">${rec.text || rec.description || ''}</p>
             </div>
           </div>
         `;
