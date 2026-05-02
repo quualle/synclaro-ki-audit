@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KI-Readiness-Check für Handwerksbetriebe | Synclaro</title>
-  <meta name="description" content="In 3 Minuten erfahren Sie, wo Ihr größtes KI-Potenzial liegt. Kostenlos und unverbindlich. Für Handwerksbetriebe.">
+  <meta name="description" content="In ca. 5 Minuten erhalten Sie eine individuelle KI-Analyse Ihres Betriebs. Kostenlos und unverbindlich. Für Handwerksbetriebe.">
 
   <!-- Favicon -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23FF4F00'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>S</text></svg>">
 
   <!-- Open Graph -->
   <meta property="og:title" content="KI-Readiness-Check für Handwerksbetriebe | Synclaro">
-  <meta property="og:description" content="In 3 Minuten erfahren Sie, wo Ihr größtes KI-Potenzial liegt. Kostenlos und unverbindlich.">
+  <meta property="og:description" content="In ca. 5 Minuten erhalten Sie eine individuelle KI-Analyse Ihres Betriebs. Kostenlos und unverbindlich.">
   <meta property="og:url" content="https://ki-check.synclaro.de">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Synclaro">
@@ -20,7 +20,7 @@
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="KI-Readiness-Check für Handwerksbetriebe | Synclaro">
-  <meta name="twitter:description" content="In 3 Minuten erfahren Sie, wo Ihr größtes KI-Potenzial liegt. Kostenlos und unverbindlich.">
+  <meta name="twitter:description" content="In ca. 5 Minuten erhalten Sie eine individuelle KI-Analyse Ihres Betriebs. Kostenlos und unverbindlich.">
 
   <!-- Canonical URL -->
   <link rel="canonical" href="https://ki-check.synclaro.de/">
@@ -31,7 +31,7 @@
     "@context": "https://schema.org",
     "@type": "WebApplication",
     "name": "Synclaro KI-Readiness-Check",
-    "description": "Kostenloser KI-Readiness-Check für Handwerksbetriebe. In 3 Minuten erfahren Sie, wo Ihr größtes KI-Potenzial liegt.",
+    "description": "Kostenloser KI-Readiness-Check für Handwerksbetriebe. In ca. 5 Minuten erhalten Sie eine individuelle KI-Analyse Ihres Betriebs.",
     "url": "https://ki-check.synclaro.de",
     "applicationCategory": "BusinessApplication",
     "operatingSystem": "Web",
@@ -40,12 +40,6 @@
         "@type": "Offer",
         "name": "Kostenloser KI-Check",
         "price": "0",
-        "priceCurrency": "EUR"
-      },
-      {
-        "@type": "Offer",
-        "name": "Premium KI-Report",
-        "price": "29",
         "priceCurrency": "EUR"
       }
     ],
@@ -168,6 +162,17 @@
     .loading-dot:nth-child(2) { animation: dotPulse 1.4s infinite 0.2s; }
     .loading-dot:nth-child(3) { animation: dotPulse 1.4s infinite 0.4s; }
 
+    /* Indeterminate loading bar */
+    @keyframes loadingBarSweep {
+      0% { transform: translateX(-100%); width: 40%; }
+      50% { width: 60%; }
+      100% { transform: translateX(250%); width: 40%; }
+    }
+    .transition-loading-bar {
+      width: 40%;
+      animation: loadingBarSweep 1.8s ease-in-out infinite;
+    }
+
     /* Smooth scroll */
     html { scroll-behavior: smooth; }
 
@@ -257,10 +262,10 @@
     <section class="hero-gradient min-h-screen flex items-center pt-16">
       <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center py-20">
         <h1 class="font-display font-800 text-4xl sm:text-5xl lg:text-6xl text-charcoal leading-tight mb-6 animate-fade-in-up">
-          Wie KI-ready ist Ihr<br class="hidden sm:block"> Handwerksbetrieb?
+          Wie KI-ready ist Ihr<br class="hidden sm:block"> Betrieb?
         </h1>
         <p class="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto mb-10 animate-fade-in-up delay-100">
-          In 3 Minuten erfahren Sie, wo Ihr größtes KI-Potenzial liegt — kostenlos und unverbindlich.
+          In ca. 5 Minuten erhalten Sie eine individuelle KI-Analyse Ihres Betriebs — kostenlos und unverbindlich.
         </p>
         <div class="animate-fade-in-up delay-200">
           <button onclick="startCheck()" class="inline-flex items-center bg-swiss-orange hover:bg-swiss-orange-hover text-white text-lg font-semibold px-8 py-4 rounded-xl transition-all duration-200 shadow-lg shadow-swiss-orange/25 hover:shadow-xl hover:shadow-swiss-orange/30 hover:-translate-y-0.5">
@@ -271,7 +276,7 @@
         <div class="mt-6 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-sm text-gray-500 animate-fade-in-up delay-300">
           <span class="flex items-center gap-1.5">
             <svg class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-            3 Minuten
+            Ca. 5 Minuten
           </span>
           <span class="flex items-center gap-1.5">
             <svg class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
@@ -314,14 +319,14 @@
           <div class="text-center">
             <div class="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-5 text-3xl">📋</div>
             <div class="text-xs font-bold text-swiss-orange uppercase tracking-wider mb-2">Schritt 1</div>
-            <h3 class="font-display font-700 text-lg text-charcoal mb-2">17 Fragen beantworten</h3>
-            <p class="text-gray-500 text-sm">Kurze, gezielte Fragen zu Ihrem Betrieb und Ihren Prozessen.</p>
+            <h3 class="font-display font-700 text-lg text-charcoal mb-2">Individuell zugeschnittene Fragen</h3>
+            <p class="text-gray-500 text-sm">Unsere KI passt die Fragen an Ihren Betrieb und Ihre Antworten an.</p>
           </div>
           <div class="text-center">
             <div class="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-5 text-3xl">🧠</div>
             <div class="text-xs font-bold text-swiss-orange uppercase tracking-wider mb-2">Schritt 2</div>
-            <h3 class="font-display font-700 text-lg text-charcoal mb-2">KI analysiert Ihr Potenzial</h3>
-            <p class="text-gray-500 text-sm">Unsere KI bewertet Ihren Digitalisierungsgrad und findet Optimierungspotenziale.</p>
+            <h3 class="font-display font-700 text-lg text-charcoal mb-2">KI stellt gezielte Folgefragen</h3>
+            <p class="text-gray-500 text-sm">Je tiefer Ihre Antworten, desto wertvoller wird Ihre persönliche Analyse.</p>
           </div>
           <div class="text-center">
             <div class="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-5 text-3xl">📊</div>
@@ -374,7 +379,7 @@
     <section class="bg-charcoal py-20">
       <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <h2 class="font-display font-700 text-3xl sm:text-4xl text-white mb-6">Bereit? Starten Sie Ihren kostenlosen KI-Check.</h2>
-        <p class="text-gray-400 mb-10 text-lg">Finden Sie in 3 Minuten heraus, wo Ihr Betrieb von KI profitieren kann.</p>
+        <p class="text-gray-400 mb-10 text-lg">Finden Sie in ca. 5 Minuten heraus, wo Ihr Betrieb von KI profitieren kann.</p>
         <button onclick="startCheck()" class="inline-flex items-center bg-swiss-orange hover:bg-swiss-orange-hover text-white text-lg font-semibold px-8 py-4 rounded-xl transition-all duration-200 shadow-lg shadow-swiss-orange/30 hover:shadow-xl hover:-translate-y-0.5">
           Jetzt starten
           <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
@@ -408,7 +413,7 @@
       <div class="sticky top-16 z-40 bg-white border-b border-gray-100 shadow-sm">
         <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div class="flex items-center justify-between text-sm text-gray-500 mb-2">
-            <span id="step-label">Schritt 1 von 5</span>
+            <span id="step-label">Schritt 1</span>
             <span id="step-percent">0%</span>
           </div>
           <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -422,12 +427,75 @@
 
         <!-- Step 1: Ihr Unternehmen -->
         <div id="step-1" class="step-content">
+          <!-- Expectation Management -->
+          <div class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-6 border border-orange-100 mb-8">
+            <div class="flex items-start gap-3">
+              <span class="text-2xl flex-shrink-0">&#129302;</span>
+              <div>
+                <h3 class="font-display font-700 text-base text-charcoal mb-1">Individuell auf Ihren Betrieb zugeschnitten</h3>
+                <p class="text-gray-600 text-sm leading-relaxed">
+                  Unser KI-Berater analysiert Ihre Antworten in Echtzeit und stellt gezielt Folgefragen
+                  zu den Bereichen, die für Ihren Betrieb am relevantesten sind.
+                  Rechnen Sie mit ca. 5 Minuten für eine aussagekräftige Analyse.
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div class="mb-8">
             <h2 class="font-display font-700 text-2xl sm:text-3xl text-charcoal mb-2">Ihr Unternehmen</h2>
             <p class="text-gray-500">Erzählen Sie uns etwas über Ihren Betrieb.</p>
           </div>
 
           <div class="space-y-8">
+            <!-- Vorname -->
+            <div>
+              <label class="block text-sm font-semibold text-charcoal mb-2">Ihr Vorname <span class="text-gray-400 font-normal">(optional)</span></label>
+              <input type="text" id="q-vorname" placeholder="z.B. Marco" class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-charcoal text-sm transition-all duration-200 focus:border-swiss-orange focus:ring-1 focus:ring-swiss-orange outline-none">
+            </div>
+
+            <!-- Rolle -->
+            <div>
+              <label class="block text-sm font-semibold text-charcoal mb-3">Ihre Rolle im Unternehmen <span class="text-swiss-orange">*</span></label>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label class="radio-option">
+                  <input type="radio" name="q-rolle" value="Geschäftsführer/Inhaber" class="sr-only" required>
+                  <div class="radio-label flex items-center gap-2.5 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Geschäftsführer / Inhaber</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-rolle" value="Betriebsleiter" class="sr-only">
+                  <div class="radio-label flex items-center gap-2.5 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Betriebsleiter</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-rolle" value="Büro/Verwaltung" class="sr-only">
+                  <div class="radio-label flex items-center gap-2.5 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Büro / Verwaltung</span>
+                  </div>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="q-rolle" value="IT-Verantwortlicher" class="sr-only">
+                  <div class="radio-label flex items-center gap-2.5 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">IT-Verantwortlicher</span>
+                  </div>
+                </label>
+                <label class="radio-option sm:col-span-2">
+                  <input type="radio" name="q-rolle" value="Mitarbeiter" class="sr-only">
+                  <div class="radio-label flex items-center gap-2.5 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                    <span class="text-sm text-charcoal">Mitarbeiter</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
             <!-- Branche -->
             <div>
               <label class="block text-sm font-semibold text-charcoal mb-2">In welcher Branche sind Sie tätig? <span class="text-swiss-orange">*</span></label>
@@ -534,504 +602,35 @@
           </div>
         </div>
 
-        <!-- Step 2: Digitalisierungsstand -->
-        <div id="step-2" class="step-content hidden">
+        <!-- Dynamic Step (AI-generated) -->
+        <div id="step-dynamic" class="step-content hidden">
           <div class="mb-8">
-            <h2 class="font-display font-700 text-2xl sm:text-3xl text-charcoal mb-2">Digitalisierungsstand</h2>
-            <p class="text-gray-500">Wie digital arbeitet Ihr Betrieb heute?</p>
+            <h2 id="dynamic-step-title" class="font-display font-700 text-2xl sm:text-3xl text-charcoal mb-2"></h2>
+            <p id="dynamic-step-description" class="text-gray-500"></p>
           </div>
+          <div id="dynamic-questions-container" class="space-y-10">
+            <!-- Rendered dynamically by renderDynamicStep() -->
+          </div>
+        </div>
 
-          <div class="space-y-10">
-            <!-- Kundenanfragen -->
-            <div>
-              <label class="block text-sm font-semibold text-charcoal mb-3">Wie verwalten Sie Kundenanfragen? <span class="text-swiss-orange">*</span></label>
-              <div class="space-y-2.5">
-                <label class="radio-option">
-                  <input type="radio" name="q-kundenanfragen" value="1" class="sr-only" required>
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Telefon & Papier</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-kundenanfragen" value="2" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">E-Mail & Excel-Listen</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-kundenanfragen" value="3" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">CRM-Software (z.B. HubSpot, Pipedrive)</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-kundenanfragen" value="4" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Volldigitales System mit automatischer Nachverfolgung</span>
-                  </div>
-                </label>
-              </div>
+        <!-- Between-Step Loading Transition -->
+        <div id="step-loading-transition" class="step-content hidden">
+          <div class="flex flex-col items-center justify-center py-20 px-4">
+            <div class="w-12 h-12 border-4 border-gray-200 border-t-swiss-orange rounded-full animate-spin mb-5"></div>
+            <p class="text-base font-semibold text-charcoal mb-2 text-center">Bitte warten Sie einen Moment</p>
+            <p id="transition-message" class="text-sm text-gray-500 text-center max-w-md mb-4">Ihre Antworten werden ausgewertet und die nächsten Fragen werden individuell für Sie bestimmt.</p>
+            <div class="flex gap-1.5 mt-2">
+              <span class="loading-dot w-2 h-2 rounded-full bg-swiss-orange"></span>
+              <span class="loading-dot w-2 h-2 rounded-full bg-swiss-orange"></span>
+              <span class="loading-dot w-2 h-2 rounded-full bg-swiss-orange"></span>
             </div>
-
-            <!-- Angebote -->
-            <div>
-              <label class="block text-sm font-semibold text-charcoal mb-3">Wie erstellen Sie Angebote? <span class="text-swiss-orange">*</span></label>
-              <div class="space-y-2.5">
-                <label class="radio-option">
-                  <input type="radio" name="q-angebote" value="1" class="sr-only" required>
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Handschriftlich oder Word-Vorlagen</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-angebote" value="2" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Excel-Kalkulation</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-angebote" value="3" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Branchensoftware (z.B. Craftview, TopKontor)</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-angebote" value="4" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">KI-gestützte automatische Angebotserstellung</span>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <!-- Dokumentation -->
-            <div>
-              <label class="block text-sm font-semibold text-charcoal mb-3">Wie dokumentieren Sie Ihre Projekte? <span class="text-swiss-orange">*</span></label>
-              <div class="space-y-2.5">
-                <label class="radio-option">
-                  <input type="radio" name="q-dokumentation" value="1" class="sr-only" required>
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Notizblock & Aktenordner</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-dokumentation" value="2" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Fotos per WhatsApp & E-Mail</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-dokumentation" value="3" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Projektmanagement-Tool (z.B. Plancraft, Trello)</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-dokumentation" value="4" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Digitale Plattform mit automatischer Dokumentation</span>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <!-- Wissen -->
-            <div>
-              <label class="block text-sm font-semibold text-charcoal mb-3">Wie sichern Sie das Wissen Ihrer Mitarbeiter? <span class="text-swiss-orange">*</span></label>
-              <div class="space-y-2.5">
-                <label class="radio-option">
-                  <input type="radio" name="q-wissen" value="1" class="sr-only" required>
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Nur in den Köpfen der Mitarbeiter</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-wissen" value="2" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Ordner & Papierunterlagen</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-wissen" value="3" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Digitale Wissensdatenbank (Wiki, Sharepoint)</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-wissen" value="4" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">KI-gestütztes Wissensmanagement mit Suchfunktion</span>
-                  </div>
-                </label>
-              </div>
+            <div class="w-full max-w-xs mt-6 h-1 bg-gray-100 rounded-full overflow-hidden">
+              <div class="h-full bg-swiss-orange rounded-full transition-loading-bar"></div>
             </div>
           </div>
         </div>
 
-        <!-- Step 3: Kommunikation & Prozesse -->
-        <div id="step-3" class="step-content hidden">
-          <div class="mb-8">
-            <h2 class="font-display font-700 text-2xl sm:text-3xl text-charcoal mb-2">Kommunikation & Prozesse</h2>
-            <p class="text-gray-500">Wie laufen die täglichen Abläufe in Ihrem Betrieb?</p>
-          </div>
-
-          <div class="space-y-10">
-            <!-- Kommunikation Büro/Baustelle -->
-            <div>
-              <label class="block text-sm font-semibold text-charcoal mb-3">Wie kommunizieren Büro und Baustelle? <span class="text-swiss-orange">*</span></label>
-              <div class="space-y-2.5">
-                <label class="radio-option">
-                  <input type="radio" name="q-kommunikation" value="1" class="sr-only" required>
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Hauptsächlich per Telefon</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-kommunikation" value="2" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">WhatsApp-Gruppen</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-kommunikation" value="3" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Planungs-App (z.B. Buildertrend, Fieldwire)</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-kommunikation" value="4" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Echtzeit-System mit digitaler Auftragssteuerung</span>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <!-- Arbeitszeiten -->
-            <div>
-              <label class="block text-sm font-semibold text-charcoal mb-3">Wie erfassen Sie Arbeitszeiten? <span class="text-swiss-orange">*</span></label>
-              <div class="space-y-2.5">
-                <label class="radio-option">
-                  <input type="radio" name="q-arbeitszeiten" value="1" class="sr-only" required>
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Handgeschriebene Stundenzettel</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-arbeitszeiten" value="2" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Excel-Tabellen</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-arbeitszeiten" value="3" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Digitale Zeiterfassungs-App</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-arbeitszeiten" value="4" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Automatische Erfassung mit GPS/NFC</span>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <!-- Rechnungsstellung -->
-            <div>
-              <label class="block text-sm font-semibold text-charcoal mb-3">Wie läuft Ihre Rechnungsstellung? <span class="text-swiss-orange">*</span></label>
-              <div class="space-y-2.5">
-                <label class="radio-option">
-                  <input type="radio" name="q-rechnungen" value="1" class="sr-only" required>
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Komplett manuell (Word/Excel)</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-rechnungen" value="2" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Teilautomatisiert (Branchensoftware)</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-rechnungen" value="3" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Automatisiert aus Zeiterfassung/Aufmaß</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-rechnungen" value="4" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Vollautomatisch mit KI-Unterstützung</span>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <!-- Materialbeschaffung -->
-            <div>
-              <label class="block text-sm font-semibold text-charcoal mb-3">Wie beschaffen Sie Material? <span class="text-swiss-orange">*</span></label>
-              <div class="space-y-2.5">
-                <label class="radio-option">
-                  <input type="radio" name="q-material" value="1" class="sr-only" required>
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Telefon, Fax oder persönlich beim Händler</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-material" value="2" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">E-Mail-Bestellungen</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-material" value="3" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Online-Shops & Vergleichsplattformen</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-material" value="4" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Automatisierte Bestellung basierend auf Projektdaten</span>
-                  </div>
-                </label>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Step 4: Ihre Herausforderungen -->
-        <div id="step-4" class="step-content hidden">
-          <div class="mb-8">
-            <h2 class="font-display font-700 text-2xl sm:text-3xl text-charcoal mb-2">Ihre Herausforderungen</h2>
-            <p class="text-gray-500">Was sind Ihre größten Schmerzpunkte im Alltag?</p>
-          </div>
-
-          <div class="space-y-10">
-            <!-- Zeitfresser -->
-            <div>
-              <label class="block text-sm font-semibold text-charcoal mb-2">Was ist Ihr größter Zeitfresser im Alltag? <span class="text-swiss-orange">*</span></label>
-              <textarea id="q-zeitfresser" required rows="3" class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-charcoal resize-none transition-all duration-200" placeholder="z.B. Angebote schreiben, E-Mails beantworten, Material bestellen..."></textarea>
-            </div>
-
-            <!-- Fehlerquellen (Checkboxes) -->
-            <div>
-              <label class="block text-sm font-semibold text-charcoal mb-3">Wo passieren die meisten Fehler? <span class="text-gray-400 font-normal">(Mehrfachauswahl)</span></label>
-              <div class="space-y-2.5">
-                <label class="checkbox-option">
-                  <input type="checkbox" name="q-fehler" value="Kommunikation zwischen Büro und Baustelle" class="sr-only">
-                  <div class="checkbox-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="checkbox-box w-4 h-4 rounded border-2 border-gray-300 flex-shrink-0 flex items-center justify-center transition-all duration-200">
-                      <svg class="w-2.5 h-2.5 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                    </span>
-                    <span class="text-sm text-charcoal">Kommunikation zwischen Büro und Baustelle</span>
-                  </div>
-                </label>
-                <label class="checkbox-option">
-                  <input type="checkbox" name="q-fehler" value="Angebots- und Rechnungserstellung" class="sr-only">
-                  <div class="checkbox-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="checkbox-box w-4 h-4 rounded border-2 border-gray-300 flex-shrink-0 flex items-center justify-center transition-all duration-200">
-                      <svg class="w-2.5 h-2.5 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                    </span>
-                    <span class="text-sm text-charcoal">Angebots- und Rechnungserstellung</span>
-                  </div>
-                </label>
-                <label class="checkbox-option">
-                  <input type="checkbox" name="q-fehler" value="Terminplanung und Koordination" class="sr-only">
-                  <div class="checkbox-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="checkbox-box w-4 h-4 rounded border-2 border-gray-300 flex-shrink-0 flex items-center justify-center transition-all duration-200">
-                      <svg class="w-2.5 h-2.5 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                    </span>
-                    <span class="text-sm text-charcoal">Terminplanung und Koordination</span>
-                  </div>
-                </label>
-                <label class="checkbox-option">
-                  <input type="checkbox" name="q-fehler" value="Materialbestellung und Lagerhaltung" class="sr-only">
-                  <div class="checkbox-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="checkbox-box w-4 h-4 rounded border-2 border-gray-300 flex-shrink-0 flex items-center justify-center transition-all duration-200">
-                      <svg class="w-2.5 h-2.5 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                    </span>
-                    <span class="text-sm text-charcoal">Materialbestellung und Lagerhaltung</span>
-                  </div>
-                </label>
-                <label class="checkbox-option">
-                  <input type="checkbox" name="q-fehler" value="Dokumentation und Nachweise" class="sr-only">
-                  <div class="checkbox-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="checkbox-box w-4 h-4 rounded border-2 border-gray-300 flex-shrink-0 flex items-center justify-center transition-all duration-200">
-                      <svg class="w-2.5 h-2.5 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                    </span>
-                    <span class="text-sm text-charcoal">Dokumentation und Nachweise</span>
-                  </div>
-                </label>
-                <label class="checkbox-option">
-                  <input type="checkbox" name="q-fehler" value="Kundenkommunikation und Nachverfolgung" class="sr-only">
-                  <div class="checkbox-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="checkbox-box w-4 h-4 rounded border-2 border-gray-300 flex-shrink-0 flex items-center justify-center transition-all duration-200">
-                      <svg class="w-2.5 h-2.5 text-white hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                    </span>
-                    <span class="text-sm text-charcoal">Kundenkommunikation und Nachverfolgung</span>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <!-- Automatisierung -->
-            <div>
-              <label class="block text-sm font-semibold text-charcoal mb-2">Was würden Sie sofort automatisieren, wenn es möglich wäre?</label>
-              <textarea id="q-automatisieren" rows="3" class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm text-charcoal resize-none transition-all duration-200" placeholder="z.B. Rechnungen schreiben, Terminplanung, Kundennachverfolgung..."></textarea>
-            </div>
-          </div>
-        </div>
-
-        <!-- Step 5: Ihre KI-Bereitschaft -->
-        <div id="step-5" class="step-content hidden">
-          <div class="mb-8">
-            <h2 class="font-display font-700 text-2xl sm:text-3xl text-charcoal mb-2">Ihre KI-Bereitschaft</h2>
-            <p class="text-gray-500">Wie bereit ist Ihr Betrieb für den nächsten Schritt?</p>
-          </div>
-
-          <div class="space-y-10">
-            <!-- KI-Erfahrung -->
-            <div>
-              <label class="block text-sm font-semibold text-charcoal mb-3">Wie viel Erfahrung haben Sie mit KI? <span class="text-swiss-orange">*</span></label>
-              <div class="space-y-2.5">
-                <label class="radio-option">
-                  <input type="radio" name="q-ki-erfahrung" value="1" class="sr-only" required>
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Keine — KI ist Neuland für mich</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-ki-erfahrung" value="2" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Habe ChatGPT oder ähnliches ausprobiert</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-ki-erfahrung" value="3" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Nutze KI regelmäßig für einzelne Aufgaben</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-ki-erfahrung" value="4" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Habe KI bereits in Geschäftsprozesse integriert</span>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <!-- Budget -->
-            <div>
-              <label class="block text-sm font-semibold text-charcoal mb-3">Welches Budget haben Sie für Digitalisierung/KI? <span class="text-swiss-orange">*</span></label>
-              <div class="space-y-2.5">
-                <label class="radio-option">
-                  <input type="radio" name="q-budget" value="1" class="sr-only" required>
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Aktuell kein Budget vorgesehen</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-budget" value="2" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Bis 500 € pro Monat</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-budget" value="3" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">500–2.000 € pro Monat</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-budget" value="4" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Über 2.000 € pro Monat</span>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <!-- Zeitrahmen -->
-            <div>
-              <label class="block text-sm font-semibold text-charcoal mb-3">Wie schnell möchten Sie starten? <span class="text-swiss-orange">*</span></label>
-              <div class="space-y-2.5">
-                <label class="radio-option">
-                  <input type="radio" name="q-zeitrahmen" value="1" class="sr-only" required>
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Erstmal nur informieren</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-zeitrahmen" value="2" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">In den nächsten 3 Monaten</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-zeitrahmen" value="3" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Innerhalb eines Monats</span>
-                  </div>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="q-zeitrahmen" value="4" class="sr-only">
-                  <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
-                    <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
-                    <span class="text-sm text-charcoal">Am liebsten sofort</span>
-                  </div>
-                </label>
-              </div>
-            </div>
-          </div>
-        </div>
-
+        <!-- Steps 2-5 removed: now dynamically generated by AI. Old content purged. -->
         <!-- Validation Error -->
         <div id="validation-error" class="hidden mt-4 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
           Bitte füllen Sie alle Pflichtfelder aus, bevor Sie fortfahren.
@@ -1060,7 +659,7 @@
       <!-- Loading State -->
       <div id="results-loading" class="flex flex-col items-center justify-center min-h-[60vh]">
         <div class="w-16 h-16 border-4 border-gray-200 border-t-swiss-orange rounded-full animate-spin mb-6"></div>
-        <p class="text-lg font-semibold text-charcoal mb-2">Ihre KI-Analyse wird erstellt</p>
+        <p id="loading-message" class="text-lg font-semibold text-charcoal mb-2 transition-opacity duration-300">Ihre Antworten werden analysiert...</p>
         <div class="flex gap-1.5">
           <span class="loading-dot w-2 h-2 rounded-full bg-swiss-orange"></span>
           <span class="loading-dot w-2 h-2 rounded-full bg-swiss-orange"></span>
@@ -1120,7 +719,25 @@
                   <div id="cat-ki-bar" class="bar-animated h-full bg-swiss-orange rounded-full" style="width: 0%"></div>
                 </div>
               </div>
+              <div>
+                <div class="flex items-center justify-between text-sm mb-2">
+                  <span class="font-medium text-charcoal">KI-Nutzung</span>
+                  <span id="cat-nutzung-pct" class="font-semibold text-charcoal">0%</span>
+                </div>
+                <div class="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                  <div id="cat-nutzung-bar" class="bar-animated h-full bg-swiss-orange rounded-full" style="width: 0%"></div>
+                </div>
+              </div>
             </div>
+          </div>
+
+          <!-- AI Assessment -->
+          <div id="ai-assessment" class="hidden bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-6 sm:p-8 border border-orange-100 mb-8">
+            <div class="flex items-start gap-3 mb-3">
+              <span class="text-2xl">&#127919;</span>
+              <h3 class="font-display font-700 text-lg text-charcoal">Ihre persönliche Einschätzung</h3>
+            </div>
+            <p id="ai-assessment-text" class="text-gray-700 text-sm leading-relaxed pl-9"></p>
           </div>
 
           <!-- Quick Wins -->
@@ -1153,46 +770,40 @@
           <!-- Divider -->
           <hr class="border-gray-200 my-10">
 
-          <!-- Premium CTA -->
+          <!-- Brücke zu synclaro.de — kein Verkauf, niederschwelliger Übergang -->
           <div class="bg-charcoal rounded-2xl p-8 sm:p-10 text-center">
-            <h3 class="font-display font-700 text-2xl sm:text-3xl text-white mb-3">Wollen Sie den vollständigen Implementierungsplan?</h3>
-            <p class="text-gray-400 mb-8 max-w-lg mx-auto">Ihr kostenloser Check zeigt die Richtung. Der Premium-Report zeigt den Weg.</p>
+            <h3 class="font-display font-700 text-2xl sm:text-3xl text-white mb-3">Bereit für den nächsten Schritt?</h3>
+            <p class="text-gray-400 mb-8 max-w-xl mx-auto">
+              Ihr Check zeigt die Richtung. Wenn Sie KI in Ihrem Betrieb wirklich verankern wollen — strategisch, mit echten Eigenprojekten, nicht nur ChatGPT-Prompts — dann ist Synclaro die richtige Wahl.
+            </p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg mx-auto text-left mb-8">
               <div class="flex items-start gap-2.5">
                 <svg class="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                <span class="text-sm text-gray-300">Detaillierte Analyse aller Unternehmensbereiche</span>
+                <span class="text-sm text-gray-300">24-Wochen-Gruppencoaching mit Praxis-Architektur</span>
               </div>
               <div class="flex items-start gap-2.5">
                 <svg class="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                <span class="text-sm text-gray-300">5 branchenspezifische KI-Tool-Empfehlungen</span>
+                <span class="text-sm text-gray-300">Einzelcoaching für Inhaber-Geschäftsführer</span>
               </div>
               <div class="flex items-start gap-2.5">
                 <svg class="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                <span class="text-sm text-gray-300">3-6-12 Monats-Implementierungsplan</span>
+                <span class="text-sm text-gray-300">Done-For-You-Projekte (DMS, BI, Automatisierung)</span>
               </div>
               <div class="flex items-start gap-2.5">
                 <svg class="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                <span class="text-sm text-gray-300">ROI-Projektion für Ihren Betrieb</span>
-              </div>
-              <div class="flex items-start gap-2.5">
-                <svg class="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                <span class="text-sm text-gray-300">10 sofort nutzbare KI-Prompt-Vorlagen</span>
-              </div>
-              <div class="flex items-start gap-2.5">
-                <svg class="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                <span class="text-sm text-gray-300">Förderungs-Check (bis zu 90% Kostenübernahme)</span>
+                <span class="text-sm text-gray-300">67 % Handwerks-Kunden — Inhaber zu Inhaber</span>
               </div>
             </div>
-            <div class="mb-6">
-              <span class="font-display font-800 text-4xl text-white">29 €</span>
-              <span class="text-gray-400 text-sm ml-1">netto zzgl. MwSt.</span>
+            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+              <a href="https://synclaro.de/gruppencoaching" target="_blank" rel="noopener" class="inline-flex items-center justify-center bg-swiss-orange hover:bg-swiss-orange-hover text-white text-base font-semibold px-6 py-3.5 rounded-xl transition-all duration-200 shadow-lg shadow-swiss-orange/30 hover:shadow-xl hover:-translate-y-0.5">
+                Gruppencoaching ansehen
+                <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+              </a>
+              <a href="https://synclaro.de/kontakt" target="_blank" rel="noopener" class="inline-flex items-center justify-center bg-white/10 hover:bg-white/15 text-white text-base font-semibold px-6 py-3.5 rounded-xl transition-all duration-200 border border-white/20">
+                15-Min-Erstgespräch
+              </a>
             </div>
-            <button onclick="showScreen('screen-order')" class="inline-flex items-center bg-swiss-orange hover:bg-swiss-orange-hover text-white text-lg font-semibold px-8 py-4 rounded-xl transition-all duration-200 shadow-lg shadow-swiss-orange/30 hover:shadow-xl hover:-translate-y-0.5">
-              Premium Report bestellen
-              <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
-            </button>
-            <p class="text-gray-500 text-xs mt-4">Sofortige Lieferung per E-Mail. Rechnung auf 14 Tage.</p>
-            <p class="text-gray-500 text-xs mt-2">Nicht zufrieden? Geld zurück — ohne Wenn und Aber.</p>
+            <p class="text-gray-500 text-xs mt-5">Kein Verkaufsdruck. Wenn Synclaro nicht passt, sagen wir das auch.</p>
           </div>
         </div>
 
@@ -1226,131 +837,32 @@
     </div>
   </div>
 
-  <!-- ==================== SCREEN 4: ORDER FORM ==================== -->
-  <div id="screen-order" class="screen screen-hidden">
-    <div class="min-h-screen bg-warm-cream pt-16">
-      <div class="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-
-        <div class="text-center mb-10">
-          <h2 class="font-display font-700 text-2xl sm:text-3xl text-charcoal mb-2">Premium Report bestellen</h2>
-          <p class="text-gray-500">Ihr persönlicher KI-Implementierungsplan für <span class="font-semibold text-charcoal">29 € netto</span></p>
-        </div>
-
-        <form id="order-form" onsubmit="submitOrder(event)" class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-gray-100">
-          <div class="space-y-5">
-            <div>
-              <label class="block text-sm font-semibold text-charcoal mb-1.5">Firmenname <span class="text-swiss-orange">*</span></label>
-              <input type="text" id="order-firma" required class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-charcoal transition-all duration-200" placeholder="Muster GmbH">
-            </div>
-            <div>
-              <label class="block text-sm font-semibold text-charcoal mb-1.5">Ansprechpartner <span class="text-swiss-orange">*</span></label>
-              <input type="text" id="order-name" required class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-charcoal transition-all duration-200" placeholder="Max Mustermann">
-            </div>
-            <div>
-              <label class="block text-sm font-semibold text-charcoal mb-1.5">E-Mail-Adresse <span class="text-swiss-orange">*</span></label>
-              <input type="email" id="order-email" required class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-charcoal transition-all duration-200" placeholder="info@firma.de">
-            </div>
-            <div>
-              <label class="block text-sm font-semibold text-charcoal mb-1.5">Telefon <span class="text-gray-400 font-normal">(optional)</span></label>
-              <input type="tel" id="order-telefon" class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-charcoal transition-all duration-200" placeholder="+49 123 456 789">
-            </div>
-            <div>
-              <label class="block text-sm font-semibold text-charcoal mb-1.5">Straße + Hausnummer <span class="text-swiss-orange">*</span></label>
-              <input type="text" id="order-strasse" required class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-charcoal transition-all duration-200" placeholder="Musterstraße 1">
-            </div>
-            <div class="grid grid-cols-3 gap-4">
-              <div>
-                <label class="block text-sm font-semibold text-charcoal mb-1.5">PLZ <span class="text-swiss-orange">*</span></label>
-                <input type="text" id="order-plz" required pattern="[0-9]{5}" maxlength="5" class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-charcoal transition-all duration-200" placeholder="12345">
-              </div>
-              <div class="col-span-2">
-                <label class="block text-sm font-semibold text-charcoal mb-1.5">Ort <span class="text-swiss-orange">*</span></label>
-                <input type="text" id="order-ort" required class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-charcoal transition-all duration-200" placeholder="Musterstadt">
-              </div>
-            </div>
-            <div class="pt-2">
-              <label class="flex items-start gap-3 cursor-pointer">
-                <input type="checkbox" id="order-agb" required class="mt-1 w-4 h-4 rounded border-gray-300 text-swiss-orange focus:ring-swiss-orange">
-                <span class="text-sm text-gray-600">Ich akzeptiere die <a href="https://synclaro.de/impressum" target="_blank" class="text-swiss-orange hover:underline">AGB</a> und <a href="https://synclaro.de/datenschutz" target="_blank" class="text-swiss-orange hover:underline">Datenschutzerklärung</a>. <span class="text-swiss-orange">*</span></span>
-              </label>
-            </div>
-          </div>
-
-          <div id="order-error" class="hidden mt-4 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700"></div>
-
-          <button type="submit" id="order-submit-btn" class="w-full mt-6 bg-swiss-orange hover:bg-swiss-orange-hover text-white font-semibold text-base px-6 py-4 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2">
-            <span id="order-btn-text">Jetzt bestellen — 29 € netto</span>
-            <div id="order-btn-spinner" class="hidden">
-              <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-            </div>
-          </button>
-
-          <p class="text-xs text-gray-400 text-center mt-4">
-            Sie erhalten den Report sofort per E-Mail. Die Rechnung folgt separat.
-          </p>
-          <p class="text-xs text-gray-400 text-center mt-2">
-            Einzelunternehmen Synclaro IT Service, Bahnhofstr. 9, 92364 Deining
-          </p>
-        </form>
-
-        <button onclick="showScreen('screen-results')" class="mt-6 mx-auto flex items-center gap-2 text-gray-500 hover:text-charcoal text-sm font-medium transition-colors duration-200">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-          Zurück zu den Ergebnissen
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== SCREEN 5: CONFIRMATION ==================== -->
-  <div id="screen-confirmation" class="screen screen-hidden">
-    <div class="min-h-screen bg-warm-cream pt-16 flex items-center justify-center">
-      <div class="max-w-lg mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
-        <!-- Animated Checkmark -->
-        <div class="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-8 check-animated">
-          <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-        </div>
-
-        <h2 class="font-display font-700 text-2xl sm:text-3xl text-charcoal mb-4">Ihr Premium Report ist unterwegs!</h2>
-        <p class="text-gray-600 mb-2">
-          Wir haben Ihren persönlichen KI-Implementierungsplan an
-          <span id="confirm-email" class="font-semibold text-charcoal">Ihre E-Mail-Adresse</span> gesendet.
-        </p>
-        <p class="text-gray-500 text-sm mb-10">Die Rechnung erhalten Sie in Kürze per E-Mail.</p>
-
-        <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm mb-8">
-          <p class="text-gray-500 text-sm mb-4">Haben Sie Fragen? Buchen Sie ein kostenloses Erstgespräch:</p>
-          <a href="https://cal.com/synclaro/erstgespraech" target="_blank" rel="noopener" class="inline-flex items-center bg-swiss-orange hover:bg-swiss-orange-hover text-white font-semibold text-sm px-6 py-3 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md">
-            Kostenloses Erstgespräch buchen
-            <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-          </a>
-        </div>
-
-        <button onclick="window.location.reload()" class="text-gray-500 hover:text-charcoal text-sm font-medium transition-colors duration-200">
-          Zurück zur Startseite
-        </button>
-      </div>
-    </div>
-  </div>
+  <!-- 2026-05-02: Premium-Report-Screens (Order-Form + Confirmation) entfernt.
+       KI-Check ist reine Marketing-Maßnahme, kein 29-EUR-Verkaufsprodukt.
+       Brücke zu synclaro.de via direkter Link in Results-Screen (Z. 779-820). -->
 
 
   <!-- ==================== JAVASCRIPT ==================== -->
   <script>
-    // === State ===
+    // === State (Adaptive AI-native Check) ===
     let currentStep = 1;
-    const totalSteps = 5;
+    let dynamicStepCount = 0;
     let analysisResult = null;
-    let collectedAnswers = null;
+    let companyProfile = null;
+    let allAnswers = [];
+    let stepHistory = [];
+    let currentStepData = null;
+    let isLastStep = false;
+    let currentProgress = 0;
+    let loadingInterval = null;
 
     // === Screen Management ===
     function showScreen(screenId) {
-      const screens = document.querySelectorAll('.screen');
-      screens.forEach(s => {
+      document.querySelectorAll('.screen').forEach(s => {
         s.classList.remove('screen-visible');
         s.classList.add('screen-hidden');
       });
-
       const target = document.getElementById(screenId);
-      // Small delay to allow display:none to be set, then animate in
       requestAnimationFrame(() => {
         target.classList.remove('screen-hidden');
         target.classList.add('screen-visible');
@@ -1361,39 +873,36 @@
     // === Start Check ===
     function startCheck() {
       currentStep = 1;
+      dynamicStepCount = 0;
+      companyProfile = null;
+      allAnswers = [];
+      stepHistory = [];
+      currentStepData = null;
+      isLastStep = false;
+      currentProgress = 0;
       updateProgress();
-      showAllSteps();
+      document.getElementById('step-1').classList.remove('hidden');
+      document.getElementById('step-dynamic').classList.add('hidden');
+      document.getElementById('step-loading-transition').classList.add('hidden');
+      updateNavButtons();
       showScreen('screen-questionnaire');
     }
 
-    // === Step Management ===
-    function showAllSteps() {
-      for (let i = 1; i <= totalSteps; i++) {
-        const step = document.getElementById(`step-${i}`);
-        if (i === currentStep) {
-          step.classList.remove('hidden');
-          step.style.opacity = '1';
-          step.style.transform = 'translateX(0)';
-        } else {
-          step.classList.add('hidden');
-        }
-      }
-      updateNavButtons();
-    }
-
+    // === Progress ===
     function updateProgress() {
-      const percent = Math.round(((currentStep - 1) / totalSteps) * 100);
-      document.getElementById('step-label').textContent = `Schritt ${currentStep} von ${totalSteps}`;
+      const percent = currentStep === 1 ? 0 : currentProgress;
+      document.getElementById('step-label').textContent = `Schritt ${currentStep}`;
       document.getElementById('step-percent').textContent = `${percent}%`;
       document.getElementById('progress-bar').style.width = `${percent}%`;
     }
 
+    // === Nav Buttons ===
     function updateNavButtons() {
       const backBtn = document.getElementById('btn-back');
       const backSpacer = document.getElementById('btn-back-spacer');
       const nextBtn = document.getElementById('btn-next');
 
-      if (currentStep === 1) {
+      if (currentStep <= 1) {
         backBtn.classList.add('hidden');
         backBtn.classList.remove('inline-flex');
         backSpacer.classList.remove('hidden');
@@ -1403,58 +912,17 @@
         backSpacer.classList.add('hidden');
       }
 
-      if (currentStep === totalSteps) {
-        nextBtn.innerHTML = `
-          Ergebnis anzeigen
-          <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-        `;
+      if (isLastStep && currentStep > 1) {
+        nextBtn.innerHTML = 'Ergebnis anzeigen <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>';
       } else {
-        nextBtn.innerHTML = `
-          Weiter
-          <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-        `;
+        nextBtn.innerHTML = 'Weiter <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>';
       }
     }
 
-    // === Validation ===
-    function validateStep(step) {
-      const errorEl = document.getElementById('validation-error');
-      errorEl.classList.add('hidden');
-
-      switch (step) {
-        case 1:
-          if (!document.getElementById('q-branche').value) return showValidationError();
-          if (!getRadioValue('q-mitarbeiter')) return showValidationError();
-          if (!getRadioValue('q-umsatz')) return showValidationError();
-          return true;
-
-        case 2:
-          if (!getRadioValue('q-kundenanfragen')) return showValidationError();
-          if (!getRadioValue('q-angebote')) return showValidationError();
-          if (!getRadioValue('q-dokumentation')) return showValidationError();
-          if (!getRadioValue('q-wissen')) return showValidationError();
-          return true;
-
-        case 3:
-          if (!getRadioValue('q-kommunikation')) return showValidationError();
-          if (!getRadioValue('q-arbeitszeiten')) return showValidationError();
-          if (!getRadioValue('q-rechnungen')) return showValidationError();
-          if (!getRadioValue('q-material')) return showValidationError();
-          return true;
-
-        case 4:
-          if (!document.getElementById('q-zeitfresser').value.trim()) return showValidationError();
-          return true;
-
-        case 5:
-          if (!getRadioValue('q-ki-erfahrung')) return showValidationError();
-          if (!getRadioValue('q-budget')) return showValidationError();
-          if (!getRadioValue('q-zeitrahmen')) return showValidationError();
-          return true;
-
-        default:
-          return true;
-      }
+    // === Helpers ===
+    function getRadioValue(name) {
+      const el = document.querySelector(`input[name="${name}"]:checked`);
+      return el ? el.value : null;
     }
 
     function showValidationError() {
@@ -1464,121 +932,323 @@
       return false;
     }
 
-    function getRadioValue(name) {
-      const el = document.querySelector(`input[name="${name}"]:checked`);
-      return el ? el.value : null;
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    function getCheckboxValues(name) {
-      const els = document.querySelectorAll(`input[name="${name}"]:checked`);
-      return Array.from(els).map(el => el.value);
+    // === Step 1 Validation & Collection ===
+    function validateStep1() {
+      document.getElementById('validation-error').classList.add('hidden');
+      if (!getRadioValue('q-rolle')) return showValidationError();
+      if (!document.getElementById('q-branche').value) return showValidationError();
+      if (!getRadioValue('q-mitarbeiter')) return showValidationError();
+      if (!getRadioValue('q-umsatz')) return showValidationError();
+      return true;
     }
 
-    // === Navigation ===
-    function nextStep() {
-      if (!validateStep(currentStep)) return;
+    function collectStep1() {
+      companyProfile = {
+        vorname: document.getElementById('q-vorname')?.value?.trim() || '',
+        rolle: getRadioValue('q-rolle'),
+        branche: document.getElementById('q-branche').value,
+        mitarbeiter: getRadioValue('q-mitarbeiter'),
+        umsatz: getRadioValue('q-umsatz'),
+      };
+    }
 
-      if (currentStep === totalSteps) {
-        submitQuestionnaire();
-        return;
+    // === Dynamic Step Rendering ===
+    function renderDynamicStep(stepData) {
+      document.getElementById('dynamic-step-title').textContent = stepData.stepTitle || '';
+      document.getElementById('dynamic-step-description').textContent = stepData.stepDescription || '';
+
+      const container = document.getElementById('dynamic-questions-container');
+      container.innerHTML = '';
+
+      (stepData.questions || []).forEach(q => {
+        const wrapper = document.createElement('div');
+
+        const label = document.createElement('label');
+        label.className = 'block text-sm font-semibold text-charcoal mb-3';
+        label.textContent = q.label + (q.required ? '' : '');
+        if (q.required) {
+          const star = document.createElement('span');
+          star.className = 'text-swiss-orange ml-1';
+          star.textContent = '*';
+          label.appendChild(star);
+        }
+        wrapper.appendChild(label);
+
+        if (q.type === 'radio' && q.options) {
+          const group = document.createElement('div');
+          group.className = 'space-y-2.5';
+          q.options.forEach(opt => {
+            const lbl = document.createElement('label');
+            lbl.className = 'radio-option';
+            lbl.innerHTML = `
+              <input type="radio" name="dq-${q.id}" value="${escapeHtml(opt.value)}" class="sr-only" ${q.required ? 'required' : ''}>
+              <div class="radio-label flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300">
+                <span class="radio-dot w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 transition-all duration-200"></span>
+                <span class="text-sm text-charcoal">${escapeHtml(opt.label)}</span>
+              </div>
+            `;
+            group.appendChild(lbl);
+          });
+          wrapper.appendChild(group);
+
+        } else if (q.type === 'checkbox' && q.options) {
+          const group = document.createElement('div');
+          group.className = 'space-y-2.5';
+          q.options.forEach(opt => {
+            const lbl = document.createElement('label');
+            lbl.className = 'flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 cursor-pointer transition-all duration-200 hover:border-gray-300';
+            lbl.innerHTML = `
+              <input type="checkbox" name="dq-${q.id}" value="${escapeHtml(opt.value)}" class="w-4 h-4 rounded border-gray-300 text-swiss-orange focus:ring-swiss-orange">
+              <span class="text-sm text-charcoal">${escapeHtml(opt.label)}</span>
+            `;
+            group.appendChild(lbl);
+          });
+          wrapper.appendChild(group);
+
+        } else if (q.type === 'textarea') {
+          const ta = document.createElement('textarea');
+          ta.id = `dq-${q.id}`;
+          ta.rows = 3;
+          ta.placeholder = q.placeholder || '';
+          ta.className = 'w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-charcoal text-sm transition-all duration-200 focus:border-swiss-orange focus:ring-1 focus:ring-swiss-orange outline-none resize-none';
+          if (q.required) ta.required = true;
+          wrapper.appendChild(ta);
+
+        } else if (q.type === 'select' && q.options) {
+          const sel = document.createElement('select');
+          sel.id = `dq-${q.id}`;
+          sel.className = 'w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-charcoal text-sm appearance-none cursor-pointer transition-all duration-200';
+          if (q.required) sel.required = true;
+          const defaultOpt = document.createElement('option');
+          defaultOpt.value = '';
+          defaultOpt.textContent = 'Bitte wählen...';
+          sel.appendChild(defaultOpt);
+          q.options.forEach(opt => {
+            const o = document.createElement('option');
+            o.value = opt.value;
+            o.textContent = opt.label;
+            sel.appendChild(o);
+          });
+          wrapper.appendChild(sel);
+        }
+
+        container.appendChild(wrapper);
+      });
+    }
+
+    // === Dynamic Step Validation ===
+    function validateDynamicStep() {
+      document.getElementById('validation-error').classList.add('hidden');
+      if (!currentStepData || !currentStepData.questions) return true;
+
+      for (const q of currentStepData.questions) {
+        if (!q.required) continue;
+        if (q.type === 'radio') {
+          if (!document.querySelector(`input[name="dq-${q.id}"]:checked`)) return showValidationError();
+        } else if (q.type === 'checkbox') {
+          if (!document.querySelector(`input[name="dq-${q.id}"]:checked`)) return showValidationError();
+        } else if (q.type === 'textarea') {
+          if (!document.getElementById(`dq-${q.id}`)?.value?.trim()) return showValidationError();
+        } else if (q.type === 'select') {
+          if (!document.getElementById(`dq-${q.id}`)?.value) return showValidationError();
+        }
       }
+      return true;
+    }
 
-      const currentEl = document.getElementById(`step-${currentStep}`);
-      currentEl.classList.add('step-leaving');
+    // === Collect Dynamic Answers ===
+    function collectDynamicAnswers() {
+      if (!currentStepData || !currentStepData.questions) return;
 
-      setTimeout(() => {
-        currentEl.classList.add('hidden');
-        currentEl.classList.remove('step-leaving');
+      // Remove answers from current step (in case of back-navigation re-submit)
+      allAnswers = allAnswers.filter(a => a.stepNumber !== currentStep);
+
+      currentStepData.questions.forEach(q => {
+        let answer;
+        if (q.type === 'radio') {
+          const checked = document.querySelector(`input[name="dq-${q.id}"]:checked`);
+          answer = checked ? checked.value : '';
+        } else if (q.type === 'checkbox') {
+          const checked = document.querySelectorAll(`input[name="dq-${q.id}"]:checked`);
+          answer = Array.from(checked).map(el => el.value);
+        } else if (q.type === 'textarea') {
+          answer = document.getElementById(`dq-${q.id}`)?.value?.trim() || '';
+        } else if (q.type === 'select') {
+          answer = document.getElementById(`dq-${q.id}`)?.value || '';
+        }
+        allAnswers.push({
+          questionId: q.id,
+          questionLabel: q.label,
+          questionType: q.type,
+          answer: answer,
+          stepNumber: currentStep,
+        });
+      });
+    }
+
+    // === Fetch Next Questions from AI ===
+    async function fetchNextQuestions() {
+      // Show inline loading transition
+      document.getElementById('step-1').classList.add('hidden');
+      document.getElementById('step-dynamic').classList.add('hidden');
+      document.getElementById('step-loading-transition').classList.remove('hidden');
+
+      try {
+        const response = await fetch('/.netlify/functions/generate-questions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            companyProfile,
+            previousAnswers: allAnswers,
+            stepNumber: dynamicStepCount + 1,
+          }),
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const stepData = await response.json();
+        currentStepData = stepData;
+        isLastStep = stepData.isLastStep || false;
+        currentProgress = stepData.progress || 0;
+        dynamicStepCount++;
         currentStep++;
-        updateProgress();
 
-        const nextEl = document.getElementById(`step-${currentStep}`);
-        nextEl.classList.remove('hidden');
-        nextEl.classList.add('step-entering');
+        // Cache for back navigation
+        stepHistory.push({ stepData, stepNumber: currentStep });
+
+        updateProgress();
+        renderDynamicStep(stepData);
+
+        // Transition
+        document.getElementById('step-loading-transition').classList.add('hidden');
+        document.getElementById('step-dynamic').classList.remove('hidden');
+        document.getElementById('step-dynamic').classList.add('step-entering');
         requestAnimationFrame(() => {
-          nextEl.classList.remove('step-entering');
+          document.getElementById('step-dynamic').classList.remove('step-entering');
         });
 
         updateNavButtons();
         document.getElementById('validation-error').classList.add('hidden');
         window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 200);
+
+      } catch (error) {
+        console.error('Fragen-Generierung fehlgeschlagen:', error);
+        document.getElementById('step-loading-transition').classList.add('hidden');
+        document.getElementById('validation-error').textContent = 'Die nächsten Fragen konnten nicht geladen werden. Bitte versuchen Sie es erneut.';
+        document.getElementById('validation-error').classList.remove('hidden');
+        // Show the previous step again
+        if (currentStep === 1) {
+          document.getElementById('step-1').classList.remove('hidden');
+        } else {
+          document.getElementById('step-dynamic').classList.remove('hidden');
+        }
+      }
+    }
+
+    // === Navigation ===
+    function nextStep() {
+      if (currentStep === 1) {
+        if (!validateStep1()) return;
+        collectStep1();
+        fetchNextQuestions();
+      } else {
+        if (!validateDynamicStep()) return;
+        collectDynamicAnswers();
+        if (isLastStep) {
+          submitQuestionnaire();
+          return;
+        }
+        fetchNextQuestions();
+      }
     }
 
     function prevStep() {
       if (currentStep <= 1) return;
-
-      const currentEl = document.getElementById(`step-${currentStep}`);
-      currentEl.classList.add('hidden');
-
-      currentStep--;
-      updateProgress();
-
-      const prevEl = document.getElementById(`step-${currentStep}`);
-      prevEl.classList.remove('hidden');
-
-      updateNavButtons();
       document.getElementById('validation-error').classList.add('hidden');
+
+      if (currentStep === 2) {
+        // Go back to fixed Step 1
+        document.getElementById('step-dynamic').classList.add('hidden');
+        document.getElementById('step-1').classList.remove('hidden');
+        currentStep = 1;
+        dynamicStepCount = 0;
+        currentProgress = 0;
+        isLastStep = false;
+        // Remove answers from dynamic steps
+        allAnswers = [];
+        stepHistory = [];
+        currentStepData = null;
+      } else if (stepHistory.length >= 2) {
+        // Go back to previous dynamic step
+        stepHistory.pop(); // remove current
+        const prev = stepHistory[stepHistory.length - 1];
+        currentStepData = prev.stepData;
+        currentStep--;
+        dynamicStepCount--;
+        isLastStep = false;
+        currentProgress = currentStepData.progress || 0;
+        // Remove answers from current and later steps
+        allAnswers = allAnswers.filter(a => a.stepNumber < currentStep);
+        renderDynamicStep(currentStepData);
+      }
+      updateProgress();
+      updateNavButtons();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // === Collect Answers ===
-    function collectAnswers() {
-      const answers = {
-        unternehmen: {
-          branche: document.getElementById('q-branche').value,
-          mitarbeiter: getRadioValue('q-mitarbeiter'),
-          umsatz: getRadioValue('q-umsatz'),
-        },
-        digitalisierung: {
-          kundenanfragen: parseInt(getRadioValue('q-kundenanfragen')),
-          angebote: parseInt(getRadioValue('q-angebote')),
-          dokumentation: parseInt(getRadioValue('q-dokumentation')),
-          wissen: parseInt(getRadioValue('q-wissen')),
-        },
-        kommunikation: {
-          buero_baustelle: parseInt(getRadioValue('q-kommunikation')),
-          zeiterfassung: parseInt(getRadioValue('q-arbeitszeiten')),
-          rechnungen: parseInt(getRadioValue('q-rechnungen')),
-          beschaffung: parseInt(getRadioValue('q-material')),
-        },
-        herausforderungen: {
-          zeitfresser: document.getElementById('q-zeitfresser').value.trim(),
-          fehler: getCheckboxValues('q-fehler'),
-          automatisieren: document.getElementById('q-automatisieren').value.trim(),
-        },
-        ki_bereitschaft: {
-          erfahrung: parseInt(getRadioValue('q-ki-erfahrung')),
-          budget: parseInt(getRadioValue('q-budget')),
-          zeitrahmen: parseInt(getRadioValue('q-zeitrahmen')),
-        },
-      };
-      return answers;
+    // === Progressive Loading Messages ===
+    function startLoadingMessages() {
+      const messages = [
+        'Ihre Antworten werden analysiert...',
+        'Branchenspezifische Empfehlungen werden erstellt...',
+        'Ihr persönliches KI-Potenzial wird berechnet...',
+        'Fast fertig — Ihr Ergebnis wird zusammengestellt...',
+      ];
+      let index = 0;
+      const el = document.getElementById('loading-message');
+      if (el) el.textContent = messages[0];
+      loadingInterval = setInterval(() => {
+        index++;
+        if (index < messages.length && el) {
+          el.style.opacity = '0';
+          setTimeout(() => { el.textContent = messages[index]; el.style.opacity = '1'; }, 300);
+        }
+      }, 3000);
     }
 
-    // === Submit Questionnaire ===
+    function stopLoadingMessages() {
+      if (loadingInterval) { clearInterval(loadingInterval); loadingInterval = null; }
+    }
+
+    // === Submit Questionnaire (Final Analysis) ===
     async function submitQuestionnaire() {
-      collectedAnswers = collectAnswers();
+      collectDynamicAnswers();
 
       showScreen('screen-results');
       document.getElementById('results-loading').classList.remove('hidden');
       document.getElementById('results-content').classList.add('hidden');
       document.getElementById('results-error').classList.add('hidden');
+      startLoadingMessages();
 
       try {
         const response = await fetch('/.netlify/functions/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(collectedAnswers),
+          body: JSON.stringify({ companyProfile, answers: allAnswers }),
         });
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
         analysisResult = await response.json();
+        stopLoadingMessages();
         displayResults(analysisResult);
-
       } catch (error) {
         console.error('Analyse-Fehler:', error);
+        stopLoadingMessages();
         document.getElementById('results-loading').classList.add('hidden');
         document.getElementById('results-error').classList.remove('hidden');
       }
@@ -1590,68 +1260,73 @@
       document.getElementById('results-content').classList.remove('hidden');
 
       const totalScore = (data.scores && data.scores.total && data.scores.total.percent) || 0;
-      const categories = data.scores || {};
-      const recommendations = data.recommendations || [];
+      const scores = data.scores || {};
 
-      // Determine level and color
-      let level = '';
+      // Level and color
+      let level = data.level || '';
       let circleColor = '#FF4F00';
-      if (totalScore < 25) {
-        level = 'Analog-Betrieb';
-        circleColor = '#EF4444';
-      } else if (totalScore < 50) {
-        level = 'Digital-Grundlage';
-        circleColor = '#FF4F00';
-      } else if (totalScore < 75) {
-        level = 'Digitaler Fortgeschrittener';
-        circleColor = '#F59E0B';
-      } else {
-        level = 'KI-Pionier';
-        circleColor = '#10B981';
-      }
+      if (totalScore < 25) { circleColor = '#EF4444'; }
+      else if (totalScore < 50) { circleColor = '#FF4F00'; }
+      else if (totalScore < 75) { circleColor = '#F59E0B'; }
+      else { circleColor = '#10B981'; }
 
-      // Animate score circle
+      // Score circle
       const circle = document.getElementById('score-circle');
-      const circumference = 314; // 2 * PI * 50
-      const offset = circumference - (circumference * totalScore / 100);
+      const circumference = 314;
       circle.style.stroke = circleColor;
-      circle.style.strokeDashoffset = offset;
+      circle.style.strokeDashoffset = circumference - (circumference * totalScore / 100);
 
-      // Counter animation for score number
       animateCounter('score-number', totalScore, '%');
       document.getElementById('score-level').textContent = level;
 
-      // Category bars
-      const digitalPct = (categories.digitalisierung && categories.digitalisierung.percent) || 0;
-      const kommPct = (categories.kommunikation && categories.kommunikation.percent) || 0;
-      const kiPct = (categories.ki_bereitschaft && categories.ki_bereitschaft.percent) || 0;
+      // 4 Category bars
+      const digitalPct = (scores.digitalisierung && scores.digitalisierung.percent) || 0;
+      const kommPct = (scores.kommunikation && scores.kommunikation.percent) || 0;
+      const kiPct = (scores.ki_bereitschaft && scores.ki_bereitschaft.percent) || 0;
+      const nutzungPct = (scores.ki_nutzung && scores.ki_nutzung.percent) || 0;
 
       setTimeout(() => {
         document.getElementById('cat-digital-pct').textContent = `${digitalPct}%`;
         document.getElementById('cat-digital-bar').style.width = `${digitalPct}%`;
-
         document.getElementById('cat-komm-pct').textContent = `${kommPct}%`;
         document.getElementById('cat-komm-bar').style.width = `${kommPct}%`;
-
         document.getElementById('cat-ki-pct').textContent = `${kiPct}%`;
         document.getElementById('cat-ki-bar').style.width = `${kiPct}%`;
+        document.getElementById('cat-nutzung-pct').textContent = `${nutzungPct}%`;
+        document.getElementById('cat-nutzung-bar').style.width = `${nutzungPct}%`;
       }, 300);
 
-      // Quick wins
+      // AI Assessment
+      const assessmentEl = document.getElementById('ai-assessment');
+      const assessmentTextEl = document.getElementById('ai-assessment-text');
+      if (data.gesamteinschaetzung) {
+        assessmentTextEl.textContent = data.gesamteinschaetzung;
+        assessmentEl.classList.remove('hidden');
+      } else {
+        assessmentEl.classList.add('hidden');
+      }
+
+      // Recommendations
       const winsList = document.getElementById('quick-wins-list');
       winsList.innerHTML = '';
-      recommendations.forEach((rec, index) => {
+      const recs = data.empfehlungen || [];
+      recs.forEach((rec, index) => {
         const card = document.createElement('div');
-        card.className = 'bg-white rounded-xl p-5 border border-gray-100 shadow-sm animate-fade-in-up';
-        card.style.animationDelay = `${(index + 1) * 0.15}s`;
+        card.className = 'bg-white rounded-2xl p-6 border border-gray-100 shadow-sm animate-fade-in-up';
+        card.style.animationDelay = `${(index + 1) * 0.2}s`;
         card.style.opacity = '0';
         card.innerHTML = `
-          <div class="flex items-start gap-3">
-            <span class="text-xl mt-0.5">💡</span>
-            <div>
-              <h4 class="font-semibold text-charcoal text-sm mb-1">${rec.title || ''}</h4>
-              <p class="text-gray-500 text-sm leading-relaxed">${rec.text || rec.description || ''}</p>
-            </div>
+          <div class="flex items-start gap-3 mb-3">
+            <span class="text-xl mt-0.5">&#128161;</span>
+            <h4 class="font-display font-700 text-base text-charcoal">${escapeHtml(rec.titel)}</h4>
+          </div>
+          <p class="text-gray-600 text-sm leading-relaxed mb-4 pl-9">${escapeHtml(rec.analyse)}</p>
+          <div class="bg-amber-50 rounded-xl p-4 mb-4 ml-9 border border-amber-100">
+            <p class="text-gray-600 text-sm italic leading-relaxed">${escapeHtml(rec.sozialBeweis)}</p>
+          </div>
+          <div class="flex items-start gap-2 ml-9">
+            <svg class="w-5 h-5 text-swiss-orange flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+            <p class="text-sm font-semibold text-charcoal">${escapeHtml(rec.naechsterSchritt)}</p>
           </div>
         `;
         winsList.appendChild(card);
@@ -1664,13 +1339,9 @@
       let current = 0;
       const duration = 1500;
       const step = target / (duration / 16);
-
       function update() {
         current += step;
-        if (current >= target) {
-          el.textContent = `${Math.round(target)}${suffix}`;
-          return;
-        }
+        if (current >= target) { el.textContent = `${Math.round(target)}${suffix}`; return; }
         el.textContent = `${Math.round(current)}${suffix}`;
         requestAnimationFrame(update);
       }
@@ -1680,83 +1351,48 @@
     // === Submit Order ===
     async function submitOrder(event) {
       event.preventDefault();
-
       const form = document.getElementById('order-form');
       const errorEl = document.getElementById('order-error');
       const submitBtn = document.getElementById('order-submit-btn');
       const btnText = document.getElementById('order-btn-text');
       const btnSpinner = document.getElementById('order-btn-spinner');
-
       errorEl.classList.add('hidden');
 
-      // Validate
-      if (!form.checkValidity()) {
-        form.reportValidity();
-        return;
-      }
-
-      // PLZ validation
+      if (!form.checkValidity()) { form.reportValidity(); return; }
       const plz = document.getElementById('order-plz').value;
-      if (!/^[0-9]{5}$/.test(plz)) {
-        errorEl.textContent = 'Bitte geben Sie eine gültige 5-stellige Postleitzahl ein.';
-        errorEl.classList.remove('hidden');
-        return;
-      }
+      if (!/^[0-9]{5}$/.test(plz)) { errorEl.textContent = 'Bitte geben Sie eine gültige 5-stellige Postleitzahl ein.'; errorEl.classList.remove('hidden'); return; }
+      if (!document.getElementById('order-agb').checked) { errorEl.textContent = 'Bitte akzeptieren Sie die AGB und Datenschutzerklärung.'; errorEl.classList.remove('hidden'); return; }
 
-      // AGB check
-      if (!document.getElementById('order-agb').checked) {
-        errorEl.textContent = 'Bitte akzeptieren Sie die AGB und Datenschutzerklärung.';
-        errorEl.classList.remove('hidden');
-        return;
-      }
-
-      // Loading state
       submitBtn.disabled = true;
       btnText.textContent = 'Ihr Premium Report wird erstellt';
       btnSpinner.classList.remove('hidden');
 
-      const orderData = {
-        firma: document.getElementById('order-firma').value.trim(),
-        name: document.getElementById('order-name').value.trim(),
-        email: document.getElementById('order-email').value.trim(),
-        telefon: document.getElementById('order-telefon').value.trim(),
-        strasse: document.getElementById('order-strasse').value.trim(),
-        plz: plz,
-        ort: document.getElementById('order-ort').value.trim(),
-        answers: collectedAnswers,
-        analysisResult: analysisResult,
-      };
-
       try {
-        // Background function: returns 202 immediately, processes async
         const response = await fetch('/.netlify/functions/order-premium-background', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             company: {
-              name: orderData.firma,
-              email: orderData.email,
-              ansprechpartner: orderData.name,
-              telefon: orderData.telefon,
-              strasse: orderData.strasse,
-              plz: orderData.plz,
-              ort: orderData.ort,
+              name: document.getElementById('order-firma').value.trim(),
+              email: document.getElementById('order-email').value.trim(),
+              ansprechpartner: document.getElementById('order-name').value.trim(),
+              telefon: document.getElementById('order-telefon').value.trim(),
+              strasse: document.getElementById('order-strasse').value.trim(),
+              plz: plz,
+              ort: document.getElementById('order-ort').value.trim(),
             },
-            answers: collectedAnswers,
+            companyProfile,
+            answers: allAnswers,
             scores: analysisResult?.scores || analysisResult,
           }),
         });
 
-        // Background functions return 202 Accepted
         if (response.status !== 202 && !response.ok) throw new Error(`HTTP ${response.status}`);
-
-        // Show confirmation
-        document.getElementById('confirm-email').textContent = orderData.email;
+        document.getElementById('confirm-email').textContent = document.getElementById('order-email').value.trim();
         showScreen('screen-confirmation');
-
       } catch (error) {
         console.error('Bestell-Fehler:', error);
-        errorEl.textContent = 'Die Bestellung konnte leider nicht verarbeitet werden. Bitte versuchen Sie es erneut oder kontaktieren Sie uns direkt.';
+        errorEl.textContent = 'Die Bestellung konnte leider nicht verarbeitet werden. Bitte versuchen Sie es erneut.';
         errorEl.classList.remove('hidden');
       } finally {
         submitBtn.disabled = false;
@@ -1770,47 +1406,27 @@
       const score = document.getElementById('score-number')?.textContent || '?';
       const level = document.getElementById('score-level')?.textContent || '';
       const url = 'https://ki-check.synclaro.de';
-      const text = `Mein Handwerksbetrieb hat beim KI-Readiness-Check ${score} erreicht (${level}). Wie KI-ready ist euer Betrieb? Kostenlos in 3 Minuten:`;
-
-      if (platform === 'linkedin') {
-        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
-      } else if (platform === 'whatsapp') {
-        window.open(`https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`, '_blank');
-      } else if (platform === 'email') {
-        window.location.href = `mailto:?subject=${encodeURIComponent('KI-Readiness-Check für Handwerksbetriebe')}&body=${encodeURIComponent(text + '\n\n' + url)}`;
-      } else if (platform === 'copy') {
-        navigator.clipboard.writeText(url).then(() => {
-          const btn = document.getElementById('copy-link-btn');
-          btn.textContent = 'Kopiert!';
-          setTimeout(() => btn.textContent = 'Link kopieren', 2000);
-        });
-      }
+      const text = `Mein Betrieb hat beim KI-Readiness-Check ${score} erreicht (${level}). Wie KI-ready ist euer Betrieb?`;
+      if (platform === 'linkedin') window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
+      else if (platform === 'whatsapp') window.open(`https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`, '_blank');
+      else if (platform === 'email') window.location.href = `mailto:?subject=${encodeURIComponent('KI-Readiness-Check')}&body=${encodeURIComponent(text + '\n\n' + url)}`;
+      else if (platform === 'copy') navigator.clipboard.writeText(url).then(() => { const btn = document.getElementById('copy-link-btn'); btn.textContent = 'Kopiert!'; setTimeout(() => btn.textContent = 'Link kopieren', 2000); });
     }
 
-    // === Navbar Shadow on Scroll ===
+    // === Navbar Shadow ===
     window.addEventListener('scroll', () => {
       const navbar = document.getElementById('navbar');
-      if (window.scrollY > 10) {
-        navbar.classList.add('nav-scrolled');
-      } else {
-        navbar.classList.remove('nav-scrolled');
-      }
+      if (window.scrollY > 10) navbar.classList.add('nav-scrolled');
+      else navbar.classList.remove('nav-scrolled');
     }, { passive: true });
 
-    // === Cookie-free Page View Counter (non-blocking) ===
+    // === Page View Tracker ===
     (function() {
       try {
-        const payload = {
-          page: window.location.pathname,
-          referrer: document.referrer || '',
-          ts: new Date().toISOString(),
-          ua: navigator.userAgent,
-          screen: `${screen.width}x${screen.height}`,
-        };
         fetch('/.netlify/functions/track-pageview', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({ page: window.location.pathname, referrer: document.referrer || '', ts: new Date().toISOString(), ua: navigator.userAgent, screen: `${screen.width}x${screen.height}` }),
           keepalive: true,
         }).catch(() => {});
       } catch(e) {}
