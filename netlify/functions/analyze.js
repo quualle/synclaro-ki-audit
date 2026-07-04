@@ -1,5 +1,7 @@
-// Synclaro KI-Readiness-Check — Scoring & Analyse
-// Berechnet KI-Readiness-Scores und gibt Quick-Win-Empfehlungen
+// Synclaro KI-Readiness-Check — AI-getriebene Analyse
+// Bewertet alle dynamischen Antworten und erstellt personalisierte Empfehlungen
+
+const OpenAI = require("openai");
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -7,163 +9,145 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 
-// Empfehlungen für jede Frage bei niedrigem Score (1 oder 2)
-const EMPFEHLUNGEN = {
-  kundenanfragen: {
-    title: "Digitales Anfragenmanagement",
-    text: "Implementieren Sie ein einfaches CRM oder Ticketsystem, um keine Kundenanfrage mehr zu verlieren.",
-  },
-  angebote: {
-    title: "Automatisierte Angebotserstellung",
-    text: "Nutzen Sie KI-gestützte Vorlagen, um Angebote in Minuten statt Stunden zu erstellen.",
-  },
-  dokumentation: {
-    title: "Digitale Projektdokumentation",
-    text: "Fotos, Notizen und Fortschritte zentral und mobil erfassen — kein Papierkram mehr.",
-  },
-  wissen: {
-    title: "Wissensmanagement digitalisieren",
-    text: "Erfahrungswissen Ihrer Mitarbeiter in einer durchsuchbaren Wissensdatenbank sichern.",
-  },
-  buero_baustelle: {
-    title: "Echtzeitkommunikation Büro ↔ Baustelle",
-    text: "Mit einer App-Lösung Missverständnisse und Doppelarbeit eliminieren.",
-  },
-  zeiterfassung: {
-    title: "Digitale Zeiterfassung",
-    text: "Stundenzettel durch eine mobile App ersetzen — spart 5+ Stunden pro Woche.",
-  },
-  rechnungen: {
-    title: "Automatische Rechnungsstellung",
-    text: "Von der Zeiterfassung direkt zur Rechnung — ohne Medienbruch.",
-  },
-  beschaffung: {
-    title: "Intelligente Materialbeschaffung",
-    text: "Automatische Bestellvorschläge basierend auf Projektplanung und Bestandsdaten.",
-  },
-  erfahrung: {
-    title: "KI-Grundlagen aufbauen",
-    text: "Mit ChatGPT oder Claude erste Erfahrungen sammeln — für Textarbeit, E-Mails, Planung.",
-  },
-  budget: {
-    title: "Fördermittel nutzen",
-    text: "Bis zu 90% Ihrer Digitalisierungskosten können durch KOMPASS oder Landesförderung gedeckt werden.",
-  },
-  timeline: {
-    title: "Sofort starten",
-    text: "Der beste Zeitpunkt für KI-Integration war gestern. Der zweitbeste ist heute.",
-  },
-};
+const SYSTEM_PROMPT = `Du bist der Senior KI-Berater von Synclaro. Du analysierst die vollständigen Ergebnisse eines adaptiven KI-Readiness-Checks.
 
-// Score-Stufen
-function getLevel(percent) {
-  if (percent < 25) return "KI-Einsteiger";
-  if (percent < 50) return "Digital-Grundlage";
-  if (percent < 75) return "Fortgeschritten";
-  return "KI-Vorreiter";
-}
+Du erhältst ALLE Fragen und Antworten (dynamisch auf den Betrieb zugeschnitten) plus das Unternehmensprofil.
 
-// Kategorie-Score berechnen
-function calcCategoryScore(values, max) {
-  const score = Object.values(values).reduce((sum, v) => sum + (Number(v) || 0), 0);
-  const percent = Math.round((score / max) * 100);
-  return { score, max, percent };
-}
+DEIN WISSEN AUS DER BERATUNGSPRAXIS (basierend auf 200+ Coaching-Stunden mit Handwerksbetrieben):
+- Handwerksbetriebe sparen durch Prozessautomatisierung durchschnittlich 10-20 Stunden pro Monat
+- Systematisches Wissensmanagement beschleunigt die Einarbeitung neuer Mitarbeiter um bis zu 50%
+- Automatisierte Angebotserstellung reduziert Zeitaufwand von einem halben Tag auf Minuten
+- Zentrale digitale Dokumentation eliminiert Informationsverluste zwischen Büro und Baustelle
+- Digitale Zeiterfassung spart 5+ Stunden pro Woche gegenüber Papierstundenzetteln
+- ROI von KI-Maßnahmen liegt bei KMUs typischerweise bei unter 6 Monaten
+- KOMPASS-Förderprogramm kann bis zu 90% der Beratungskosten übernehmen
+- Schlüsselpersonen-Abhängigkeit ist das größte unerkannte Risiko im Handwerk
+- Größte emotionale Gewinne: Überblick, weniger Stress, Zukunftssicherheit
 
-// Top-3-Empfehlungen aus den niedrigsten Scores ermitteln
-function getRecommendations(answers) {
-  const allQuestions = [];
+PRAXISBEISPIELE FÜR SOCIAL PROOF (anonymisiert verwenden):
+- Holzbaubetrieb (20 MA): Durch digitales Dokumentensystem Suchzeit um 80% reduziert
+- Schreinerei: Nach Wissensmanagement-System Einarbeitung in halber Zeit
+- Fensterbaubetrieb: Reparaturprozess digitalisiert, Durchlaufzeit halbiert
+- Dachdeckerbetrieb: Automatisierte Angebotserstellung → Angebotsquote +40%
+- Gebäudereinigung: Digitale Zeiterfassung spart 8h/Woche Verwaltungsaufwand
+- Spenglerbetrieb: 15.000€ Investition nach 10 Coaching-Stunden gerechtfertigt
 
-  // Alle Fragen mit ihren Scores sammeln
-  for (const [key, value] of Object.entries(answers.digitalisierung || {})) {
-    allQuestions.push({ key, score: Number(value) || 0 });
-  }
-  for (const [key, value] of Object.entries(answers.kommunikation || {})) {
-    allQuestions.push({ key, score: Number(value) || 0 });
-  }
-  for (const [key, value] of Object.entries(answers.ki_bereitschaft || {})) {
-    allQuestions.push({ key, score: Number(value) || 0 });
-  }
+SCORING-METHODE:
+Bewerte jeden Bereich auf 0-100% basierend auf den relevanten Antworten:
+- 0-24%: Kaum digitalisiert / kein KI-Einsatz
+- 25-49%: Grundlegende Digitalisierung vorhanden
+- 50-74%: Gut aufgestellt mit Optimierungspotenzial
+- 75-100%: Vorreiter / bereits KI-integriert
 
-  // Nach Score aufsteigend sortieren (niedrigste zuerst)
-  allQuestions.sort((a, b) => a.score - b.score);
+LEVEL-ZUORDNUNG basierend auf Gesamt-Prozent:
+- 0-24%: "KI-Einsteiger"
+- 25-49%: "Digital-Grundlage"
+- 50-74%: "Fortgeschritten"
+- 75-100%: "KI-Vorreiter"
 
-  // Top 3 mit Score <= 2 nehmen (nur dort wo Handlungsbedarf besteht)
-  const recommendations = [];
-  for (const q of allQuestions) {
-    if (recommendations.length >= 3) break;
-    if (q.score <= 2 && EMPFEHLUNGEN[q.key]) {
-      recommendations.push(EMPFEHLUNGEN[q.key]);
+TONALITÄT:
+- Wertschätzend und ermutigend, nie herablassend
+- Konkret und praxisnah, keine leeren Buzzwords
+- Sie-Form
+- Branchenspezifisch formulieren
+- Wie ein erfahrener Berater auf Augenhöhe
+
+AUSGABEFORMAT (strikt JSON):
+{
+  "scores": {
+    "digitalisierung": {"percent": 45, "summary": "Kurze Einordnung in 1 Satz"},
+    "kommunikation": {"percent": 35, "summary": "Kurze Einordnung in 1 Satz"},
+    "ki_bereitschaft": {"percent": 60, "summary": "Kurze Einordnung in 1 Satz"},
+    "ki_nutzung": {"percent": 20, "summary": "Kurze Einordnung in 1 Satz"},
+    "total": {"percent": 40}
+  },
+  "level": "Digital-Grundlage",
+  "gesamteinschaetzung": "2-3 Sätze persönliche Einschätzung. Konstruktiv und motivierend.",
+  "empfehlungen": [
+    {
+      "titel": "Kurzer, prägnanter Titel",
+      "analyse": "2-3 Sätze, warum dieser Bereich für diesen Betrieb wichtig ist.",
+      "sozialBeweis": "Ein konkreter Satz: 'Ein [Branche]-Betrieb mit ähnlicher Ausgangslage konnte durch [Maßnahme] [messbares Ergebnis] erzielen.'",
+      "naechsterSchritt": "Konkreter, sofort umsetzbarer erster Schritt."
     }
-  }
-
-  // Falls weniger als 3 gefunden: auch Score 3 berücksichtigen
-  if (recommendations.length < 3) {
-    for (const q of allQuestions) {
-      if (recommendations.length >= 3) break;
-      if (q.score === 3 && EMPFEHLUNGEN[q.key]) {
-        const existing = recommendations.find((r) => r.title === EMPFEHLUNGEN[q.key].title);
-        if (!existing) {
-          recommendations.push(EMPFEHLUNGEN[q.key]);
-        }
-      }
-    }
-  }
-
-  return recommendations;
+  ]
 }
+
+Liefere GENAU 3 Empfehlungen. Jede soll einen anderen Bereich abdecken.`;
 
 exports.handler = async (event) => {
-  // CORS Preflight
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 204, headers: CORS_HEADERS, body: "" };
   }
 
-  // Nur POST erlauben
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
       headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-      body: JSON.stringify({ error: "Methode nicht erlaubt. Bitte POST verwenden." }),
+      body: JSON.stringify({ error: "Methode nicht erlaubt." }),
     };
   }
 
   try {
     const data = JSON.parse(event.body);
+    const { companyProfile, answers } = data;
 
-    // Eingabevalidierung
-    if (!data.digitalisierung || !data.kommunikation || !data.ki_bereitschaft) {
+    if (!companyProfile || !answers || answers.length === 0) {
       return {
         statusCode: 400,
         headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          error: "Unvollständige Daten. Bitte alle Bereiche ausfüllen (digitalisierung, kommunikation, ki_bereitschaft).",
-        }),
+        body: JSON.stringify({ error: "Unvollständige Daten." }),
       };
     }
 
-    // Scores berechnen
-    const digitalisierung = calcCategoryScore(data.digitalisierung, 16);
-    const kommunikation = calcCategoryScore(data.kommunikation, 16);
-    const ki_bereitschaft = calcCategoryScore(data.ki_bereitschaft, 12);
+    if (!process.env.OPENAI_API_KEY) {
+      return {
+        statusCode: 500,
+        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+        body: JSON.stringify({ error: "API-Konfiguration fehlt." }),
+      };
+    }
 
-    const totalScore = digitalisierung.score + kommunikation.score + ki_bereitschaft.score;
-    const totalMax = 44;
-    const totalPercent = Math.round((totalScore / totalMax) * 100);
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-    // Empfehlungen ermitteln
-    const recommendations = getRecommendations(data);
+    // User-Prompt mit allen Q&A-Paaren
+    let userPrompt = `KI-Readiness-Check Ergebnisse für einen ${companyProfile.branche || "Handwerk"}-Betrieb:\n\n`;
+    userPrompt += `BETRIEBSPROFIL:\n`;
+    userPrompt += `- Branche: ${companyProfile.branche || "nicht angegeben"}\n`;
+    userPrompt += `- Mitarbeiter: ${companyProfile.mitarbeiter || "nicht angegeben"}\n`;
+    userPrompt += `- Umsatz: ${companyProfile.umsatz || "nicht angegeben"}\n`;
+    userPrompt += `- Rolle: ${companyProfile.rolle || "nicht angegeben"}\n`;
+    if (companyProfile.vorname) {
+      userPrompt += `- Vorname: ${companyProfile.vorname}\n`;
+    }
+    userPrompt += `\nALLE ANTWORTEN AUS DEM ADAPTIVEN ASSESSMENT (${answers.length} Fragen):\n`;
+    answers.forEach((a, i) => {
+      const answerText = Array.isArray(a.answer) ? a.answer.join(", ") : a.answer;
+      userPrompt += `${i + 1}. ${a.questionLabel}: ${answerText}\n`;
+    });
 
-    const result = {
-      scores: {
-        digitalisierung,
-        kommunikation,
-        ki_bereitschaft,
-        total: { score: totalScore, max: totalMax, percent: totalPercent },
-      },
-      level: getLevel(totalPercent),
-      recommendations,
-    };
+    const completion = await openai.chat.completions.create({
+      model: "gpt-5.4",
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: userPrompt },
+      ],
+      max_completion_tokens: 2500,
+      temperature: 0.7,
+      response_format: { type: "json_object" },
+    });
+
+    const content = completion.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error("Keine Antwort vom KI-Modell");
+    }
+
+    const result = JSON.parse(content);
+
+    // Validierung
+    if (!result.scores || !result.gesamteinschaetzung || !result.empfehlungen) {
+      throw new Error("KI-Analyse hat unvollständiges Format");
+    }
 
     return {
       statusCode: 200,
@@ -173,11 +157,9 @@ exports.handler = async (event) => {
   } catch (err) {
     console.error("Analyse-Fehler:", err);
     return {
-      statusCode: 400,
+      statusCode: 500,
       headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        error: "Ungültige Anfrage. Bitte prüfen Sie das Datenformat.",
-      }),
+      body: JSON.stringify({ error: "Analyse konnte nicht erstellt werden. Bitte erneut versuchen." }),
     };
   }
 };

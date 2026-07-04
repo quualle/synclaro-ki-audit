@@ -122,12 +122,12 @@ SCHMERZPUNKTE:
 - Wunsch-Automatisierung: ${answers.schmerzpunkte?.automatisieren || "nicht angegeben"}`;
 
   const response = await openai.chat.completions.create({
-    model: "gpt-4o",
+    model: "gpt-5.4",
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content: userPrompt },
     ],
-    max_tokens: 8000,
+    max_completion_tokens: 8000,
     temperature: 0.7,
   });
 
