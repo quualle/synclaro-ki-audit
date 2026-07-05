@@ -66,7 +66,7 @@ function buildUserPrompt(companyProfile, previousAnswers, stepNumber, partial) {
   if (previousAnswers && previousAnswers.length > 0) {
     prompt += `BISHERIGE ANTWORTEN:\n`;
     previousAnswers.forEach((a) => {
-      const answerText = Array.isArray(a.answer) ? a.answer.join(", ") : a.answer;
+      const answerText = a.answerLabel || (Array.isArray(a.answer) ? a.answer.join(", ") : a.answer);
       prompt += `- ${a.questionLabel}: ${answerText}\n`;
     });
     prompt += `\n`;

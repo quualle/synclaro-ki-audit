@@ -89,10 +89,10 @@ Nach Tap 5: **Interstitial „Messung startet"** — zeigt sofort einen statisch
 **Motion:** 150–400 ms, `cubic-bezier(.2,.7,.2,1)`. Fragenwechsel: 24 px Slide + Fade. Reveal-Elemente: gestaffeltes Einrasten. `prefers-reduced-motion` respektieren. Ken-Burns nur Hero + Interstitials (30 s Loop, subtil).
 
 **Bilder (KI-generiert, whiteboard CLI, --style raw):**
-1. `hero.webp` (16:9, 2K): dunkle moderne Werkstatt, Handwerker mit Tablet, orange Arbeitslicht, kinematisch.
-2. `phase1.webp` / `phase2.webp` / `phase3.webp` (16:9): Motivreihe — Werkbank-Detail / Zeit-Motiv / Zukunftswerkstatt.
-3. `og.png` (1200×630): Marken-Karte „Wo steht Ihr Betrieb wirklich?" + Gauge-Motiv.
-Alle dunkel abgestimmt, damit Text darüber funktioniert. WebP ≤ 300 KB je Bild.
+1. `hero.jpg` (16:9, 2K): dunkle moderne Werkstatt, Handwerker mit Tablet, orange Arbeitslicht, kinematisch.
+2. `phase1.jpg` / `phase2.jpg` / `phase3.jpg` (16:9): Motivreihe — Werkbank-Detail / Zeit-Motiv / Zukunftswerkstatt.
+3. `og.jpg` (1200×630): Marken-Karte „Wo steht Ihr Betrieb wirklich?" + Gauge-Motiv.
+Alle dunkel abgestimmt, damit Text darüber funktioniert. Optimierte JPEGs ≤ 300 KB je Bild (WebP-Konvertierung optional als späteres Feintuning; sips auf macOS schreibt kein WebP).
 
 **Stack:** Eine `public/index.html`, handgeschriebenes CSS im `<style>`-Block (kein Tailwind, kein CDN-JS), Vanilla JS. Fonts via Google Fonts (preconnect + `display=swap`). Alles andere self-contained.
 
@@ -199,9 +199,9 @@ Buttons: „Karte teilen" (navigator.share mit File; Fallback Download), „PNG 
 - **Prefetch-Regel:** Beim Beantworten von Frage n−1 einer Phase → `POST generate-questions` mit `partial: true` und allen bis dahin vorhandenen Antworten. Die Antwort auf die letzte Frage ändert den Prefetch nicht (bewusster Trade-off).
 - **Events:** Meilenstein-Pings an `/.netlify/functions/track-pageview` (bestehende Signatur, fire-and-forget): `start`, `phase1..3_done`, `result`, `share_card`, `cta_click`.
 - **CORS/Headers:** wie bisher. `netlify.toml`: Timeouts beibehalten; order-premium-Functions NICHT anfassen (chirurgisch — bleiben ungenutzt liegen).
-- **SEO/OG:** Title „KI-Betriebs-Check für Handwerker | Wo steht Ihr Betrieb? | Synclaro", neue Description, `og:image` → `/assets/og.png`, JSON-LD aktualisiert.
+- **SEO/OG:** Title „KI-Betriebs-Check für Handwerker | Wo steht Ihr Betrieb? | Synclaro", neue Description, `og:image` → `/assets/og.jpg`, JSON-LD aktualisiert.
 - **A11y:** Fokus-Ringe (orange), aria-live für Fragenwechsel, Kontraste ≥ 4.5:1, komplette Tastatur-Bedienbarkeit, `prefers-reduced-motion`.
-- **Performance:** LCP < 2,5 s (Hero-Bild `fetchpriority=high`, WebP), kein Layout-Shift beim Fragenwechsel (fixe Min-Höhen), HTML+CSS+JS < 200 KB ohne Bilder.
+- **Performance:** LCP < 2,5 s (Hero-Bild `fetchpriority=high`, optimiertes JPEG), kein Layout-Shift beim Fragenwechsel (fixe Min-Höhen), HTML+CSS+JS < 200 KB ohne Bilder.
 
 ## 7. Akzeptanzkriterien (Selbst-Verifikation vor Sichtung)
 

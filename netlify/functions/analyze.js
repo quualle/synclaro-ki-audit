@@ -10,13 +10,12 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 
-// Modell-Hinweis: Die Spec (§5.3) verlangt "gpt-5.6-terra". Dieses Modell existiert
-// nicht auf dem verfügbaren OpenAI-Account (404, siehe models.list()). Per
-// Team-Lead-Vorgabe (Korrektur nach eigener API-Prüfung) wird gpt-5.5 verwendet —
-// aktuell das verfügbare Maximum für diesen Key, Qualität zählt hier (ein Call pro
-// Check, Latenz wird von der Mess-Sequenz im Frontend maskiert). gpt-5.5 erzwingt
-// jedoch temperature=1 (kein 0.6 möglich) — daher wird der Parameter für dieses
-// Modell weggelassen, siehe runAnalysis().
+// Modell-Hinweis (Stand 05.07.2026): Spec-Wunsch "gpt-5.6-terra" existiert auf diesem
+// OpenAI-Key nicht (Maximum: gpt-5.5). gpt-5.5 brauchte im E2E-Test ~27-28 s — über dem
+// harten 26-s-Limit synchroner Netlify-Functions. Deshalb gpt-5.4 mit
+// reasoning_effort "low": im E2E-Test ~20 s, 45/45 Schema-Checks grün (scripts/
+// test-functions.mjs). temperature wird weggelassen — GPT-5.x-Reasoning-Modelle
+// erlauben nur den Default (1).
 const MODEL = "gpt-5.4";
 
 // §5.4 Benchmark-Engine — deterministisch, NICHT vom LLM. µ pro Branche, σ=16 global.
@@ -133,7 +132,7 @@ function buildUserPrompt(companyProfile, answers) {
   }
   userPrompt += `\nALLE ANTWORTEN AUS DEM ADAPTIVEN CHECK (${answers.length} Fragen):\n`;
   answers.forEach((a, i) => {
-    const answerText = Array.isArray(a.answer) ? a.answer.join(", ") : a.answer;
+    const answerText = a.answerLabel || (Array.isArray(a.answer) ? a.answer.join(", ") : a.answer);
     userPrompt += `${i + 1}. ${a.questionLabel}: ${answerText}\n`;
   });
   return userPrompt;

@@ -53,7 +53,7 @@
     :root {
       --bg0:#0B0B0C; --bg1:#131316; --card:#1A1A1E;
       --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
-      --ink:#F4F3F0; --ink2:#A8A6A0; --ink3:#6E6C66;
+      --ink:#F4F3F0; --ink2:#A8A6A0; --ink3:#85837D;
       --accent:#FF4F00; --accent-soft:rgba(255,79,0,.12);
       --bad:#E5484D; --mid:#F5A524; --good:#46A758;
       --paper:#F7F5F1; --paper-ink:#17161A;
@@ -672,7 +672,7 @@
       <div class="wrap">
         <div class="bench-head">
           <p class="eyebrow" style="margin-bottom:14px">Branchen-Benchmark</p>
-          <div class="bench-pct">Besser als <span class="accent"><span id="benchPct">0</span> %</span></div>
+          <div class="bench-pct">Besser als rund <span class="accent"><span id="benchPct">0</span> %</span></div>
           <p class="bench-sub" id="benchSub">vergleichbarer Betriebe</p>
         </div>
         <div class="dist"><svg id="distSvg" viewBox="0 0 640 220" preserveAspectRatio="xMidYMid meet"></svg></div>
@@ -1009,7 +1009,7 @@
     }
 
     function buildPrevAnswers(){
-      return state.answers.map(a=>({questionId:a.questionId,questionLabel:a.questionLabel,questionType:a.questionType,answer:a.answer,phase:a.phase}));
+      return state.answers.map(a=>({questionId:a.questionId,questionLabel:a.questionLabel,questionType:a.questionType,answer:a.answer,answerLabel:a.label,phase:a.phase}));
     }
 
     async function fetchPhase(stepNumber, partial){
@@ -1560,7 +1560,7 @@
       ctx.fillText((r.level||"").toUpperCase(), W/2, 540);
 
       ctx.fillStyle="#F4F3F0"; ctx.font="600 40px 'Inter',sans-serif";
-      ctx.fillText("Besser als "+b.percentile+" % vergleichbarer Betriebe", W/2, 640);
+      ctx.fillText("Besser als rund "+b.percentile+" % vergleichbarer Betriebe", W/2, 640);
 
       drawMiniDist(ctx, total, b, 140, 690, W-280, 150);
 
@@ -1622,7 +1622,7 @@
     function shareText(){
       const total = state.result.scores.total.percent;
       const pct = state.benchmark.percentile;
-      return "Mein Betrieb im KI-Betriebs-Check: "+total+"/100 — besser als "+pct+" % vergleichbarer Betriebe. Jetzt selbst testen: "+SITE_URL;
+      return "Mein Betrieb im KI-Betriebs-Check: "+total+"/100 — besser als rund "+pct+" % vergleichbarer Betriebe. Jetzt selbst testen: "+SITE_URL;
     }
     async function shareCard(){
       track("share_card");
