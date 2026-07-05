@@ -120,10 +120,10 @@
     /* Hero */
     .hero{position:relative;min-height:100vh;min-height:100dvh;display:flex;align-items:center;overflow:hidden}
     .hero-bg{position:absolute;inset:0;z-index:0;background:#0B0B0C}
-    .hero-bg img{width:100%;height:100%;object-fit:cover;opacity:.5;animation:kenburns 34s ease-in-out infinite alternate}
+    .hero-bg img{width:100%;height:100%;object-fit:cover;opacity:.62;animation:kenburns 34s ease-in-out infinite alternate}
     @keyframes kenburns{from{transform:scale(1.04) translate(0,0)}to{transform:scale(1.14) translate(-1.5%,-2%)}}
     .hero-bg::after{content:"";position:absolute;inset:0;
-      background:linear-gradient(180deg,rgba(11,11,12,.62) 0%,rgba(11,11,12,.5) 40%,rgba(11,11,12,.92) 100%),
+      background:linear-gradient(180deg,rgba(11,11,12,.48) 0%,rgba(11,11,12,.36) 40%,rgba(11,11,12,.9) 100%),
       radial-gradient(120% 80% at 78% 30%,rgba(255,79,0,.14),transparent 55%)}
     .hero-content{position:relative;z-index:2;padding:120px 0 64px;width:100%}
     .hero h1{font-family:var(--disp);font-weight:900;font-size:clamp(2.6rem,7vw,5.5rem);line-height:.98;letter-spacing:-.02em;max-width:15ch}
@@ -331,6 +331,29 @@
     .r-verdict{max-width:52ch;margin:26px auto 0;font-size:1.12rem;color:var(--ink2);line-height:1.55}
 
     .r-sec{padding:56px 0;border-top:1px solid var(--line)}
+
+    /* Top-CTA Strategiegespräch (direkt nach dem Score-Reveal) */
+    .r-cta-top{padding:10px 0 56px}
+    .cta-card{display:grid;grid-template-columns:1.5fr 1fr;gap:36px;align-items:center;background:linear-gradient(135deg,var(--card),#141418 70%);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:18px;padding:36px 40px;position:relative;overflow:hidden}
+    .cta-card::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(60% 120% at 100% 0%,rgba(255,79,0,.1),transparent 60%)}
+    .cta-card h3{font-family:var(--disp);font-weight:900;font-size:clamp(1.4rem,3vw,2rem);letter-spacing:-.015em;line-height:1.1;margin-top:12px}
+    .cta-lead{color:var(--ink2);margin-top:12px;max-width:52ch;line-height:1.55}
+    .cta-points{list-style:none;margin:20px 0 0;padding:0}
+    .cta-points li{position:relative;padding-left:26px;margin:9px 0;color:var(--ink2);font-family:var(--mono);font-size:.85rem;letter-spacing:.01em}
+    .cta-points li::before{content:"";position:absolute;left:0;top:5px;width:12px;height:7px;border-left:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(-45deg)}
+    .cta-action{text-align:center;position:relative;z-index:1}
+    .cta-action .btn{width:100%;justify-content:center}
+    .cta-note{margin-top:14px;font-family:var(--mono);font-size:.78rem;color:var(--ink3);line-height:1.7;letter-spacing:.02em}
+    @media(max-width:760px){.cta-card{grid-template-columns:1fr;padding:28px 22px;gap:24px}}
+
+    /* Consent (Steckbrief, vor der ersten Übermittlung) */
+    .consent{display:flex;gap:12px;align-items:flex-start;margin-top:26px;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:16px 18px;cursor:pointer;text-align:left}
+    .consent input{appearance:none;-webkit-appearance:none;flex-shrink:0;width:22px;height:22px;margin-top:1px;border:2px solid var(--ink3);border-radius:6px;background:transparent;cursor:pointer;position:relative;transition:all .15s var(--ease)}
+    .consent input:checked{background:var(--accent);border-color:var(--accent)}
+    .consent input:checked::after{content:"";position:absolute;left:5px;top:2px;width:6px;height:10px;border-right:2.5px solid #fff;border-bottom:2.5px solid #fff;transform:rotate(40deg)}
+    .consent span{font-size:.82rem;color:var(--ink2);line-height:1.55}
+    .consent a{color:var(--ink);text-decoration:underline;text-underline-offset:2px}
+    .btn[disabled],.skip-link[disabled]{opacity:.4;pointer-events:none}
     .r-sec h2{font-family:var(--disp);font-weight:800;font-size:clamp(1.4rem,3vw,2rem);letter-spacing:-.01em;margin-bottom:6px}
     .r-sec .r-lead{color:var(--ink2);margin-bottom:32px;max-width:56ch}
 
@@ -667,6 +690,27 @@
         <p class="r-verdict" id="verdictText"></p>
       </div>
     </div>
+
+    <section class="r-cta-top">
+      <div class="wrap">
+        <div class="cta-card">
+          <div class="cta-copy">
+            <p class="eyebrow">Der direkte Weg</p>
+            <h3 id="ctaTopTitle">Nehmen Sie Ihr Ergebnis mit ins Gespräch.</h3>
+            <p class="cta-lead">Marco Heer, Gründer von Synclaro, geht Ihr Messergebnis persönlich mit Ihnen durch — 30 Minuten, kostenlos und unverbindlich.</p>
+            <ul class="cta-points">
+              <li>Ihre Hebel aus diesem Check, vom KI-Experten geprüft</li>
+              <li>Die potenzialreichste Maßnahme für Ihren Betrieb</li>
+              <li>Ehrliche Einschätzung: wo KI sich bei Ihnen zuerst lohnt</li>
+            </ul>
+          </div>
+          <div class="cta-action">
+            <a class="btn btn-primary" id="ctaCalTop" href="https://cal.com/marcoheer/ki-erstgespraech" target="_blank" rel="noopener">Strategiegespräch buchen</a>
+            <p class="cta-note">30 Min · kostenlos · unverbindlich<br>Ihr Ergebnis wird zur Vorbereitung automatisch übergeben</p>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <section class="r-sec">
       <div class="wrap">
@@ -1055,8 +1099,11 @@
       } else if(item.type==="vorname"){
         html += '<div class="q-text"><input type="text" id="vornameInput" placeholder="Ihr Vorname (optional)" autocomplete="given-name" value="'+esc(state.profile.vorname||"")+'" '
               + 'style="width:100%;margin-top:28px;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:18px;color:var(--ink);font-family:var(--text);font-size:1.05rem"></div>';
-        html += '<div class="q-actions"><button class="btn btn-primary" id="vornameNext">Los geht’s</button>'
-              + '<button class="skip-link" id="vornameSkip">Überspringen</button></div>';
+        html += '<label class="consent"><input type="checkbox" id="consentChk"'+(state.profile.consent?' checked':'')+'>'
+              + '<span>Ich bin einverstanden, dass meine Angaben zur automatischen Auswertung an unseren KI-Dienstleister OpenAI (Server in den USA) übermittelt werden. Buche ich später ein Strategiegespräch, wird mein Ergebnis zur Vorbereitung in die Terminbuchung (Cal.com) übernommen. Die Auswertung läuft anonym — bitte keine Namen von Kunden oder Mitarbeitern in Freitextfelder schreiben.</span></label>';
+        html += '<p style="margin:10px 2px 0;font-size:.78rem"><a href="https://synclaro.de/datenschutz" target="_blank" rel="noopener" style="color:var(--ink2);text-decoration:underline;text-underline-offset:2px">Datenschutzhinweise lesen</a></p>';
+        html += '<div class="q-actions"><button class="btn btn-primary" id="vornameNext"'+(state.profile.consent?'':' disabled')+'>Los geht’s</button>'
+              + '<button class="skip-link" id="vornameSkip"'+(state.profile.consent?'':' disabled')+'>Überspringen</button></div>';
       }
       html += '</div>';
       qhost.innerHTML = html;
@@ -1073,9 +1120,18 @@
       } else if(item.type==="vorname"){
         const inp = $("#vornameInput");
         inp.focus();
-        $("#vornameNext").addEventListener("click",()=>{ state.profile.vorname = inp.value.trim(); advanceSteckbrief(); });
-        $("#vornameSkip").addEventListener("click",()=>{ state.profile.vorname=""; advanceSteckbrief(); });
-        inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); state.profile.vorname=inp.value.trim(); advanceSteckbrief(); } });
+        const chk = $("#consentChk");
+        chk.addEventListener("change",()=>{
+          state.profile.consent = chk.checked;
+          if(chk.checked && !state.profile.consentTs){ state.profile.consentTs = new Date().toISOString(); }
+          if(chk.checked){ $("#vornameNext").removeAttribute("disabled"); $("#vornameSkip").removeAttribute("disabled"); }
+          else { $("#vornameNext").setAttribute("disabled",""); $("#vornameSkip").setAttribute("disabled",""); }
+          saveState();
+        });
+        const guard = () => { if(!state.profile.consent){ toast("Bitte bestätigen Sie kurz die Datenverarbeitung."); return false; } return true; };
+        $("#vornameNext").addEventListener("click",()=>{ if(!guard()) return; state.profile.vorname = inp.value.trim(); advanceSteckbrief(); });
+        $("#vornameSkip").addEventListener("click",()=>{ if(!guard()) return; state.profile.vorname=""; advanceSteckbrief(); });
+        inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); if(!guard()) return; state.profile.vorname=inp.value.trim(); advanceSteckbrief(); } });
       }
       saveState();
     }
@@ -1398,6 +1454,22 @@
     /* ====================================================================
        RENDER: RESULT
        ==================================================================== */
+    function calLink(){
+      let u = "https://cal.com/marcoheer/ki-erstgespraech?utm_source=ki-check&utm_medium=result";
+      try{
+        const r = state.result, b = state.benchmark;
+        if(r && r.scores && r.scores.total){
+          let notes = "Kommt über den KI-Readiness-Check (ki-check.synclaro.de) · Ergebnis: "+r.scores.total.percent+"/100"
+                    + (r.level ? " ("+r.level+")" : "");
+          if(b && typeof b.percentile === "number") notes += " · besser als rund "+b.percentile+" %";
+          notes += " · "+(state.profile.branche||"Branche unbekannt")+", "+(state.profile.mitarbeiter||"?")+" Mitarbeiter";
+          u += "&notes="+encodeURIComponent(notes);
+        }
+        if(state.profile.vorname) u += "&name="+encodeURIComponent(state.profile.vorname);
+      }catch(e){}
+      return u;
+    }
+
     function renderResult(){
       const r = state.result, b = state.benchmark;
       const total = r.scores.total.percent;
@@ -1406,6 +1478,12 @@
       animateNumber($("#scoreNum"), 0, total, 1400);
       $("#levelBadge").textContent = r.level || "—";
       $("#verdictText").textContent = r.gesamteinschaetzung || "";
+
+      if(state.profile.vorname){
+        $("#ctaTopTitle").textContent = state.profile.vorname+", nehmen Sie Ihr Ergebnis mit ins Gespräch.";
+      }
+      $("#ctaCalTop").href = calLink();
+      $("#ctaCal").href = calLink();
 
       animateNumber($("#benchPct"), 0, b.percentile, 1200);
       $("#benchSub").textContent = "vergleichbarer Betriebe in Ihrer Branche";
@@ -1535,7 +1613,7 @@
       const W=1080,H=1350;
       ctx.fillStyle="#0B0B0C"; ctx.fillRect(0,0,W,H);
       const rg = ctx.createRadialGradient(W/2,260,60,W/2,260,720);
-      rg.addColorStop(0,"rgba(255,79,0,.14)"); rg.addColorStop(1,"rgba(255,79,0,0)");
+      rg.addColorStop(0,"rgba(255,79,0,.2)"); rg.addColorStop(1,"rgba(255,79,0,0)");
       ctx.fillStyle=rg; ctx.fillRect(0,0,W,H);
 
       const now = new Date();
@@ -1544,7 +1622,7 @@
       ctx.textAlign="left"; ctx.fillStyle="#A8A6A0";
       ctx.font="500 26px 'IBM Plex Mono',monospace";
       ctx.fillText("SYNCLARO · KI-BETRIEBS-CHECK", 80, 110);
-      ctx.textAlign="right"; ctx.fillStyle="#6E6C66";
+      ctx.textAlign="right"; ctx.fillStyle="#A8A6A0";
       ctx.fillText(dstr, W-80, 110);
       ctx.strokeStyle="rgba(255,255,255,.1)"; ctx.lineWidth=1;
       ctx.beginPath(); ctx.moveTo(80,140); ctx.lineTo(W-80,140); ctx.stroke();
@@ -1553,7 +1631,7 @@
       ctx.fillStyle="#F4F3F0";
       ctx.font="900 300px 'Archivo',sans-serif";
       ctx.fillText(String(total), W/2-40, 470);
-      ctx.fillStyle="#6E6C66"; ctx.font="500 60px 'IBM Plex Mono',monospace";
+      ctx.fillStyle="#A8A6A0"; ctx.font="500 60px 'IBM Plex Mono',monospace";
       ctx.fillText("/100", W/2+150, 460);
 
       ctx.fillStyle="#FF4F00"; ctx.font="800 44px 'Archivo',sans-serif";
@@ -1573,7 +1651,7 @@
         ctx.textAlign="right"; ctx.fillStyle="#F4F3F0";
         ctx.fillText(sc+"/100", W-80, cy-14);
         const bx=80, bw=W-160, bh=14;
-        ctx.fillStyle="#1A1A1E"; roundRect(ctx,bx,cy,bw,bh,7); ctx.fill();
+        ctx.fillStyle="#2B2B31"; roundRect(ctx,bx,cy,bw,bh,7); ctx.fill();
         ctx.fillStyle="#FF4F00"; roundRect(ctx,bx,cy,bw*(sc/100),bh,7); ctx.fill();
         const ax=bx+bw*(b.branchenMittel/100);
         ctx.fillStyle="#F4F3F0"; ctx.fillRect(ax-1.5,cy-5,3,bh+10);
@@ -1586,7 +1664,7 @@
 
       ctx.fillStyle="#FF4F00"; ctx.font="800 40px 'Archivo',sans-serif";
       ctx.fillText("ki-check.synclaro.de", W/2, H-120);
-      ctx.fillStyle="#6E6C66"; ctx.font="500 24px 'IBM Plex Mono',monospace";
+      ctx.fillStyle="#98968F"; ctx.font="500 24px 'IBM Plex Mono',monospace";
       ctx.fillText("Selbsteinschätzung · 200+ Vergleichsanalysen", W/2, H-70);
     }
 
@@ -1746,9 +1824,10 @@
       $("#btnBack").addEventListener("click",goBack);
       $("#btnRestart").addEventListener("click",()=>{ clearSaved(); location.href = location.pathname + (DEMO?"?demo=1":""); });
       $("#btnShareCard").addEventListener("click",shareCard);
-      $("#btnShareCard2").addEventListener("click",()=>{ track("cta_click"); shareCard(); });
+      $("#btnShareCard2").addEventListener("click",()=>{ shareCard(); });
+      $("#ctaCalTop").addEventListener("click",()=>track("cta_click_top"));
       $("#btnDownloadCard").addEventListener("click",()=>downloadCard(null));
-      $("#ctaCal").addEventListener("click",()=>track("cta_click"));
+      $("#ctaCal").addEventListener("click",()=>track("cta_click_bottom"));
       document.querySelectorAll("[data-sh]").forEach(b=>b.addEventListener("click",()=>textShare(b.dataset.sh)));
 
       if(!DEMO){
