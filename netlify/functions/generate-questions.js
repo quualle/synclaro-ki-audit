@@ -1,5 +1,6 @@
-// Synclaro KI-Readiness-Check — Adaptive Fragen-Generierung
-// Generiert die nächste Runde individueller Fragen basierend auf bisherigen Antworten
+// Synclaro KI-Readiness-Check v3 — Adaptive Fragen-Generierung (Prüfstand-Neubau)
+// Generiert genau EINE Fragerunde (Phase) im Ein-Frage-pro-Screen-Format.
+// Unterstützt Prefetch (partial:true) und erzwingt harte Phasen-Grenzen serverseitig.
 
 const OpenAI = require("openai");
 
@@ -9,94 +10,49 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 
-const SYSTEM_PROMPT = `Du bist der KI-Assessment-Berater von Synclaro. Du führst einen adaptiven KI-Readiness-Check für Betriebe durch.
+// Modell-Hinweis: Die Spec (§5.2) verlangt "gpt-5.6-luna". Dieses Modell existiert
+// nicht auf dem verfügbaren OpenAI-Account (404). Verfügbare Modelle wurden per
+// openai.models.list() geprüft. gpt-5.4-mini wurde gewählt: unterstützt temperature
+// (gpt-5.5/gpt-5-mini erzwingen temperature=1) und ist mit ~4.3s spürbar schneller
+// als gpt-5.4/gpt-5.5 (~6-10s) — passend zum Latenz-Anspruch dieser Function.
+const MODEL = "gpt-5.4-mini";
 
-DEINE AUFGABE:
-Du erhältst das Unternehmensprofil und alle bisherigen Antworten. Generiere die nächste Runde von 3-5 gezielten Fragen, die tiefer in die relevantesten Bereiche eindringen.
+const SYSTEM_PROMPT = `Du bist der KI-Diagnose-Berater von Synclaro und führst einen adaptiven Betriebs-Check für Handwerks- und KMU-Betriebe durch. Der Check hat GENAU 3 Fragerunden (Phasen). Du generierst jeweils die nächste Phase.
 
-DOMAIN-ABDECKUNG (decke im Laufe des Assessments alle ab):
+PHASEN-DRAMATURGIE (verbindlich):
+- Phase 1 „Ihr Betrieb heute": IST-Aufnahme. Mischung aus: wie laufen Kernprozesse (Anfragen, Angebote, Doku, Zeiterfassung), welche digitalen Werkzeuge existieren, wird bereits KI genutzt (welche Tools, durch wen, wofür). 4 Fragen.
+- Phase 2 „Wo Zeit verloren geht": Bohre gezielt dort, wo Phase 1 Schwächen, Widersprüche oder spannende Signale zeigt. Frage nach konkreten Zeitfressern, Fehlerquellen, Personalabhängigkeit, Doppelarbeit. Mindestens eine Frage MUSS sich erkennbar auf eine konkrete vorherige Antwort beziehen. 3-4 Fragen.
+- Phase 3 „Ihr KI-Hebel": Zukunft. Was soll KI im Betrieb bewirken, Budgetrahmen, Zeithorizont, Bedenken (Datenschutz, Team-Akzeptanz), größter Wunsch als Freitext. 3 Fragen. Setze isLastStep=true.
 
-1. DIGITALISIERUNGSSTAND
-   - Kundenanfragen-Management (CRM, Ticketing, Nachverfolgung)
-   - Angebotserstellung (manuell vs. automatisiert)
-   - Projektdokumentation (Papier vs. digital)
-   - Wissensmanagement & Wissenstransfer
-   - Rechnungsstellung & Buchhaltung
-   - Zeiterfassung
+FRAGE-DESIGN (fürs Ein-Frage-pro-Screen-UI):
+1. Jede Frage muss ohne Kontext der anderen verständlich sein — sie steht allein auf dem Bildschirm.
+2. Bevorzugte Typen: "radio" mit 3-5 griffigen Optionen, "scale" (Bewertung 1-4 mit scaleLabels für beide Pole), "checkbox" (3-6 Optionen). Maximal EINE "textarea"-Frage pro Phase, IMMER required=false, mit einladendem placeholder.
+3. Optionstexte konkret und alltagsnah formulieren („Zettel und Zuruf", „WhatsApp-Gruppe", „Software mit App"), nie abstrakt.
+4. Sprache der Branche verwenden (Baustelle, Werkstatt, Praxis, Objekt …). Sie-Form. Kein Fachjargon.
+5. Keine Frage wiederholen, die inhaltlich schon beantwortet ist. Wenn Antworten aus der laufenden Runde fehlen (Vorab-Generierung), plane robust: frage nichts, was direkt davon abhängt.
+6. Radio-Optionen mit Bewertungscharakter: value "1" bis "4" (schwach bis stark). Scale: value 1-4.
+7. Jede Frage bekommt eine eindeutige snake_case id.
 
-2. KOMMUNIKATION & PROZESSE
-   - Büro-Außendienst/Baustelle-Kommunikation
-   - Materialbeschaffung & Lagerverwaltung
-   - Personalabhängigkeit / Schlüsselpersonen-Risiko
-   - Terminplanung & Koordination
-
-3. KI-NUTZUNG (besonders wichtig — hier tief bohren!)
-   - Welche KI-Tools werden genutzt? (ChatGPT, Claude, Copilot, branchenspezifische KI, keine)
-   - WER nutzt KI? (Chef, Büro, Außendienst, Produktion, niemand)
-   - Wie oft und wofür konkret?
-   - Wo spart KI bereits Zeit? Wo enttäuscht sie?
-   - KI-Kompetenz: Chef vs. Team — wer ist weiter?
-   - Wurden schon KI-Schulungen gemacht?
-
-4. KI-BEREITSCHAFT & ERWARTUNGEN
-   - Budget-Vorstellung für Digitalisierung/KI
-   - Zeitrahmen für Veränderungen
-   - Was erhoffen sie sich von KI?
-   - Welche Bedenken/Ängste gibt es? (Datenschutz, Jobverlust, Komplexität)
-
-5. SCHMERZPUNKTE & HERAUSFORDERUNGEN
-   - Größte Zeitfresser im Alltag
-   - Häufigste Fehlerquellen
-   - Was würden sie sofort automatisieren, wenn sie könnten?
-   - Fachkräftemangel / Einarbeitungsprobleme
-
-REGELN FÜR DIE FRAGESTELLUNG:
-1. Erste Runde (stepNumber=1): Starte mit einer Mischung aus Digitalisierung und KI-Nutzung. Frage nach konkreten Tools, Erfahrungen und den größten Zeitfressern.
-2. Folgende Runden: Bohre dort nach, wo Antworten auf Schwächen, Chancen oder interessante Muster hindeuten.
-3. Wenn jemand KI bereits nutzt: Frage nach Details — welche Tools, wie oft, wofür, was funktioniert, was nicht.
-4. Wenn jemand keine KI nutzt: Frage nach Erwartungen, Bedenken, manuellen Prozessen die sie frustrieren.
-5. KEINE Frage stellen, die inhaltlich bereits beantwortet wurde.
-6. MISCHE Fragetypen: Nicht nur radio! Nutze 1-2 textarea-Fragen für qualitative Einblicke pro Runde.
-7. 3-5 Fragen pro Runde.
-8. Nach 3-5 Runden (wenn alle Domains ausreichend abgedeckt): Setze isLastStep auf true. In der letzten Runde fokussiere auf Erwartungen und Bereitschaft.
-9. Jede Frage MUSS eine eindeutige snake_case ID haben.
-10. Bei radio-Fragen mit Bewertungscharakter: Verwende values "1" bis "4" (niedrig bis hoch).
-11. Passe die Sprache der Branche an (z.B. "Baustelle" für Bau, "Werkstatt" für KFZ, "Praxis" für Gesundheit).
-
-PROGRESS-STEUERUNG:
-- Runde 1: progress = 20
-- Runde 2: progress = 40
-- Runde 3: progress = 60
-- Runde 4: progress = 80
-- Letzte Runde: progress = 95
-
-TONALITÄT:
-- Fragen wie ein erfahrener Berater stellen, nicht wie ein Formular
-- Verständlich, ohne Fachjargon
-- Bei textarea-Fragen: Platzhalter als Inspiration mitgeben
-- Kein "Du", immer "Sie"
+ZUSÄTZLICH lieferst du pro Runde:
+- "transitionInsight": 2 Sätze persönlicher Befund über die bisherigen Antworten dieses Betriebs — wie ein Berater, der laut denkt. Konkret auf mindestens eine Antwort eingehen, eine Spannung oder einen Hebel benennen. KEINE Plattitüde. (Bei Phase 1: Befund aus dem Steckbrief.)
+- "phaseTitle" und "phaseIntro" (1 Satz, warum diese Phase jetzt kommt).
 
 AUSGABEFORMAT (strikt JSON):
 {
-  "stepTitle": "Kurzer Titel für diesen Fragenblock",
-  "stepDescription": "Ein erklärender Satz, warum diese Fragen jetzt kommen.",
+  "phaseTitle": "…",
+  "phaseIntro": "…",
+  "transitionInsight": "…",
   "questions": [
-    {
-      "id": "eindeutige_snake_case_id",
-      "type": "radio|checkbox|textarea|select",
-      "label": "Die Frage",
-      "required": true,
-      "placeholder": "Nur für textarea — Beispielantwort",
-      "options": [
-        {"value": "wert", "label": "Anzeige-Text"}
-      ]
-    }
+    {"id": "…", "type": "radio|scale|checkbox|textarea", "label": "…", "required": true,
+     "placeholder": "nur textarea", "scaleLabels": {"low": "…", "high": "…"},
+     "options": [{"value": "…", "label": "…"}]}
   ],
-  "progress": 40,
   "isLastStep": false
 }`;
 
-function buildUserPrompt(companyProfile, previousAnswers, stepNumber) {
+const VALID_TYPES = new Set(["radio", "scale", "checkbox", "textarea"]);
+
+function buildUserPrompt(companyProfile, previousAnswers, stepNumber, partial) {
   let prompt = `UNTERNEHMENSPROFIL:\n`;
   prompt += `- Branche: ${companyProfile.branche || "nicht angegeben"}\n`;
   prompt += `- Mitarbeiter: ${companyProfile.mitarbeiter || "nicht angegeben"}\n`;
@@ -105,19 +61,65 @@ function buildUserPrompt(companyProfile, previousAnswers, stepNumber) {
   if (companyProfile.vorname) {
     prompt += `- Vorname: ${companyProfile.vorname}\n`;
   }
-  prompt += `\nAKTUELLE RUNDE: ${stepNumber}\n\n`;
+  prompt += `\nAKTUELLE RUNDE (Phase): ${stepNumber}\n\n`;
 
   if (previousAnswers && previousAnswers.length > 0) {
     prompt += `BISHERIGE ANTWORTEN:\n`;
     previousAnswers.forEach((a) => {
-      const answerText = Array.isArray(a.answer) ? a.answer.join(", ") : a.answer;
+      const answerText = a.answerLabel || (Array.isArray(a.answer) ? a.answer.join(", ") : a.answer);
       prompt += `- ${a.questionLabel}: ${answerText}\n`;
     });
     prompt += `\n`;
   }
 
-  prompt += `Generiere jetzt die nächste Fragenrunde.`;
+  if (partial) {
+    prompt += `HINWEIS: Die Antworten der laufenden Runde können unvollständig sein (Vorab-Generierung).\n\n`;
+  }
+
+  prompt += `Generiere jetzt Phase ${stepNumber}.`;
   return prompt;
+}
+
+function validateStepData(stepData) {
+  if (!stepData || typeof stepData !== "object") {
+    throw new Error("Antwort ist kein Objekt");
+  }
+  if (!Array.isArray(stepData.questions) || stepData.questions.length === 0) {
+    throw new Error("KI hat keine gültigen Fragen generiert");
+  }
+  for (const q of stepData.questions) {
+    if (!q.id || !q.type || !q.label) {
+      throw new Error("Frage ohne id/type/label");
+    }
+    if (!VALID_TYPES.has(q.type)) {
+      throw new Error(`Unbekannter Fragetyp: ${q.type}`);
+    }
+    if (q.type === "scale" && (!q.scaleLabels || !q.scaleLabels.low || !q.scaleLabels.high)) {
+      throw new Error("scale-Frage ohne scaleLabels");
+    }
+  }
+}
+
+async function generateStep(openai, userPrompt) {
+  const completion = await openai.chat.completions.create({
+    model: MODEL,
+    messages: [
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "user", content: userPrompt },
+    ],
+    max_completion_tokens: 2000,
+    temperature: 0.6,
+    response_format: { type: "json_object" },
+  });
+
+  const content = completion.choices[0]?.message?.content;
+  if (!content) {
+    throw new Error("Keine Antwort vom KI-Modell");
+  }
+
+  const stepData = JSON.parse(content);
+  validateStepData(stepData);
+  return stepData;
 }
 
 exports.handler = async (event) => {
@@ -134,7 +136,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { companyProfile, previousAnswers, stepNumber } = JSON.parse(event.body);
+    const { companyProfile, previousAnswers, stepNumber, partial } = JSON.parse(event.body);
 
     if (!companyProfile) {
       return {
@@ -153,28 +155,24 @@ exports.handler = async (event) => {
     }
 
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const step = stepNumber || 1;
+    const userPrompt = buildUserPrompt(companyProfile, previousAnswers || [], step, !!partial);
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-5.4",
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: buildUserPrompt(companyProfile, previousAnswers || [], stepNumber || 1) },
-      ],
-      max_completion_tokens: 1500,
-      temperature: 0.6,
-      response_format: { type: "json_object" },
-    });
-
-    const content = completion.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error("Keine Antwort vom KI-Modell");
+    let stepData;
+    try {
+      stepData = await generateStep(openai, userPrompt);
+    } catch (firstErr) {
+      console.error("Fragen-Generierung 1. Versuch fehlgeschlagen:", firstErr);
+      // Ein automatischer Retry bei API-/Parse-Fehler (kurzer Backoff)
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      stepData = await generateStep(openai, userPrompt);
     }
 
-    const stepData = JSON.parse(content);
-
-    // Validierung
-    if (!stepData.questions || !Array.isArray(stepData.questions) || stepData.questions.length === 0) {
-      throw new Error("KI hat keine gültigen Fragen generiert");
+    // Hard-Enforcement unabhängig vom LLM: ab Phase 3 immer isLastStep=true
+    if (step >= 3) {
+      stepData.isLastStep = true;
+    } else {
+      stepData.isLastStep = !!stepData.isLastStep;
     }
 
     // internalNotes nicht ans Frontend senden
