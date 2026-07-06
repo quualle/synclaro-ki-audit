@@ -697,7 +697,7 @@
           <div class="cta-copy">
             <p class="eyebrow">Der direkte Weg</p>
             <h3 id="ctaTopTitle">Nehmen Sie Ihr Ergebnis mit ins Gespräch.</h3>
-            <p class="cta-lead">Synclaro bietet Betrieben bis 100 Mitarbeitern ein kostenloses 30-minütiges Strategiegespräch mit unseren KI-Experten. Dabei prüfen wir gemeinsam, wie Sie die im Check erkannten Potenziale am besten in Ihrem Betrieb umsetzen.</p>
+            <p class="cta-lead">Synclaro bietet Betrieben bis 100 Mitarbeitern ein kostenloses 20-minütiges Strategiegespräch mit unseren KI-Experten. Dabei prüfen wir gemeinsam, wie Sie die im Check erkannten Potenziale am besten in Ihrem Betrieb umsetzen.</p>
             <ul class="cta-points">
               <li>Ihre Hebel aus diesem Check, von unseren KI-Experten geprüft</li>
               <li>Die wirksamste Maßnahme für Ihren Betrieb</li>
@@ -705,8 +705,8 @@
             </ul>
           </div>
           <div class="cta-action">
-            <a class="btn btn-primary" id="ctaCalTop" href="https://cal.com/marcoheer/ki-erstgespraech" target="_blank" rel="noopener">Strategiegespräch buchen</a>
-            <p class="cta-note">30 Min · kostenlos · unverbindlich<br>Ihr Ergebnis wird zur Vorbereitung automatisch übergeben</p>
+            <a class="btn btn-primary" id="ctaCalTop" href="https://synclaro.de/kontakt?utm_source=ki-check&utm_medium=result" target="_blank" rel="noopener">Strategiegespräch anfragen</a>
+            <p class="cta-note">20 Min · kostenlos · unverbindlich<br>Anfrage über das Synclaro-Kontaktformular</p>
           </div>
         </div>
       </div>
@@ -788,10 +788,10 @@
       <div class="inner">
         <p class="eyebrow" style="margin-bottom:16px">Der nächste Schritt</p>
         <h2>Aus dem Messergebnis wird ein Plan.</h2>
-        <p>Im kostenlosen 30-Minuten-Strategiegespräch schauen wir gemeinsam auf Ihr Ergebnis und prüfen, wie Sie die erkannten Potenziale am besten in Ihrem Betrieb umsetzen.</p>
+        <p>Im kostenlosen 20-Minuten-Strategiegespräch schauen wir gemeinsam auf Ihr Ergebnis und prüfen, wie Sie die erkannten Potenziale am besten in Ihrem Betrieb umsetzen.</p>
         <div class="cta-row">
-          <a class="btn btn-primary" href="https://cal.com/marcoheer/ki-erstgespraech" target="_blank" rel="noopener" id="ctaCal">
-            Strategiegespräch buchen
+          <a class="btn btn-primary" href="https://synclaro.de/kontakt?utm_source=ki-check&utm_medium=result" target="_blank" rel="noopener" id="ctaCal">
+            Strategiegespräch anfragen
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </a>
           <button class="btn btn-ghost" id="btnShareCard2">Ergebnis teilen</button>
@@ -1100,7 +1100,7 @@
         html += '<div class="q-text"><input type="text" id="vornameInput" placeholder="Ihr Vorname (optional)" autocomplete="given-name" value="'+esc(state.profile.vorname||"")+'" '
               + 'style="width:100%;margin-top:28px;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:18px;color:var(--ink);font-family:var(--text);font-size:1.05rem"></div>';
         html += '<label class="consent"><input type="checkbox" id="consentChk"'+(state.profile.consent?' checked':'')+'>'
-              + '<span>Ich bin einverstanden, dass meine Angaben zur automatischen Auswertung an unseren KI-Dienstleister OpenAI (Server in den USA) übermittelt werden. Buche ich später ein Strategiegespräch, wird mein Ergebnis zur Vorbereitung in die Terminbuchung (Cal.com) übernommen. Die Auswertung läuft anonym — bitte keine Namen von Kunden oder Mitarbeitern in Freitextfelder schreiben.</span></label>';
+              + '<span>Ich bin einverstanden, dass meine Angaben zur automatischen Auswertung an unseren KI-Dienstleister OpenAI (Server in den USA) übermittelt werden. Die Auswertung läuft anonym — bitte keine Namen von Kunden oder Mitarbeitern in Freitextfelder schreiben.</span></label>';
         html += '<p style="margin:10px 2px 0;font-size:.78rem"><a href="https://synclaro.de/datenschutz" target="_blank" rel="noopener" style="color:var(--ink2);text-decoration:underline;text-underline-offset:2px">Datenschutzhinweise lesen</a></p>';
         html += '<div class="q-actions"><button class="btn btn-primary" id="vornameNext"'+(state.profile.consent?'':' disabled')+'>Los geht’s</button>'
               + '<button class="skip-link" id="vornameSkip"'+(state.profile.consent?'':' disabled')+'>Überspringen</button></div>';
@@ -1454,20 +1454,11 @@
     /* ====================================================================
        RENDER: RESULT
        ==================================================================== */
+    // Marco-Entscheid 06.07. (Revision Karte n_cal): CTA führt auf die bestehende
+    // Kontakt-Seite, keine Cal.com-Direktbuchung mehr. Nur Quell-Attribution, keine
+    // Ergebnis- oder Personendaten in der URL.
     function calLink(){
-      let u = "https://cal.com/marcoheer/ki-erstgespraech?utm_source=ki-check&utm_medium=result";
-      try{
-        const r = state.result, b = state.benchmark;
-        if(r && r.scores && r.scores.total){
-          let notes = "Kommt über den KI-Readiness-Check (ki-check.synclaro.de) · Ergebnis: "+r.scores.total.percent+"/100"
-                    + (r.level ? " ("+r.level+")" : "");
-          if(b && typeof b.percentile === "number") notes += " · besser als rund "+b.percentile+" %";
-          notes += " · "+(state.profile.branche||"Branche unbekannt")+", "+(state.profile.mitarbeiter||"?")+" Mitarbeiter";
-          u += "&notes="+encodeURIComponent(notes);
-        }
-        if(state.profile.vorname) u += "&name="+encodeURIComponent(state.profile.vorname);
-      }catch(e){}
-      return u;
+      return "https://synclaro.de/kontakt?utm_source=ki-check&utm_medium=result";
     }
 
     function renderResult(){

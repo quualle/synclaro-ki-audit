@@ -17,8 +17,8 @@ Ihre Antworten im Check sowie — freiwillig — Ihr Vorname zur persönlichen A
 **Speicherung**
 Ihre Antworten, Ihr freiwillig angegebener Vorname, der Zeitpunkt Ihrer Einwilligung und Ihr Ergebnis werden in Ihrem Browser gespeichert (Local Storage), damit Sie einen unterbrochenen Check fortsetzen können; Sie können dies durch Löschen Ihrer Browserdaten jederzeit entfernen. Auf unseren Servern speichern wir aus dem Check-Durchlauf keine personenbezogenen Profile; zur Reichweitenmessung erfassen wir technische Nutzungsereignisse (z. B. Seitenaufruf, Check abgeschlossen) ohne Bildung von Nutzerprofilen.
 
-**Terminbuchung**
-Wenn Sie im Anschluss ein Strategiegespräch buchen, geschieht das über den Dienst Cal.com; dabei wird Ihr Check-Ergebnis (Punktzahl, Branche, Betriebsgröße) zur Vorbereitung des Gesprächs in die Buchungsnotiz übernommen. Diese Übernahme erfolgt erst durch Ihren aktiven Klick auf den Buchungslink und ist vorvertragliche Maßnahme auf Ihre Anfrage (Art. 6 Abs. 1 lit. b DSGVO); Sie können die Notiz im Buchungsformular vor dem Absenden einsehen und löschen. Es gelten ergänzend die Datenschutzhinweise von Cal.com.
+**Kontaktaufnahme**
+Wenn Sie im Anschluss ein Strategiegespräch anfragen, führt der Link auf unser reguläres Kontaktformular (synclaro.de/kontakt); dabei werden keine Check-Daten automatisch übertragen. Für das Kontaktformular gelten die übrigen Abschnitte dieser Datenschutzerklärung.
 
 **Hosting**
 Die Seite wird bei Netlify, Inc. (USA) gehostet; dabei fallen übliche Server-Logdaten an (z. B. IP-Adresse, Zeitpunkt des Abrufs) — Rechtsgrundlage Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse am sicheren Betrieb).
