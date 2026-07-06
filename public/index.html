@@ -852,10 +852,9 @@
     function top10(branche){ return Math.round(benchMu(branche)+21); }
 
     // Steckbrief-Definition
-    const BRANCHEN = Object.keys(BENCHMARK);
     const STECKBRIEF = [
-      { id:"branche", label:"In welcher Branche arbeiten Sie?", kicker:"Steckbrief · 1 von 5", type:"grid",
-        options: BRANCHEN.map(b=>({value:b,label:b})) },
+      { id:"branche", label:"In welcher Branche sind Sie tätig?", kicker:"Steckbrief · 1 von 5", type:"text",
+        placeholder:"z. B. SHK, Physiotherapie-Praxis, Steuerkanzlei, Weinhandel …" },
       { id:"mitarbeiter", label:"Wie viele Mitarbeiter hat Ihr Betrieb?", kicker:"Steckbrief · 2 von 5", type:"radio",
         options:[{value:"1",label:"Nur ich"},{value:"2–5",label:"2–5"},{value:"6–10",label:"6–10"},{value:"11–20",label:"11–20"},{value:"21+",label:"Mehr als 20"}] },
       { id:"rolle", label:"Welche Rolle haben Sie im Betrieb?", kicker:"Steckbrief · 3 von 5", type:"radio",
@@ -1096,6 +1095,10 @@
         html += '<div class="q-options">';
         item.options.forEach(o=>{ html += chipHtml(o,"radio", state.profile[item.id]===o.value); });
         html += '</div>';
+      } else if(item.type==="text"){
+        html += '<div class="q-text"><input type="text" id="steckTextInput" placeholder="'+esc(item.placeholder||"")+'" maxlength="60" autocomplete="off" value="'+esc(state.profile[item.id]||"")+'" '
+              + 'style="width:100%;margin-top:28px;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:18px;color:var(--ink);font-family:var(--text);font-size:1.05rem"></div>';
+        html += '<div class="q-actions"><button class="btn btn-primary" id="steckTextNext">Weiter</button></div>';
       } else if(item.type==="vorname"){
         html += '<div class="q-text"><input type="text" id="vornameInput" placeholder="Ihr Vorname (optional)" autocomplete="given-name" value="'+esc(state.profile.vorname||"")+'" '
               + 'style="width:100%;margin-top:28px;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:18px;color:var(--ink);font-family:var(--text);font-size:1.05rem"></div>';
@@ -1117,6 +1120,17 @@
             setTimeout(()=>advanceSteckbrief(), 340);
           });
         });
+      } else if(item.type==="text"){
+        const inp = $("#steckTextInput");
+        inp.focus();
+        const submit = () => {
+          const val = inp.value.trim();
+          if(!val){ toast("Bitte kurz eintragen — auch eine grobe Bezeichnung reicht."); return; }
+          state.profile[item.id] = val;
+          advanceSteckbrief();
+        };
+        $("#steckTextNext").addEventListener("click", submit);
+        inp.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); submit(); } });
       } else if(item.type==="vorname"){
         const inp = $("#vornameInput");
         inp.focus();
@@ -1170,7 +1184,7 @@
     }
 
     function brancheFact(branche, mu, t10){
-      return branche+"-Betriebe starten im Schnitt bei <span class='mono'>"+mu+"/100</span> — die Top 10 % liegen über <span class='mono'>"+t10+"</span>.";
+      return "Betriebe wie Ihrer starten im Schnitt bei <span class='mono'>"+mu+"/100</span> — die Top 10 % liegen über <span class='mono'>"+t10+"</span>.";
     }
 
     let interShownAt = 0;
