@@ -2,6 +2,7 @@ node_modules/
 .heartbeat
 .watchdog.log
 .netlify/
+supabase/.temp/
 .env
 /tmp/
 logs/

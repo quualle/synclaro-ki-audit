@@ -1,4 +1,10 @@
-# Vorlage: Abschnitt für synclaro.de/datenschutz — „KI-Betriebs-Check"
+# ARCHIVIERT — frühere Datenschutz-Vorlage „KI-Betriebs-Check"
+
+> **Nicht verwenden.** Die Vorlage beschreibt den alten Check ohne
+> Kontaktformular und ist nicht mehr technisch zutreffend. Die aktuelle
+> Datenschutzergänzung liegt auf dem Branch `feat/ai-readiness-privacy` im
+> Repository `quualle/synclaro_website_astro`; die operativen Freigabepunkte
+> stehen in [`LAUNCH_READINESS.md`](./LAUNCH_READINESS.md).
 
 **Zweck:** Der Check (ki-check.synclaro.de) verlinkt seit v3 im Einwilligungs-Häkchen auf die Datenschutzerklärung. Dort sollte dieser Abschnitt ergänzt werden. Einbau über die Website-Session/Marco — NICHT Teil dieses Repos.
 

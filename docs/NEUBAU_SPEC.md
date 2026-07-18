@@ -1,4 +1,9 @@
-# KI-Readiness-Check v3 — Neubau-Spezifikation (Fable 5)
+# ARCHIVIERT — KI-Readiness-Check v3 — Neubau-Spezifikation (Fable 5)
+
+> **Nicht mehr umsetzen.** Diese historische Handwerks-Spezifikation wurde am
+> 18.07.2026 durch den branchenoffenen Lead-Funnel ersetzt. Der aktuelle,
+> prüfbare Stand und alle Launch-Gates stehen in
+> [`LAUNCH_READINESS.md`](./LAUNCH_READINESS.md).
 
 **Autor:** SPRINT-11F (Fable 5) · **Datum:** 05.07.2026 · **Branch:** `neubau/fable-v3`
 **Auftrag:** Marco, 05.07.: Komplett-Überarbeitung Design + Inhalt, 3/10 → mindestens 9/10. „Leute müssen das Gefühl haben, dass die Zeit vergeht wie nichts. Optisch eine absolute Mega-Hammer-Seite."
