@@ -1,6 +1,6 @@
 "use strict";
 
-const ASSESSMENT_VERSION = "2026-07-18.v2";
+const ASSESSMENT_VERSION = "2026-07-19.v3";
 
 const DIMENSIONS = {
   prozesse_daten: {

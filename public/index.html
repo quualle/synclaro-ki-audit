@@ -36,10 +36,9 @@
     "audience": { "@type": "BusinessAudience", "audienceType": "Selbstständige und kleine Unternehmen" }
   }
   </script>
-  <link rel="preload" as="image" href="/assets/og-ai-readiness.jpg" fetchpriority="high">
-  <link rel="stylesheet" href="/styles.css?v=20260718.4">
+  <link rel="stylesheet" href="/styles.css?v=20260719.1">
   <script src="/consent-state.js?v=20260718.1" defer></script>
-  <script src="/app.js?v=20260718.6" defer></script>
+  <script src="/app.js?v=20260719.1" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Zum Inhalt springen</a>
@@ -69,8 +68,9 @@
               Readiness testen
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
             </button>
-            <span class="hero-proof">Basisscore ohne Kontaktdaten</span>
+            <span class="hero-proof">Persönliche Auswertung · kostenlos</span>
           </div>
+          <p class="hero-data-note">Am Ende erforderlich: Name, Unternehmen und E-Mail · kein Rückruf · Newsletter nur freiwillig</p>
           <ul class="hero-meta" aria-label="Testdetails">
             <li><strong>ca. 4 Min.</strong><span>mobil optimiert</span></li>
             <li><strong>fester Score</strong><span>reproduzierbar</span></li>
@@ -121,10 +121,10 @@
           <h2>Erst Klarheit.<br>Dann der nächste Schritt.</h2>
         </div>
         <ol class="process-list">
-          <li><span>01</span><div><h3>Unternehmen einordnen</h3><p>Branche, Unternehmensgröße, Rolle und wichtigstes Ziel — ohne Kontaktdaten.</p></div></li>
+          <li><span>01</span><div><h3>Unternehmen einordnen</h3><p>Branche, Unternehmensgröße, Rolle und wichtigstes Ziel.</p></div></li>
           <li><span>02</span><div><h3>12 Kernfragen beantworten</h3><p>Eine Frage pro Bildschirm, ohne Fachjargon und ohne Fangfragen.</p></div></li>
-          <li><span>03</span><div><h3>Basisscore sofort sehen</h3><p>Gesamtscore, Reifegrad und alle vier Teilwerte bleiben frei zugänglich.</p></div></li>
-          <li><span>04</span><div><h3>Persönliche Auswertung anfordern</h3><p>Optional: Kontaktdaten angeben, Detailanalyse freischalten und Rückruf anfordern.</p></div></li>
+          <li><span>03</span><div><h3>Auswertung abschließen</h3><p>Am Ende fragen wir Name, Unternehmen und E-Mail einzeln ab, damit wir Ihr Ergebnis bereitstellen können.</p></div></li>
+          <li><span>04</span><div><h3>Score und Fahrplan erhalten</h3><p>Sie sehen Ihren Score, vier Teilwerte, drei Prioritäten und einen konkreten 90-Tage-Fahrplan.</p></div></li>
         </ol>
       </div>
     </section>
@@ -136,8 +136,8 @@
           <h2>Sie wissen vor dem Start, was mit Ihren Daten passiert.</h2>
         </div>
         <div class="trust-cards">
-          <article><h3>Der Basisscore ist frei.</h3><p>Für den Test und den Basisscore brauchen Sie weder E-Mail-Adresse noch Telefonnummer.</p></article>
-          <article><h3>Kontakt ist eine Zusatzleistung.</h3><p>Telefon und E-Mail werden erst abgefragt, wenn Sie die persönliche Auswertung und einen einmaligen Rückruf wünschen.</p></article>
+          <article><h3>Die Auswertung bleibt kostenlos.</h3><p>Vorname, Nachname, Unternehmen und E-Mail werden erst nach den Bewertungsfragen abgefragt. Eine Telefonnummer benötigen wir nicht.</p></article>
+          <article><h3>Kein versteckter Rückruf.</h3><p>Wir rufen Sie nicht ungefragt an. Ein Gespräch mit Marco buchen Sie nach dem Ergebnis selbst und bewusst.</p></article>
           <article><h3>Tracking bleibt freiwillig.</h3><p>Analyse- und Meta-Technologien sind getrennt, standardmäßig aus und blockieren den Test nicht.</p></article>
         </div>
       </div>
@@ -193,77 +193,14 @@
     </div>
   </section>
 
-  <section class="score-screen" id="scorePreview" role="dialog" aria-modal="true" aria-labelledby="scorePreviewTitle" hidden>
-    <header class="result-nav">
-      <a class="brand" href="#top" aria-label="Synclaro">
-        <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="14"/><path d="M20 6v28M6 20h28"/></svg><span>Synclaro</span>
-      </a>
-      <button class="text-button" id="restartFromPreview" type="button">Neu starten</button>
-    </header>
-    <div class="score-shell">
-      <div class="score-intro">
-        <p class="kicker">Ihr Basisscore · ohne Kontaktdaten</p>
-        <h1 id="scorePreviewTitle" tabindex="-1">Ihre KI-Readiness auf einen Blick.</h1>
-        <p>Der Score wird aus allen zwölf Kernfragen berechnet. Er ist eine strukturierte Selbsteinschätzung — kein Marktvergleich und keine Zertifizierung.</p>
-      </div>
-      <div class="score-overview">
-        <div class="score-primary">
-          <div class="score-dial" aria-label="Gesamtscore">
-            <svg viewBox="0 0 220 220" aria-hidden="true"><circle class="dial-base" cx="110" cy="110" r="92"/><circle class="dial-value" id="previewDial" cx="110" cy="110" r="92"/></svg>
-            <div><strong id="previewScore">0</strong><span>/100</span><small id="previewLevel">—</small></div>
-          </div>
-          <div class="score-mobile-cta" id="scoreMobileCta">
-            <button class="button button-accent" id="openLeadFormTop" type="button">Detailanalyse &amp; Rückruf anfordern</button>
-            <small>Optional · Kontaktdaten erst im nächsten Schritt</small>
-          </div>
-        </div>
-        <div class="score-breakdown" id="previewBreakdown"></div>
-      </div>
-      <div class="unlock-card" id="unlockCard">
-        <div>
-          <p class="kicker">Optional · persönliche Auswertung</p>
-          <h2>Was bedeutet dieser Score konkret für Ihr Unternehmen?</h2>
-          <p>Schalten Sie Ihre Detailanalyse, den größten Hebel und einen 90-Tage-Fahrplan frei. Gleichzeitig bitten Sie Synclaro um einen einmaligen Rückruf zu Ihrem Ergebnis.</p>
-          <ul><li>3 priorisierte Empfehlungen</li><li>konkreter erster Schritt</li><li>direkte Terminoption nach dem Ergebnis</li></ul>
-        </div>
-        <button class="button button-accent button-large" id="openLeadForm" type="button">Auswertung anfordern</button>
-      </div>
-
-      <form class="lead-form" id="leadForm" aria-labelledby="leadFormTitle" novalidate hidden>
-        <div class="form-heading">
-          <p class="kicker">Persönliche Auswertung</p>
-          <h2 id="leadFormTitle" tabindex="-1">Ihre Angaben für Auswertung und Rückruf.</h2>
-          <p>Die persönliche Auswertung erscheint direkt hier im Test. E-Mail und Telefonnummer benötigen wir für den gewünschten Rückruf und ein einmaliges Nachfassen, falls wir Sie nicht erreichen. Ihre Kontaktdaten gehen nicht an OpenAI.</p>
-        </div>
-        <div class="form-grid">
-          <label><span>Vorname *</span><input name="firstName" autocomplete="given-name" maxlength="80" aria-describedby="firstNameError" required><small class="field-error" id="firstNameError" hidden>Bitte geben Sie Ihren Vornamen ein.</small></label>
-          <label><span>Nachname *</span><input name="lastName" autocomplete="family-name" maxlength="100" aria-describedby="lastNameError" required><small class="field-error" id="lastNameError" hidden>Bitte geben Sie Ihren Nachnamen ein.</small></label>
-          <label class="full"><span>Unternehmen / Tätigkeit *</span><input name="company" autocomplete="organization" maxlength="160" aria-describedby="companyError" required><small class="field-error" id="companyError" hidden>Bitte nennen Sie Ihr Unternehmen oder Ihre selbstständige Tätigkeit.</small></label>
-          <label><span>E-Mail-Adresse *</span><input name="email" type="email" inputmode="email" autocomplete="email" maxlength="254" aria-describedby="emailError" required><small class="field-error" id="emailError" hidden>Bitte geben Sie eine gültige E-Mail-Adresse ein.</small></label>
-          <label><span>Telefonnummer mit Vorwahl *</span><input name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="40" aria-describedby="phoneError" required><small class="field-error" id="phoneError" hidden>Bitte geben Sie eine erreichbare Telefonnummer mit 7 bis 15 Ziffern ein.</small></label>
-        </div>
-        <p class="field-note">* Pflichtfelder für die von Ihnen angeforderte persönliche Auswertung. Kein Newsletter-Abo.</p>
-        <div class="consent-stack">
-          <label class="check-row"><input type="checkbox" name="callbackConsent" aria-describedby="callbackConsentText callbackConsentError" required><span><strong>Einmalige Kontaktaufnahme *</strong><small id="callbackConsentText">Ich möchte meine vollständige KI-Readiness-Auswertung erhalten und bitte Synclaro IT Dienstleistungen, Inhaber Marco Heer, mich zu diesem Testergebnis einmal per Telefon zu kontaktieren. Falls ich nicht erreichbar bin, darf Synclaro per E-Mail nachfassen. Dabei dürfen mir passende Leistungen rund um KI und Automatisierung vorgestellt werden. Ich kann meine Einwilligung jederzeit mit Wirkung für die Zukunft widerrufen.</small><small class="field-error" id="callbackConsentError" hidden>Bitte bestätigen Sie die gewünschte einmalige Kontaktaufnahme.</small></span></label>
-          <label class="check-row"><input type="checkbox" name="aiConsent" aria-describedby="aiConsentText aiConsentError" required><span><strong>Individuelle KI-Auswertung *</strong><small id="aiConsentText">Ich willige ein, dass meine Unternehmensangaben und Testantworten zur individuellen Auswertung durch OpenAI Ireland Ltd. verarbeitet werden. Dabei kann eine technische Weiterverarbeitung außerhalb des EWR auf Grundlage geeigneter Garantien, zum Beispiel EU-Standardvertragsklauseln, erfolgen. Meine Kontaktdaten werden nicht an OpenAI übermittelt. Ich kann meine Einwilligung jederzeit mit Wirkung für die Zukunft widerrufen.</small><small class="field-error" id="aiConsentError" hidden>Bitte bestätigen Sie die Verarbeitung für Ihre individuelle Auswertung.</small></span></label>
-        </div>
-        <details class="privacy-details"><summary>Welche Daten werden wofür verwendet?</summary><p>Die Kontaktdaten werden im Synclaro-CRM gespeichert, damit der gewünschte Rückruf und ein E-Mail-Nachfassen möglich sind. Nur Unternehmensprofil und Testantworten — keine Kontaktdaten — werden für die individuelle Formulierung an OpenAI übermittelt. Einzelheiten, Empfänger, Speicherdauer und Widerrufswege stehen in den <a href="https://synclaro.de/datenschutz#ki-readiness-test" target="_blank" rel="noopener">Datenschutzhinweisen</a>.</p></details>
-        <div class="form-error" id="leadFormError" role="alert" hidden></div>
-        <div class="form-actions">
-          <button class="button button-accent button-large" id="submitLead" type="submit">Auswertung &amp; Rückruf anfordern</button>
-          <button class="text-button" id="closeLeadForm" type="button">Beim Basisscore bleiben</button>
-        </div>
-      </form>
-      <p class="preview-notice" id="previewNotice" hidden>Preview-Modus: Es werden keine Lead-, E-Mail- oder Meta-Daten übertragen.</p>
-    </div>
-  </section>
+  <section class="score-screen" id="scorePreview" hidden></section>
 
   <section class="measuring-screen" id="measuringScreen" aria-live="polite" hidden>
     <div class="measuring-card">
-      <p class="kicker">Ihre Detailauswertung entsteht</p>
+      <p class="kicker">Ihre Auswertung wird vorbereitet</p>
       <h2 id="measuringTitle" tabindex="-1">Aus Antworten wird eine klare Reihenfolge.</h2>
       <ol id="measuringSteps">
-        <li><i></i><span>Lead sicher gespeichert</span></li>
+        <li><i></i><span>Angaben sicher gespeichert</span></li>
         <li><i></i><span>Score und Antwortmuster geprüft</span></li>
         <li><i></i><span>Empfehlungen priorisiert</span></li>
         <li><i></i><span>90-Tage-Fahrplan aufgebaut</span></li>
@@ -294,6 +231,11 @@
         <div><p class="kicker">Größter Hebel</p><h2 id="leverTitle"></h2><p id="leverReason"></p></div>
         <div class="time-indicator"><small>Potenzialindikator</small><strong id="timePotential"></strong><p id="timeNote"></p></div>
       </section>
+      <section class="booking-card">
+        <div><p class="kicker">Ihr nächster sinnvoller Schritt</p><h2>Kostenlose KI-Potenzialanalyse mit Marco.</h2><p>Ordnen Sie Ihren Score in 20 Minuten ein, prüfen Sie den wirtschaftlich stärksten KI-Hebel und bestimmen Sie den sinnvollsten nächsten Schritt. Sie entscheiden selbst, ob und wann Sie buchen.</p></div>
+        <a class="button button-accent button-large" id="calendarCta" data-calendar-cta href="https://cal.com/marcoheer/ki-erstgespraech" target="_blank" rel="noopener">Kostenlosen Termin buchen</a>
+      </section>
+      <aside class="newsletter-result-note" id="newsletterResultNote" role="status" hidden></aside>
       <section class="result-section">
         <div class="section-heading compact"><p class="kicker">Prioritäten</p><h2>Drei sinnvolle nächste Schritte.</h2></div>
         <div class="recommendations" id="recommendations"></div>
@@ -302,9 +244,9 @@
         <div class="section-heading compact"><p class="kicker">90 Tage</p><h2>Vom Test zur messbaren Umsetzung.</h2></div>
         <div class="roadmap" id="roadmap"></div>
       </section>
-      <section class="booking-card">
-        <div><p class="kicker">Rückruf ist angefragt</p><h2>Lieber direkt einen Termin sichern?</h2><p>Ihre Anfrage ist bereits gespeichert. Wenn Sie möchten, öffnen Sie jetzt Cal.com und wählen dort einen passenden Gesprächstermin.</p></div>
-        <a class="button button-accent button-large" id="calendarCta" href="https://cal.com/marcoheer/ki-erstgespraech" target="_blank" rel="noopener">Termin auswählen</a>
+      <section class="booking-card booking-card-final">
+        <div><p class="kicker">Aus Klarheit wird Umsetzung</p><h2>Welcher Hebel lohnt sich für Ihr Unternehmen zuerst?</h2><p>Prüfen Sie Ihren Score und den sinnvollsten nächsten Schritt kostenlos mit Marco. Sie buchen freiwillig; es entsteht keine Verpflichtung.</p></div>
+        <a class="button button-accent button-large" data-calendar-cta href="https://cal.com/marcoheer/ki-erstgespraech" target="_blank" rel="noopener">Kostenlosen Termin mit Marco buchen</a>
       </section>
       <p class="diagnostic-note" id="diagnosticNote"></p>
     </div>

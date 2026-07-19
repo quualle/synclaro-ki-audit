@@ -5,18 +5,17 @@
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
   const API = "/.netlify/functions";
   const CONSENT_STATE = window.SynclaroConsentState;
-  const STATE_KEY = "synclaro_ai_readiness_state_v5";
+  const STATE_KEY = "synclaro_ai_readiness_state_v6";
   const CONSENT_KEY = "synclaro_ai_readiness_consent_v1";
   const CONSENT_SUBJECT_KEY = "synclaro_ai_readiness_consent_subject_v1";
   const ATTRIBUTION_KEY = "synclaro_ai_readiness_attribution_v1";
   const CONSENT_MAX_AGE_MS = 180 * 24 * 60 * 60 * 1000;
   const SESSION_MAX_AGE_MS = 2 * 60 * 60 * 1000;
   const DEFAULT_CONFIG = {
-    assessmentVersion: "2026-07-18.v2",
-    privacyVersion: "privacy-ai-readiness-v1-2026-07-18",
+    assessmentVersion: "2026-07-19.v3",
+    privacyVersion: "privacy-ai-readiness-v2-2026-07-19",
     cookieConsentVersion: "cookie-v1-2026-07-18",
-    callbackConsent: { version: "callback-v1-2026-07-18", text: "Ich möchte meine vollständige KI-Readiness-Auswertung erhalten und bitte Synclaro IT Dienstleistungen, Inhaber Marco Heer, mich zu diesem Testergebnis einmal per Telefon zu kontaktieren. Falls ich nicht erreichbar bin, darf Synclaro per E-Mail nachfassen. Dabei dürfen mir passende Leistungen rund um KI und Automatisierung vorgestellt werden. Ich kann meine Einwilligung jederzeit mit Wirkung für die Zukunft widerrufen." },
-    aiProcessingConsent: { version: "ai-processing-v2-2026-07-18", text: "Ich willige ein, dass meine Unternehmensangaben und Testantworten zur individuellen Auswertung durch OpenAI Ireland Ltd. verarbeitet werden. Dabei kann eine technische Weiterverarbeitung außerhalb des EWR auf Grundlage geeigneter Garantien, zum Beispiel EU-Standardvertragsklauseln, erfolgen. Meine Kontaktdaten werden nicht an OpenAI übermittelt. Ich kann meine Einwilligung jederzeit mit Wirkung für die Zukunft widerrufen." },
+    newsletterConsent: { version: "newsletter-email-v1-2026-07-19", text: "Ja, ich möchte regelmäßig praxistaugliche KI-Impulse, Einladungen und Angebote von Synclaro per E-Mail erhalten. Die Anmeldung wird per Double-Opt-in bestätigt; eine Abmeldung ist jederzeit möglich." },
     analyticsConsent: { version: "cookie-v1-2026-07-18", text: "Analyse: Synclaro speichert pseudonyme Funnel-Ereignisse, um Nutzung und Abbrüche des AI Readiness Tests auszuwerten. Testantworten und Kontaktdaten werden dabei nicht als Ereigniseigenschaften gespeichert." },
     marketingConsent: { version: "cookie-v1-2026-07-18", text: "Marketing einschließlich Meta: Synclaro darf Meta Pixel und Conversions API einsetzen, um die Kampagne zu messen und Werbung zu personalisieren. Dabei können Online-Kennungen, Browser- und Gerätedaten sowie gehashte Kontaktdaten an Meta Platforms Ireland Limited übermittelt werden." },
     metaPixelId: "1497847851628194",
@@ -80,6 +79,12 @@
       placeholder: "z. B. Steuerberatung, Agentur, Online-Handel, Metallbau",
     },
   ];
+  const CONTACT_STEPS = [
+    { id: "firstName", label: "Wie dürfen wir Sie ansprechen?", autocomplete: "given-name", maxlength: 80, error: "Bitte geben Sie Ihren Vornamen ein." },
+    { id: "lastName", label: "Und wie lautet Ihr Nachname?", autocomplete: "family-name", maxlength: 100, error: "Bitte geben Sie Ihren Nachnamen ein." },
+    { id: "company", label: "Für welches Unternehmen machen Sie den Test?", autocomplete: "organization", maxlength: 160, error: "Bitte nennen Sie Ihr Unternehmen oder Ihre selbstständige Tätigkeit." },
+    { id: "email", label: "Welche E-Mail-Adresse gehört zu Ihrer Auswertung?", autocomplete: "email", maxlength: 254, type: "email", inputmode: "email", error: "Bitte geben Sie eine gültige E-Mail-Adresse ein." },
+  ];
 
   let config = { ...DEFAULT_CONFIG };
   let consent = { necessary: true, analytics: false, marketing: false, version: DEFAULT_CONFIG.cookieConsentVersion, grantedAt: null, globalDecisionId: null };
@@ -102,18 +107,14 @@
   let pendingConsentIntent = null;
   let consentReturnFocus = null;
   let testReturnFocus = null;
-  let leadFormReturnFocus = null;
   let currentInteractionLayer = null;
   const scrollMilestones = new Set();
   const sessionStartedAt = Date.now();
 
   function renderRuntimeConfig() {
-    $("#callbackConsentText").textContent = config.callbackConsent.text;
-    $("#aiConsentText").textContent = config.aiProcessingConsent.text;
     $("#analyticsConsentText").textContent = config.analyticsConsent.text;
     $("#marketingConsentText").textContent = config.marketingConsent.text;
     $("#calendarCta").href = config.calendarUrl;
-    $("#previewNotice").hidden = config.production;
   }
 
   renderRuntimeConfig();
@@ -144,9 +145,13 @@
       phaseIndex: -1,
       questionIndex: 0,
       answers: [],
+      contact: {},
+      contactIndex: 0,
       baseline: null,
       assessmentId: null,
       submissionId: null,
+      bookingReference: null,
+      newsletterStatus: null,
       runId: uuid(),
       sessionIssuedAt: null,
       result: null,
@@ -188,7 +193,7 @@
   function visibleInteractionLayer() {
     const consentLayer = $("#consentLayer");
     if (!consentLayer.hidden) return consentLayer;
-    return ["assessmentApp", "transitionScreen", "scorePreview", "measuringScreen", "fullResult"]
+    return ["assessmentApp", "transitionScreen", "measuringScreen", "fullResult"]
       .map((id) => $(`#${id}`))
       .find((element) => !element.hidden) || null;
   }
@@ -204,7 +209,6 @@
     }
     const targets = {
       transitionScreen: "#transitionTitle",
-      scorePreview: "#scorePreviewTitle",
       measuringScreen: "#measuringTitle",
       fullResult: "#resultTitle",
     };
@@ -254,9 +258,6 @@
       } else if (layer.id === "assessmentApp") {
         event.preventDefault();
         closeTest();
-      } else if (layer.id === "scorePreview" && !$("#leadForm").hidden) {
-        event.preventDefault();
-        closeLeadForm();
       }
       return;
     }
@@ -303,7 +304,7 @@
   }
 
   const interactionObserver = new MutationObserver(refreshInteractionLayer);
-  ["consentLayer", "assessmentApp", "transitionScreen", "scorePreview", "measuringScreen", "fullResult"]
+  ["consentLayer", "assessmentApp", "transitionScreen", "measuringScreen", "fullResult"]
     .forEach((id) => interactionObserver.observe($(`#${id}`), { attributes: true, attributeFilter: ["hidden"] }));
   addEventListener("keydown", handleModalKeyboard);
 
@@ -349,7 +350,7 @@
     try {
       const saved = JSON.parse(sessionStorage.getItem(STATE_KEY) || "null");
       const freshEnough = saved && Number(saved.savedAt) > Date.now() - (2 * 60 * 60 * 1000);
-      const validStage = ["profile", "assessment", "preview", "result"].includes(saved?.stage);
+      const validStage = ["profile", "assessment", "contact", "result"].includes(saved?.stage);
       if (!freshEnough || !validStage || !saved.profile || !Array.isArray(saved.answers) || !Array.isArray(saved.phases)) return false;
       state = { ...freshState(), ...saved };
       $$('[data-start-test]').forEach((button) => { button.firstChild.textContent = "Test fortsetzen "; });
@@ -862,6 +863,12 @@
     refreshInteractionLayer();
   }
 
+  function showOnlyScreen(id) {
+    hideAllScreens();
+    $(`#${id}`).hidden = false;
+    refreshInteractionLayer();
+  }
+
   async function startTest() {
     testReturnFocus ||= document.activeElement;
     if (!(await ensureSession())) return;
@@ -882,8 +889,11 @@
       renderQuestion();
       return;
     }
-    if (state.stage === "preview" && state.baseline) {
-      showScorePreview();
+    if (state.stage === "contact" && state.baseline) {
+      hideAllScreens();
+      $("#assessmentApp").hidden = false;
+      document.body.classList.add("modal-open");
+      renderContactStep();
       return;
     }
     if (state.stage === "result" && state.result) {
@@ -907,7 +917,7 @@
   }
 
   function optionHtml(option, selected) {
-    return `<button class="option${selected ? " selected" : ""}" type="button" role="radio" aria-checked="${selected ? "true" : "false"}" data-value="${esc(option.value)}"><span class="marker" aria-hidden="true"></span><strong>${esc(option.label)}</strong></button>`;
+    return `<button class="option${selected ? " selected" : ""}" type="button" aria-pressed="${selected ? "true" : "false"}" data-value="${esc(option.value)}"><span class="marker" aria-hidden="true"></span><strong>${esc(option.label)}</strong></button>`;
   }
 
   function transitionQuestion(render) {
@@ -926,9 +936,9 @@
     const current = state.profile[item.id] || "";
     let body = `<article class="question-card"><p class="question-index">${esc(item.kicker)}</p><h1 id="questionTitle" tabindex="-1">${esc(item.label)}</h1>${item.help ? `<p class="question-help">${esc(item.help)}</p>` : ""}`;
     if (item.type === "text") {
-      body += `<div class="question-field"><input id="profileText" maxlength="80" autocomplete="off" placeholder="${esc(item.placeholder)}"></div><div class="question-actions"><button class="button button-accent" id="profileNext" type="button">Weiter</button></div>`;
+      body += `<div class="question-field"><input id="profileText" aria-labelledby="questionTitle" maxlength="80" autocomplete="off" placeholder="${esc(item.placeholder)}"></div><div class="question-actions"><button class="button button-accent" id="profileNext" type="button">Weiter</button></div>`;
     } else {
-      body += `<div class="option-list" role="radiogroup" aria-labelledby="questionTitle">${item.options.map((option) => optionHtml(option, current === option.value)).join("")}</div>`;
+      body += `<div class="option-list" role="group" aria-labelledby="questionTitle">${item.options.map((option) => optionHtml(option, current === option.value)).join("")}</div>`;
     }
     body += "</article>";
     $("#questionHost").innerHTML = body;
@@ -951,7 +961,7 @@
         $$(".option", $("#questionHost")).forEach((other) => {
           const selected = other === button;
           other.classList.toggle("selected", selected);
-          other.setAttribute("aria-checked", selected ? "true" : "false");
+          other.setAttribute("aria-pressed", selected ? "true" : "false");
         });
         saveState();
         setTimeout(advanceProfile, 190);
@@ -1035,9 +1045,9 @@
     const existing = existingAnswer(question.id);
     let body = `<article class="question-card"><p class="question-index">${esc(phase.phaseTitle)} · ${state.questionIndex + 1} von ${phase.questions.length}</p><h1 id="questionTitle" tabindex="-1">${esc(question.label)}</h1>`;
     if (question.type === "textarea") {
-      body += `<p class="question-help">Optional — ein oder zwei konkrete Sätze genügen. Bitte keine Namen, Kontakt- oder Kundendaten eingeben.</p><div class="question-field"><textarea id="answerText" maxlength="700" placeholder="${esc(question.placeholder || "Ihre Antwort …")}"></textarea></div><div class="question-actions"><button class="button button-accent" id="answerNext" type="button">Weiter</button><button class="text-button" id="answerSkip" type="button">Überspringen</button></div>`;
+      body += `<p class="question-help">Optional — ein oder zwei konkrete Sätze genügen. Bitte keine Namen, Kontakt- oder Kundendaten eingeben.</p><div class="question-field"><textarea id="answerText" aria-labelledby="questionTitle" maxlength="700" placeholder="${esc(question.placeholder || "Ihre Antwort …")}"></textarea></div><div class="question-actions"><button class="button button-accent" id="answerNext" type="button">Weiter</button><button class="text-button" id="answerSkip" type="button">Überspringen</button></div>`;
     } else {
-      body += `<div class="option-list" role="radiogroup" aria-labelledby="questionTitle">${(question.options || []).map((option) => optionHtml(option, existing?.answer === option.value)).join("")}</div>`;
+      body += `<div class="option-list" role="group" aria-labelledby="questionTitle">${(question.options || []).map((option) => optionHtml(option, existing?.answer === option.value)).join("")}</div>`;
     }
     body += "</article>";
     $("#questionHost").innerHTML = body;
@@ -1058,7 +1068,7 @@
         $$(".option", $("#questionHost")).forEach((other) => {
           const selected = other === button;
           other.classList.toggle("selected", selected);
-          other.setAttribute("aria-checked", selected ? "true" : "false");
+          other.setAttribute("aria-pressed", selected ? "true" : "false");
         });
         const option = question.options.find((item) => item.value === button.dataset.value);
         recordAnswer(question, option.value, option.label);
@@ -1093,7 +1103,7 @@
       return;
     }
     track("phase_completed", { phase: String(state.phaseIndex + 1), question_count: phase.questions.length }, state.phaseIndex + 1);
-    if (state.phaseIndex >= 2) return showScorePreview();
+    if (state.phaseIndex >= 2) return startContactCapture();
     const nextIndex = state.phaseIndex + 1;
     const nextTitle = nextIndex === 1 ? "Das Fundament steht. Jetzt zählt der Alltag." : "Potenzial erkannt. Jetzt zählt Umsetzung.";
     const insight = phase.transitionInsight || "Ihre Antworten werden zur nächsten Runde verdichtet.";
@@ -1103,6 +1113,19 @@
   function goBack() {
     if (state.stage === "profile") {
       if (state.profileIndex > 0) { state.profileIndex -= 1; transitionQuestion(renderProfile); }
+      return;
+    }
+    if (state.stage === "contact") {
+      if (state.contactIndex > 0) {
+        state.contactIndex -= 1;
+        transitionQuestion(renderContactStep);
+      } else {
+        state.stage = "assessment";
+        state.phaseIndex = 2;
+        state.questionIndex = currentPhase().questions.length - 1;
+        transitionQuestion(renderQuestion);
+      }
+      saveState();
       return;
     }
     if (state.stage !== "assessment") return;
@@ -1174,75 +1197,98 @@
     requestAnimationFrame(() => setTimeout(() => $$('[data-width]', root).forEach((bar) => { bar.style.width = `${bar.dataset.width}%`; }), 80));
   }
 
-  function showScorePreview() {
+  async function startContactCapture() {
     state.baseline = scoreAssessment();
-    state.stage = "preview";
-    saveState();
-    hideAllScreens();
-    $("#scorePreview").hidden = false;
-    document.body.classList.add("modal-open");
-    $("#previewScore").textContent = state.baseline.scores.total.percent;
-    $("#previewLevel").textContent = state.baseline.level;
-    $("#previewBreakdown").innerHTML = breakdownHtml(state.baseline);
-    const circumference = 2 * Math.PI * 92;
-    const offset = circumference * (1 - state.baseline.scores.total.percent / 100);
-    $("#previewDial").style.strokeDasharray = String(circumference);
-    requestAnimationFrame(() => { $("#previewDial").style.strokeDashoffset = String(offset); });
-    animateBars($("#previewBreakdown"));
-    window.scrollTo(0, 0);
-    requestAnimationFrame(() => $("#scorePreviewTitle").focus({ preventScroll: true }));
-    track("result_preview_viewed", { score: state.baseline.scores.total.percent, level: state.baseline.level }, 16);
-    metaEvent("AIReadinessCompleted");
-  }
-
-  function openLeadForm() {
-    leadFormReturnFocus = document.activeElement;
+    state.stage = "contact";
+    state.contactIndex = Math.max(0, Math.min(CONTACT_STEPS.length - 1, state.contactIndex || 0));
     formOpenedAt = Date.now();
-    $("#leadForm").hidden = false;
-    $("#unlockCard").hidden = true;
-    $("#scoreMobileCta").hidden = true;
-    $("#leadForm").scrollIntoView({ behavior: "smooth", block: "start" });
-    setTimeout(() => $("#leadFormTitle").focus({ preventScroll: true }), 400);
-    track("lead_form_viewed", { score: state.baseline.scores.total.percent }, 17);
+    saveState();
+    $("#assessmentApp").hidden = true;
+    $("#transitionScreen").hidden = false;
+    $("#transitionKicker").textContent = "FRAGEN ABGESCHLOSSEN";
+    $("#transitionTitle").textContent = "Ihre Antworten sind vollständig.";
+    $("#transitionText").textContent = "Vier kurze Angaben noch: Vorname, Nachname, Unternehmen und E-Mail. Danach ordnen wir Ihre Auswertung zu und zeigen Score, Prioritäten und 90-Tage-Fahrplan. Kein Rückruf; Newsletter nur freiwillig.";
+    requestAnimationFrame(() => $("#transitionTitle").focus({ preventScroll: true }));
+    track("phase_completed", { phase: "assessment", question_count: state.answers.length }, 17);
+    metaEvent("AIReadinessCompleted", { assessment_version: config.assessmentVersion });
+    await new Promise((resolve) => setTimeout(resolve, 900));
+    $("#transitionScreen").hidden = true;
+    $("#assessmentApp").hidden = false;
+    renderContactStep();
+    track("lead_form_viewed", { employee_band: state.profile.mitarbeiter }, 17);
   }
 
-  function closeLeadForm() {
-    $("#leadForm").hidden = true;
-    $("#unlockCard").hidden = false;
-    $("#scoreMobileCta").hidden = false;
-    $("#unlockCard").scrollIntoView({ behavior: "smooth", block: "center" });
-    const returnTarget = leadFormReturnFocus;
-    leadFormReturnFocus = null;
-    restoreFocus(returnTarget);
+  function validContactValue(step, value) {
+    const clean = String(value || "").trim();
+    if (step.id === "email") return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(clean) && clean.length <= step.maxlength;
+    return clean.length >= 2 && clean.length <= step.maxlength;
   }
 
-  function validateLeadForm(form) {
-    const fields = ["firstName", "lastName", "company", "email", "phone"];
-    let firstInvalid = null;
-    const mark = (name, valid) => {
-      const input = form.elements[name];
-      input.classList.toggle("invalid", !valid && input.type !== "checkbox");
-      input.setAttribute("aria-invalid", valid ? "false" : "true");
-      const message = $(`#${name}Error`);
-      if (message) message.hidden = valid;
-      if (!valid && !firstInvalid) firstInvalid = input;
-    };
-    fields.forEach((name) => {
-      const input = form.elements[name];
-      const valid = input.checkValidity() && input.value.trim().length >= (name === "email" ? 5 : 2);
-      mark(name, valid);
+  function renderContactStep() {
+    const step = CONTACT_STEPS[state.contactIndex];
+    if (!step) return;
+    state.stage = "contact";
+    updateProgress(`Auswertung · ${state.contactIndex + 1}/${CONTACT_STEPS.length}`, 17 + state.contactIndex, 21);
+    $("#backButton").style.visibility = "visible";
+    const isFinal = state.contactIndex === CONTACT_STEPS.length - 1;
+    const stored = state.contact?.[step.id] || "";
+    const newsletterChecked = state.contact?.newsletter === true;
+    const inputAttributes = [
+      `type="${esc(step.type || "text")}"`,
+      `name="${esc(step.id)}"`,
+      `id="contactValue"`,
+      `autocomplete="${esc(step.autocomplete)}"`,
+      `maxlength="${step.maxlength}"`,
+      step.inputmode ? `inputmode="${esc(step.inputmode)}"` : "",
+      `aria-labelledby="questionTitle"`,
+      `aria-describedby="contactFieldError"`,
+      "required",
+    ].filter(Boolean).join(" ");
+    const finalContent = isFinal ? `
+      <label class="check-row newsletter-choice"><input type="checkbox" name="newsletter"${newsletterChecked ? " checked" : ""}><span><strong>Freiwillige KI-Impulse per E-Mail</strong><small>${esc(config.newsletterConsent.text)}</small></span></label>
+      <p class="result-privacy-note">Mit Klick auf „Meinen Readiness-Score anzeigen“ verarbeiten wir Ihre Angaben zur Zuordnung, Speicherung und unmittelbaren Anzeige der Auswertung. Die Newsletter-Einwilligung ist freiwillig und nicht Voraussetzung. <a href="https://synclaro.de/datenschutz#ki-readiness-test" target="_blank" rel="noopener">Datenschutzhinweise</a></p>
+      <input class="form-honeypot" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <div class="form-error" id="leadFormError" role="alert" hidden></div>` : "";
+    $("#questionHost").innerHTML = `<form class="question-card contact-step" id="contactStepForm" novalidate>
+      <p class="question-index">Fast geschafft · ${state.contactIndex + 1} von ${CONTACT_STEPS.length}</p>
+      <h1 id="questionTitle" tabindex="-1">${esc(step.label)}</h1>
+      <div class="question-field"><input ${inputAttributes} value="${esc(stored)}"><small class="field-error" id="contactFieldError" hidden>${esc(step.error)}</small></div>
+      ${finalContent}
+      <div class="question-actions"><button class="button button-accent${isFinal ? " button-large" : ""}" id="contactNext" type="submit">${isFinal ? "Meinen Readiness-Score anzeigen" : "Weiter"}</button></div>
+      ${isFinal && !config.production ? '<p class="preview-notice">Preview-Modus: Es werden keine Lead-, E-Mail-, Meta- oder Telegram-Daten übertragen.</p>' : ""}
+    </form>`;
+    const form = $("#contactStepForm");
+    const input = $("#contactValue");
+    setTimeout(() => input.focus(), 50);
+    input.addEventListener("input", () => {
+      input.classList.remove("invalid");
+      input.setAttribute("aria-invalid", "false");
+      $("#contactFieldError").hidden = true;
     });
-    const phoneDigits = form.elements.phone.value.replace(/\D/g, "");
-    mark("phone", phoneDigits.length >= 7 && phoneDigits.length <= 15);
-    mark("callbackConsent", form.elements.callbackConsent.checked);
-    mark("aiConsent", form.elements.aiConsent.checked);
-    if (firstInvalid) {
-      firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
-      firstInvalid.focus();
-      track("lead_form_validation_error", { field: firstInvalid.name || "consent", error_code: "required_or_invalid" }, 17);
-      return false;
-    }
-    return true;
+    form.addEventListener("submit", (event) => {
+      const value = input.value.trim();
+      if (!validContactValue(step, value)) {
+        event.preventDefault();
+        input.classList.add("invalid");
+        input.setAttribute("aria-invalid", "true");
+        $("#contactFieldError").hidden = false;
+        input.focus();
+        track("lead_form_validation_error", { field: step.id, error_code: "required_or_invalid" }, 17 + state.contactIndex);
+        return;
+      }
+      state.contact[step.id] = value;
+      if (!isFinal) {
+        event.preventDefault();
+        state.contactIndex += 1;
+        saveState();
+        transitionQuestion(renderContactStep);
+        return;
+      }
+      state.contact.newsletter = form.elements.newsletter.checked;
+      saveState();
+      void submitLead(event);
+    });
+    saveState();
   }
 
   async function submitLead(event) {
@@ -1250,19 +1296,14 @@
     const form = event.currentTarget;
     const errorBox = $("#leadFormError");
     errorBox.hidden = true;
-    if (!validateLeadForm(form)) {
-      errorBox.textContent = "Bitte prüfen Sie die markierten Pflichtfelder und beide Einwilligungen.";
-      errorBox.hidden = false;
-      return;
-    }
-    const button = $("#submitLead");
+    const button = $("#contactNext");
     button.disabled = true;
     button.textContent = "Wird sicher gespeichert …";
     if (!(await ensureSession())) {
       errorBox.textContent = "Die sichere Testsitzung konnte nicht erneuert werden. Bitte versuchen Sie es erneut.";
       errorBox.hidden = false;
       button.disabled = false;
-      button.textContent = "Auswertung & Rückruf anfordern";
+      button.textContent = "Meinen Readiness-Score anzeigen";
       return;
     }
     if (!(await ensureTrackingDecisionForCurrentRun())) {
@@ -1271,26 +1312,29 @@
     state.submissionId ||= uuid();
     saveState();
     const contact = {
-      firstName: form.elements.firstName.value.trim(),
-      lastName: form.elements.lastName.value.trim(),
-      company: form.elements.company.value.trim(),
-      email: form.elements.email.value.trim(),
-      phone: form.elements.phone.value.trim(),
+      firstName: state.contact.firstName.trim(),
+      lastName: state.contact.lastName.trim(),
+      company: state.contact.company.trim(),
+      email: state.contact.email.trim(),
     };
     const payload = {
       submissionId: state.submissionId,
       runId: state.runId,
       trackingSubjectId,
       trackingPreviousDecisionId: consent.globalDecisionId || null,
-      website: "",
+      website: form.elements.website?.value || "",
       formOpenedAt: new Date(formOpenedAt || Date.now()).toISOString(),
       companyProfile: state.profile,
       answers: state.answers,
       contact,
       attribution: metaAttribution(),
       consents: {
-        callback: { granted: true, version: config.callbackConsent.version },
-        aiProcessing: { granted: true, version: config.aiProcessingConsent.version },
+        privacyNotice: { acknowledged: true, version: config.privacyVersion },
+        newsletter: {
+          granted: state.contact.newsletter === true,
+          version: config.newsletterConsent.version,
+          text: config.newsletterConsent.text,
+        },
         analytics: { granted: consent.analytics, version: consent.version, grantedAt: consent.analytics ? consent.grantedAt : null },
         marketing: { granted: consent.marketing, version: consent.version, grantedAt: consent.marketing ? consent.grantedAt : null },
       },
@@ -1309,53 +1353,31 @@
         try { localStorage.setItem(CONSENT_KEY, JSON.stringify(consent)); } catch {}
       }
       state.assessmentId = result.assessmentId;
+      state.bookingReference = result.bookingReference || null;
+      state.newsletterStatus = result.newsletterStatus || (result.preview && state.contact.newsletter ? "preview_not_sent" : state.contact.newsletter ? "doi_pending" : "not_requested");
       state.baseline = result.baseline || state.baseline;
       saveState();
       track("lead_submitted", { score: state.baseline.scores.total.percent, employee_band: state.profile.mitarbeiter }, 17);
-      metaEvent("Lead", {}, { eventID: result.leadEventId || state.submissionId });
-      await showMeasuringAndAnalyze(result, contact);
+      if (result.metaLeadEligible) metaEvent("Lead", {}, { eventID: result.leadEventId || state.submissionId });
+      await showMeasuringAndAnalyze(result);
     } catch (error) {
       errorBox.textContent = error.message || "Der Lead konnte nicht sicher gespeichert werden. Bitte versuchen Sie es erneut.";
       errorBox.hidden = false;
       button.disabled = false;
-      button.textContent = "Auswertung & Rückruf anfordern";
+      button.textContent = "Meinen Readiness-Score anzeigen";
     }
   }
 
   async function showMeasuringAndAnalyze(submissionResult) {
-    $("#scorePreview").hidden = true;
-    $("#measuringScreen").hidden = false;
+    showOnlyScreen("measuringScreen");
+    document.body.classList.add("modal-open");
     requestAnimationFrame(() => $("#measuringTitle").focus({ preventScroll: true }));
     const steps = $$("#measuringSteps li");
     steps[0].classList.add("done");
     steps[1].classList.add("active");
     const animation = animateMeasuring(steps);
-    let result;
-    if (submissionResult.preview) {
-      await new Promise((resolve) => setTimeout(resolve, 1100));
-      result = localDetailedResult(state.baseline);
-    } else {
-      try {
-        const response = await fetch(`${API}/analyze`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            assessmentId: submissionResult.assessmentId,
-            submissionId: submissionResult.submissionId,
-            analysisToken: submissionResult.analysisToken,
-            companyProfile: state.profile,
-            answers: state.answers,
-            aiProcessingConsent: { granted: true, version: config.aiProcessingConsent.version },
-          }),
-        });
-        const analysis = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(analysis.error || "Analyse fehlgeschlagen");
-        result = analysis;
-      } catch {
-        result = localDetailedResult(state.baseline);
-        result.diagnosticNote += " Die sprachliche Detailanalyse war vorübergehend nicht erreichbar; der feste Score und die Empfehlungen bleiben nutzbar.";
-      }
-    }
+    await new Promise((resolve) => setTimeout(resolve, submissionResult.preview ? 900 : 450));
+    const result = submissionResult.result || localDetailedResult(state.baseline);
     await animation;
     state.result = result;
     saveState();
@@ -1440,8 +1462,7 @@
   function renderFullResult() {
     const result = state.result;
     state.stage = "result";
-    $("#measuringScreen").hidden = true;
-    $("#fullResult").hidden = false;
+    showOnlyScreen("fullResult");
     document.body.classList.add("modal-open");
     $("#resultScore").textContent = result.scores.total.percent;
     $("#resultLevel").textContent = result.level;
@@ -1456,11 +1477,26 @@
     const roadmap = result.roadmap || {};
     $("#roadmap").innerHTML = ["phase1", "phase2", "phase3"].map((key) => roadmap[key]).filter(Boolean).map((phase) => `<article><small>${esc(phase.zeitraum)}</small><h3>${esc(phase.titel)}</h3><ul>${(phase.punkte || []).map((point) => `<li>${esc(point)}</li>`).join("")}</ul></article>`).join("");
     $("#diagnosticNote").textContent = result.diagnosticNote || "Strukturierte Selbsteinschätzung; keine Zertifizierung oder Erfolgsgarantie.";
+    const newsletterNote = $("#newsletterResultNote");
+    if (state.newsletterStatus === "doi_pending") {
+      newsletterNote.innerHTML = "<strong>KI-Impulse: Bitte jetzt Ihr Postfach prüfen.</strong><span>Öffnen Sie die Bestätigungs-E-Mail und bestätigen Sie Ihre freiwillige Anmeldung innerhalb von 24 Stunden. Falls sie nicht erscheint, prüfen Sie bitte auch den Spam-Ordner.</span>";
+      newsletterNote.hidden = false;
+    } else if (state.newsletterStatus === "preview_not_sent") {
+      newsletterNote.innerHTML = "<strong>Preview-Modus: Newsletter-Auswahl geprüft.</strong><span>In dieser Vorschau wurde absichtlich keine Bestätigungs-E-Mail versendet und keine Anmeldung gespeichert.</span>";
+      newsletterNote.hidden = false;
+    } else if (["already_active", "confirmed"].includes(state.newsletterStatus)) {
+      newsletterNote.innerHTML = "<strong>Ihre Synclaro KI-Impulse sind bereits aktiviert.</strong><span>Eine Abmeldung ist jederzeit über den Link in jeder Newsletter-E-Mail möglich.</span>";
+      newsletterNote.hidden = false;
+    } else {
+      newsletterNote.hidden = true;
+      newsletterNote.replaceChildren();
+    }
     const calendar = new URL(config.calendarUrl);
     calendar.searchParams.set("utm_source", "ki-readiness");
     calendar.searchParams.set("utm_medium", "result");
     calendar.searchParams.set("utm_campaign", "ai_readiness_result");
-    $("#calendarCta").href = calendar.toString();
+    if (state.bookingReference) calendar.searchParams.set("readiness_ref", state.bookingReference);
+    $$('[data-calendar-cta]').forEach((cta) => { cta.href = calendar.toString(); });
     window.scrollTo(0, 0);
     requestAnimationFrame(() => $("#resultTitle").focus({ preventScroll: true }));
     track("report_viewed", { score: result.scores.total.percent, level: result.level }, 18);
@@ -1485,21 +1521,8 @@
     $$('[data-cookie-settings]').forEach((button) => button.addEventListener("click", openConsentSettings));
     $("#backButton").addEventListener("click", goBack);
     $("#closeButton").addEventListener("click", closeTest);
-    $("#openLeadForm").addEventListener("click", openLeadForm);
-    $("#openLeadFormTop").addEventListener("click", openLeadForm);
-    $("#closeLeadForm").addEventListener("click", closeLeadForm);
-    $("#leadForm").addEventListener("submit", submitLead);
-    $("#leadForm").addEventListener("input", (event) => {
-      const input = event.target;
-      if (!input?.name) return;
-      input.classList.remove("invalid");
-      input.setAttribute("aria-invalid", "false");
-      const message = $(`#${input.name}Error`);
-      if (message) message.hidden = true;
-    });
-    $("#restartFromPreview").addEventListener("click", restart);
     $("#restartResult").addEventListener("click", restart);
-    $("#calendarCta").addEventListener("click", () => track("calendar_cta_clicked", { score: state.result?.scores?.total?.percent || 0 }, 19));
+    $$('[data-calendar-cta]').forEach((cta) => cta.addEventListener("click", () => track("calendar_cta_clicked", { score: state.result?.scores?.total?.percent || 0 }, 19)));
     $("#acceptAll").addEventListener("click", () => { void saveConsent(true, true); });
     $("#necessaryOnly").addEventListener("click", () => { void saveConsent(false, false); });
     $("#customizeConsent").addEventListener("click", openConsentSettings);

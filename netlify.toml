@@ -8,9 +8,6 @@
 [functions."order-premium"]
   timeout = 60
 
-[functions."analyze"]
-  timeout = 30
-
 [functions."generate-questions"]
   timeout = 10
 

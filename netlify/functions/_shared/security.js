@@ -69,25 +69,52 @@ function signingSecret() {
   return secret;
 }
 
-function signAnalysisToken(assessmentId, submissionId, ttlSeconds = 3600) {
+function signNewsletterToken(assessmentId, submissionId, ttlSeconds = 86400) {
   const expires = Math.floor(Date.now() / 1000) + ttlSeconds;
-  const data = `${assessmentId}:${submissionId}:${expires}`;
+  const data = `newsletter:${assessmentId}:${submissionId}:${expires}`;
   const signature = crypto.createHmac("sha256", signingSecret()).update(data).digest("base64url");
   return `${expires}.${signature}`;
 }
 
-function verifyAnalysisToken(token, assessmentId, submissionId) {
+function verifyNewsletterToken(token, assessmentId, submissionId) {
   try {
     const [expiresRaw, supplied] = String(token || "").split(".");
     const expires = Number(expiresRaw);
     if (!Number.isInteger(expires) || expires < Math.floor(Date.now() / 1000) || !supplied) return false;
-    const data = `${assessmentId}:${submissionId}:${expires}`;
+    const data = `newsletter:${assessmentId}:${submissionId}:${expires}`;
     const expected = crypto.createHmac("sha256", signingSecret()).update(data).digest("base64url");
-    const a = Buffer.from(supplied);
-    const b = Buffer.from(expected);
-    return a.length === b.length && crypto.timingSafeEqual(a, b);
+    const suppliedBuffer = Buffer.from(supplied);
+    const expectedBuffer = Buffer.from(expected);
+    return suppliedBuffer.length === expectedBuffer.length && crypto.timingSafeEqual(suppliedBuffer, expectedBuffer);
   } catch {
     return false;
+  }
+}
+
+function signBookingReference(assessmentId, submissionId, ttlSeconds = 30 * 24 * 60 * 60) {
+  const payload = Buffer.from(JSON.stringify({
+    a: assessmentId,
+    s: submissionId,
+    e: Math.floor(Date.now() / 1000) + ttlSeconds,
+  })).toString("base64url");
+  const signature = crypto.createHmac("sha256", signingSecret()).update(`booking:${payload}`).digest("base64url");
+  return `${payload}.${signature}`;
+}
+
+function verifyBookingReference(reference) {
+  try {
+    const [payload, supplied] = String(reference || "").split(".");
+    if (!payload || !supplied) return null;
+    const expected = crypto.createHmac("sha256", signingSecret()).update(`booking:${payload}`).digest("base64url");
+    const suppliedBuffer = Buffer.from(supplied);
+    const expectedBuffer = Buffer.from(expected);
+    if (suppliedBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(suppliedBuffer, expectedBuffer)) return null;
+    const parsed = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuid.test(parsed.a) || !uuid.test(parsed.s) || !Number.isInteger(parsed.e) || parsed.e < Math.floor(Date.now() / 1000)) return null;
+    return { assessmentId: parsed.a, submissionId: parsed.s, expiresAt: parsed.e };
+  } catch {
+    return null;
   }
 }
 
@@ -102,6 +129,8 @@ module.exports = {
   requestHost,
   requestOrigin,
   sha256,
-  signAnalysisToken,
-  verifyAnalysisToken,
+  signBookingReference,
+  signNewsletterToken,
+  verifyBookingReference,
+  verifyNewsletterToken,
 };

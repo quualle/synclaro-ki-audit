@@ -1,19 +1,19 @@
 "use strict";
 
-const { markDelivery, sendLeadNotification, sendTelegramLeadNotification } = require("./_shared/deliveries");
-const { sendMetaLead } = require("./_shared/meta");
+const { markDelivery, sendLeadNotification, sendNewsletterConfirmation, sendTelegramBookingNotification, sendTelegramLeadNotification } = require("./_shared/deliveries");
+const { sendMetaEvent, sendMetaLead } = require("./_shared/meta");
 const { getSupabaseAdmin } = require("./_shared/supabase");
 
 function deliveryInput(row) {
   return {
     assessmentId: row.assessment_id,
+    submissionId: row.submission_id,
     contactId: row.contact_id,
     contact: {
       firstName: row.first_name,
       lastName: row.last_name,
       company: row.company,
       email: row.email,
-      phone: row.phone,
     },
     profile: {
       branche: row.industry,
@@ -32,34 +32,25 @@ function deliveryInput(row) {
 async function processDelivery(supabase, row) {
   const input = deliveryInput(row);
   let outcome;
-  if (row.delivery_type === "internal_notification" || row.delivery_type === "telegram_notification") {
-    const { data: authorization, error: authorizationError } = await supabase.rpc("authorize_ai_readiness_contact_delivery_v1", {
-      p_outbox_id: row.outbox_id,
-      p_lease_token: row.lease_token,
-    });
-    if (authorizationError) throw new Error(`contact_authorization_${authorizationError.code || "unknown"}`);
-    const decision = Array.isArray(authorization) ? authorization[0] : authorization;
-    const leaseValid = decision?.lease_valid ?? decision?.leaseValid;
-    if (leaseValid !== true) return true;
-    if (decision?.authorized !== true) {
-      outcome = { sent: false, skipped: "consent_revoked" };
-    } else if (row.delivery_type === "internal_notification") {
-      outcome = await sendLeadNotification(input);
-    } else {
-      outcome = await sendTelegramLeadNotification(input);
-    }
+  const { data: authorization, error: authorizationError } = await supabase.rpc("authorize_ai_readiness_delivery_v2", {
+    p_outbox_id: row.outbox_id,
+    p_lease_token: row.lease_token,
+  });
+  if (authorizationError) throw new Error(`delivery_authorization_${authorizationError.code || "unknown"}`);
+  const decision = Array.isArray(authorization) ? authorization[0] : authorization;
+  const leaseValid = decision?.lease_valid ?? decision?.leaseValid;
+  if (leaseValid !== true) return true;
+  if (decision?.authorized !== true) {
+    outcome = { sent: false, skipped: "consent_revoked" };
+  } else if (row.delivery_type === "internal_notification") {
+    outcome = await sendLeadNotification(input);
+  } else if (row.delivery_type === "telegram_notification") {
+    outcome = await sendTelegramLeadNotification(input);
+  } else if (row.delivery_type === "telegram_booking") {
+    outcome = await sendTelegramBookingNotification(input);
+  } else if (row.delivery_type === "newsletter_double_optin") {
+    outcome = await sendNewsletterConfirmation(input);
   } else if (row.delivery_type === "meta_capi") {
-    const { data: authorization, error: authorizationError } = await supabase.rpc("authorize_ai_readiness_meta_delivery_v1", {
-      p_outbox_id: row.outbox_id,
-      p_lease_token: row.lease_token,
-    });
-    if (authorizationError) throw new Error(`meta_authorization_${authorizationError.code || "unknown"}`);
-    const decision = Array.isArray(authorization) ? authorization[0] : authorization;
-    const leaseValid = decision?.lease_valid ?? decision?.leaseValid;
-    if (leaseValid !== true) return true;
-    if (decision?.authorized !== true) {
-      outcome = { sent: false, skipped: "consent_revoked" };
-    } else {
       outcome = await sendMetaLead({
         contact: input.contact,
         attribution: input.attribution,
@@ -67,7 +58,15 @@ async function processDelivery(supabase, row) {
         eventSourceUrl: "https://ki-check.synclaro.de/",
         eventTime: Math.floor(new Date(row.submitted_at).getTime() / 1000),
       });
-    }
+  } else if (row.delivery_type === "meta_schedule") {
+    outcome = await sendMetaEvent({
+      eventName: "Schedule",
+      contact: input.contact,
+      attribution: { ...input.attribution, eventId: input.deliveryContext.eventId },
+      deliveryContext: input.deliveryContext,
+      eventSourceUrl: "https://ki-check.synclaro.de/",
+      eventTime: Number(input.deliveryContext.eventTime),
+    });
   } else {
     outcome = { sent: false, errorCode: "invalid_delivery_type" };
   }
@@ -78,7 +77,7 @@ async function processDelivery(supabase, row) {
 exports.handler = async () => {
   if (process.env.CONTEXT !== "production") return { statusCode: 204, body: "" };
   const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase.rpc("claim_ai_readiness_deliveries_v1", { p_limit: 4 });
+  const { data, error } = await supabase.rpc("claim_ai_readiness_deliveries_v2", { p_limit: 4 });
   if (error) throw new Error(`outbox_claim_${error.code || "unknown"}`);
   const rows = Array.isArray(data) ? data : [];
   const settled = await Promise.allSettled(rows.map((row) => processDelivery(supabase, row)));

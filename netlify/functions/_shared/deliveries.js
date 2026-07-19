@@ -47,7 +47,7 @@ async function sendLeadNotification({ contactId, assessmentId, baseline, attribu
         Assessment-ID: ${escapeHtml(assessmentId)}</p>
         <p><a href="${escapeHtml(crmUrl)}">Lead im geschützten CRM öffnen</a></p>
         <p>Kontaktdaten werden aus Datenschutzgründen nicht in diese Benachrichtigung kopiert.</p>
-        <p>Die Person hat den einmaligen Rückruf und ein E-Mail-Nachfassen ausdrücklich angefordert. Kein Newsletter-Opt-in.</p>`,
+        <p>Diese Meldung dokumentiert nur den abgeschlossenen Test. Es wurde kein Rückruf angefordert.</p>`,
       }),
       signal: controller.signal,
     });
@@ -60,7 +60,7 @@ async function sendLeadNotification({ contactId, assessmentId, baseline, attribu
 }
 
 async function markDelivery(supabase, outboxId, leaseToken, outcome) {
-  const { error } = await supabase.rpc("complete_ai_readiness_delivery_v1", {
+  const { error } = await supabase.rpc("complete_ai_readiness_delivery_v2", {
     p_outbox_id: outboxId,
     p_lease_token: leaseToken,
     p_success: outcome.sent === true,
@@ -69,14 +69,16 @@ async function markDelivery(supabase, outboxId, leaseToken, outcome) {
   if (error) throw new Error(`delivery_status_${error.code || "unknown"}`);
 }
 
-async function sendTelegramLeadNotification({ baseline, attribution = {} }) {
+async function sendTelegramLeadNotification({ deliveryContext = {} }) {
   if (process.env.TELEGRAM_TRANSFER_APPROVED !== "true") return { sent: false, skipped: "not_approved" };
   const token = process.env.LEAD_TELEGRAM_BOT_TOKEN;
   const chatId = process.env.LEAD_TELEGRAM_CHAT_ID;
   if (!token || !chatId) return { sent: false, skipped: "not_configured" };
   const crmUrl = crmContactsUrl();
-  const campaign = escapeHtml(campaignLabel(attribution));
-  const text = `🔔 <b>Neuer AI-Readiness-Lead</b>\n\nScore: <b>${baseline.scores.total.percent}/100</b> · ${escapeHtml(baseline.level)}\nKampagne: ${campaign}\n\nKontaktdaten und interne IDs bleiben im geschützten CRM.`;
+  const newsletterStatus = deliveryContext.newsletterStatus === "already_active"
+    ? "bereits aktiv"
+    : "Double-Opt-in ausstehend";
+  const text = `🔔 <b>Neuer AI-Readiness-Lead</b>\n\nNewsletter: <b>${newsletterStatus}</b>\n\nKontaktdaten liegen ausschließlich im geschützten CRM.`;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 6000);
   try {
@@ -102,4 +104,72 @@ async function sendTelegramLeadNotification({ baseline, attribution = {} }) {
   }
 }
 
-module.exports = { campaignLabel, crmContactsUrl, markDelivery, sendLeadNotification, sendTelegramLeadNotification };
+async function sendTelegramBookingNotification() {
+  if (process.env.TELEGRAM_TRANSFER_APPROVED !== "true") return { sent: false, skipped: "not_approved" };
+  const token = process.env.LEAD_TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.LEAD_TELEGRAM_CHAT_ID;
+  if (!token || !chatId) return { sent: false, skipped: "not_configured" };
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 6000);
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: "📅 <b>Neue KI-Potenzialanalyse gebucht</b>\n\nDie Buchung wurde dem Readiness-Funnel zugeordnet. Kontaktdaten und Termindetails bleiben in den geschützten Systemen.",
+        parse_mode: "HTML",
+        disable_web_page_preview: true,
+        reply_markup: { inline_keyboard: [[{ text: "CRM öffnen", url: crmContactsUrl() }]] },
+      }),
+      signal: controller.signal,
+    });
+    const result = await response.json().catch(() => ({}));
+    return response.ok && result.ok === true ? { sent: true } : { sent: false, errorCode: "telegram_error" };
+  } catch (error) {
+    return { sent: false, errorCode: error?.name === "AbortError" ? "timeout" : "telegram_network_error" };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function sendNewsletterConfirmation({ assessmentId, submissionId, contact, deliveryContext = {} }) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.NEWSLETTER_FROM_EMAIL || process.env.LEADS_FROM_EMAIL;
+  const token = String(deliveryContext.confirmationToken || "");
+  if (!apiKey || !from) return { sent: false, skipped: "not_configured" };
+  if (!contact?.email || !token || !assessmentId || !submissionId) return { sent: false, errorCode: "confirmation_payload_invalid" };
+  const url = new URL("https://ki-check.synclaro.de/.netlify/functions/confirm-newsletter");
+  url.searchParams.set("assessment", assessmentId);
+  url.searchParams.set("submission", submissionId);
+  url.searchParams.set("token", token);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 6000);
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "Idempotency-Key": `ai-readiness-newsletter-${assessmentId}`,
+      },
+      body: JSON.stringify({
+        from,
+        to: [contact.email],
+        subject: "Bitte bestätigen Sie Ihre Synclaro KI-Impulse",
+        html: `<h1>Fast geschafft</h1>
+          <p>Öffnen Sie die sichere Bestätigungsseite und aktivieren Sie dort mit einem bewussten Klick die freiwilligen Synclaro KI-Impulse per E-Mail.</p>
+          <p><a href="${escapeHtml(url.toString())}">Sichere Bestätigungsseite öffnen</a></p>
+          <p>Wenn Sie sich nicht angemeldet haben, ignorieren Sie diese Nachricht. Ohne Bestätigung werden Sie nicht in die Readiness-Newsletter-Liste aufgenommen.</p>`,
+      }),
+      signal: controller.signal,
+    });
+    return response.ok ? { sent: true } : { sent: false, errorCode: "resend_error" };
+  } catch (error) {
+    return { sent: false, errorCode: error?.name === "AbortError" ? "timeout" : "resend_network_error" };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+module.exports = { campaignLabel, crmContactsUrl, markDelivery, sendLeadNotification, sendNewsletterConfirmation, sendTelegramBookingNotification, sendTelegramLeadNotification };

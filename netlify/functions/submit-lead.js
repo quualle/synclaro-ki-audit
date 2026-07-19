@@ -1,11 +1,12 @@
 "use strict";
 
-const { parsePhoneNumberFromString } = require("libphonenumber-js");
+const crypto = require("crypto");
 const { ASSESSMENT_VERSION, cleanText, getQuestion, scoreAssessment } = require("./_shared/assessment");
-const { AI_CONSENT_TEXT, AI_CONSENT_VERSION, ANALYTICS_CONSENT_TEXT, CALLBACK_CONSENT_TEXT, CALLBACK_CONSENT_VERSION, COOKIE_CONSENT_VERSION, MARKETING_CONSENT_TEXT, PRIVACY_VERSION } = require("./_shared/consents");
+const { ANALYTICS_CONSENT_TEXT, COOKIE_CONSENT_VERSION, MARKETING_CONSENT_TEXT, NEWSLETTER_CONSENT_TEXT, NEWSLETTER_CONSENT_VERSION, PRIVACY_VERSION } = require("./_shared/consents");
 const { normalizeClientIp, normalizeEmail } = require("./_shared/meta");
+const { buildDeterministicResult } = require("./_shared/result");
 const { getSupabaseAdmin } = require("./_shared/supabase");
-const { clientIp, evidenceIpHash, hasAllowedOrigin, isProduction, jsonResponse, privacyHmac, signAnalysisToken } = require("./_shared/security");
+const { clientIp, evidenceIpHash, hasAllowedOrigin, isProduction, jsonResponse, privacyHmac, signBookingReference, signNewsletterToken } = require("./_shared/security");
 const { readSession } = require("./_shared/session");
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -14,23 +15,14 @@ const EMPLOYEE_BANDS = new Set(["solo", "1-5", "6-10", "11-20", "21-50", "51+"])
 const ROLES = new Set(["inhaber", "geschaeftsfuehrung", "leitung", "mitarbeit", "beratung"]);
 const GOALS = new Set(["zeit", "wachstum", "qualitaet", "wissen", "klarheit"]);
 
-function normalizePhone(value) {
-  const raw = cleanText(value, 40);
-  const parsed = parsePhoneNumberFromString(raw, "DE");
-  if (!parsed || !parsed.isValid()) return null;
-  return parsed.number;
-}
-
 function sanitizeContact(contact) {
   const firstName = cleanText(contact?.firstName, 80);
   const lastName = cleanText(contact?.lastName, 100);
   const company = cleanText(contact?.company, 160);
   const email = normalizeEmail(contact?.email).slice(0, 254);
-  const phone = normalizePhone(contact?.phone);
   if (!firstName || !lastName || !company) throw new Error("contact_required");
   if (!EMAIL_RE.test(email)) throw new Error("email_invalid");
-  if (!phone) throw new Error("phone_invalid");
-  return { firstName, lastName, company, email, phone };
+  return { firstName, lastName, company, email };
 }
 
 function sanitizeProfile(profile) {
@@ -133,16 +125,19 @@ function sanitizeAttribution(attribution, event, submissionId, marketingGranted)
 }
 
 function sanitizeConsents(consents) {
-  if (consents?.callback?.granted !== true || consents.callback.version !== CALLBACK_CONSENT_VERSION) throw new Error("callback_consent_missing");
-  if (consents?.aiProcessing?.granted !== true || consents.aiProcessing.version !== AI_CONSENT_VERSION) throw new Error("ai_consent_missing");
+  if (consents?.privacyNotice?.acknowledged !== true || consents.privacyNotice.version !== PRIVACY_VERSION) throw new Error("privacy_notice_mismatch");
   const now = new Date().toISOString();
+  const newsletterGranted = consents?.newsletter?.granted === true;
+  if (consents?.newsletter?.version !== NEWSLETTER_CONSENT_VERSION || consents?.newsletter?.text !== NEWSLETTER_CONSENT_TEXT) {
+    throw new Error("newsletter_consent_version");
+  }
   const analyticsGranted = consents?.analytics?.granted === true;
   const marketingGranted = consents?.marketing?.granted === true;
   if (analyticsGranted && consents.analytics.version !== COOKIE_CONSENT_VERSION) throw new Error("tracking_consent_version");
   if (marketingGranted && consents.marketing.version !== COOKIE_CONSENT_VERSION) throw new Error("tracking_consent_version");
   return {
-    callback: { granted: true, version: CALLBACK_CONSENT_VERSION, text: CALLBACK_CONSENT_TEXT, grantedAt: now },
-    aiProcessing: { granted: true, version: AI_CONSENT_VERSION, text: AI_CONSENT_TEXT, grantedAt: now },
+    privacyNotice: { acknowledged: true, version: PRIVACY_VERSION, acknowledgedAt: now },
+    newsletter: { granted: newsletterGranted, version: NEWSLETTER_CONSENT_VERSION, text: NEWSLETTER_CONSENT_TEXT, grantedAt: newsletterGranted ? now : null },
     analytics: { granted: analyticsGranted, version: COOKIE_CONSENT_VERSION, text: ANALYTICS_CONSENT_TEXT, grantedAt: analyticsGranted ? now : null },
     marketing: { granted: marketingGranted, version: COOKIE_CONSENT_VERSION, text: MARKETING_CONSENT_TEXT, grantedAt: marketingGranted ? now : null },
   };
@@ -152,10 +147,9 @@ function errorMessage(code) {
   const map = {
     contact_required: "Bitte füllen Sie Name und Unternehmen vollständig aus.",
     email_invalid: "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
-    phone_invalid: "Bitte geben Sie eine erreichbare Telefonnummer mit Vorwahl ein.",
     profile_invalid: "Unternehmensprofil unvollständig.",
-    callback_consent_missing: "Die Bitte um persönliche Kontaktaufnahme fehlt.",
-    ai_consent_missing: "Die Einwilligung zur individuellen KI-Auswertung fehlt.",
+    privacy_notice_mismatch: "Die Datenschutzhinweise haben sich geändert. Bitte laden Sie die Seite neu.",
+    newsletter_consent_version: "Die Newsletter-Auswahl ist veraltet. Bitte laden Sie die Seite neu.",
     tracking_consent_version: "Die Tracking-Auswahl ist veraltet. Bitte laden Sie die Seite neu und wählen Sie erneut.",
   };
   return map[code] || "Der Lead konnte nicht sicher gespeichert werden. Bitte prüfen Sie Ihre Angaben und versuchen Sie es erneut.";
@@ -186,6 +180,7 @@ exports.handler = async (event) => {
     const contact = sanitizeContact(payload.contact);
     const consents = sanitizeConsents(payload.consents);
     const attribution = sanitizeAttribution(payload.attribution, event, submissionId, consents.marketing.granted);
+    const detailedResult = buildDeterministicResult(baseline, profile);
 
     if (!isProduction()) {
       return jsonResponse(201, {
@@ -194,6 +189,8 @@ exports.handler = async (event) => {
         assessmentId: `preview-${submissionId}`,
         submissionId,
         baseline,
+        result: detailedResult,
+        newsletterStatus: consents.newsletter.granted ? "preview_not_sent" : "not_requested",
       });
     }
 
@@ -204,41 +201,26 @@ exports.handler = async (event) => {
     const trackingSubjectHash = privacyHmac("tracking-subject", trackingSubjectId);
     const consentEvidenceIpHash = evidenceIpHash(event);
     const consentEvidenceUserAgent = cleanText(event.headers?.["user-agent"] || event.headers?.["User-Agent"], 500);
-    const { data: trackingConsentData, error: trackingConsentError } = await supabase.rpc("record_ai_readiness_tracking_consent_v1", {
-      p_decision_id: submissionId,
-      p_previous_decision_id: trackingPreviousDecisionId || null,
-      p_run_id: runId,
-      p_session_hash: session.sessionHash,
-      p_tracking_subject_hash: trackingSubjectHash,
-      p_consent_version: COOKIE_CONSENT_VERSION,
-      p_analytics: consents.analytics.granted,
-      p_marketing: consents.marketing.granted,
-      p_evidence_ip_hash: consentEvidenceIpHash,
-      p_evidence_user_agent: consentEvidenceUserAgent,
-    });
-    if (trackingConsentError) {
-      return jsonResponse(503, { error: "Ihre Tracking-Auswahl konnte nicht verbindlich zugeordnet werden. Es wurde noch kein Lead gespeichert." });
-    }
-    const trackingConsentResult = Array.isArray(trackingConsentData) ? trackingConsentData[0] : trackingConsentData;
-    if (trackingConsentResult?.status === "stale" || trackingConsentResult?.accepted === false) {
-      return jsonResponse(409, { error: "Ihre Tracking-Auswahl wurde inzwischen in einem anderen Tab geändert. Bitte prüfen Sie die Auswahl und senden Sie erneut." });
-    }
+    const assessmentId = crypto.randomUUID();
+    const newsletterConfirmationToken = consents.newsletter.granted ? signNewsletterToken(assessmentId, submissionId) : null;
     const rpcPayload = {
+      assessment_id: assessmentId,
       submission_id: submissionId,
       run_id: runId,
       session_hash: session.sessionHash,
       rate_ip_hash: privacyHmac("ip", clientIp(event) || `session:${session.sessionHash}`),
       rate_email_hash: privacyHmac("email", contact.email),
-      rate_phone_hash: privacyHmac("phone", contact.phone),
       tracking_subject_hash: trackingSubjectHash,
       contact,
       profile,
       answers,
       baseline,
+      result: detailedResult,
       attribution,
       consents,
       assessment_version: ASSESSMENT_VERSION,
       privacy_version: PRIVACY_VERSION,
+      newsletter_confirmation_token: newsletterConfirmationToken,
       delivery_context: consents.marketing.granted
         ? { clientIpAddress: normalizeClientIp(clientIp(event)) || null }
         : {},
@@ -247,24 +229,76 @@ exports.handler = async (event) => {
       ipHash: consentEvidenceIpHash,
       userAgent: consentEvidenceUserAgent,
     };
-    const { data, error } = await supabase.rpc("submit_ai_readiness_lead_v1", { p_payload: rpcPayload });
-    if (error) {
-      const rateLimited = String(error.message || "").includes("rate_limited");
-      return jsonResponse(rateLimited ? 429 : 503, { error: rateLimited ? "Zu viele Versuche. Bitte versuchen Sie es später erneut." : "Der Lead konnte nicht dauerhaft gespeichert werden. Es wurde noch keine Erfolgsmeldung ausgelöst." });
+    const { data: restoreData, error: restoreError } = await supabase.rpc("restore_ai_readiness_lead_v1", { p_payload: rpcPayload });
+    if (restoreError) {
+      const submissionConflict = String(restoreError.message || "").includes("submission_conflict");
+      return jsonResponse(submissionConflict ? 409 : 503, {
+        error: submissionConflict
+          ? "Dieser Testlauf wurde bereits mit anderen Angaben gespeichert. Bitte starten Sie für eine neue Auswertung einen neuen Test."
+          : "Der bestehende Teststatus konnte gerade nicht sicher geprüft werden. Bitte versuchen Sie es erneut.",
+      });
     }
-    const result = Array.isArray(data) ? data[0] : data;
-    const assessmentId = result?.assessment_id || result?.assessmentId;
-    if (!assessmentId) throw new Error("assessment_id_missing");
+    const restored = Array.isArray(restoreData) ? restoreData[0] : restoreData;
+    let result = restored?.found === true ? restored : null;
+    let trackingConsentResult = null;
+    if (!result) {
+      const { data: trackingConsentData, error: trackingConsentError } = await supabase.rpc("record_ai_readiness_tracking_consent_v1", {
+        p_decision_id: submissionId,
+        p_previous_decision_id: trackingPreviousDecisionId || null,
+        p_run_id: runId,
+        p_session_hash: session.sessionHash,
+        p_tracking_subject_hash: trackingSubjectHash,
+        p_consent_version: COOKIE_CONSENT_VERSION,
+        p_analytics: consents.analytics.granted,
+        p_marketing: consents.marketing.granted,
+        p_evidence_ip_hash: consentEvidenceIpHash,
+        p_evidence_user_agent: consentEvidenceUserAgent,
+      });
+      if (trackingConsentError) {
+        return jsonResponse(503, { error: "Ihre Tracking-Auswahl konnte nicht verbindlich zugeordnet werden. Es wurde noch kein Lead gespeichert." });
+      }
+      trackingConsentResult = Array.isArray(trackingConsentData) ? trackingConsentData[0] : trackingConsentData;
+      if (trackingConsentResult?.status === "stale" || trackingConsentResult?.accepted === false) {
+        return jsonResponse(409, { error: "Ihre Tracking-Auswahl wurde inzwischen in einem anderen Tab geändert. Bitte prüfen Sie die Auswahl und senden Sie erneut." });
+      }
+      const { data, error } = await supabase.rpc("submit_ai_readiness_lead_v2", { p_payload: rpcPayload });
+      if (error) {
+        const rateLimited = String(error.message || "").includes("rate_limited");
+        const submissionConflict = String(error.message || "").includes("submission_conflict");
+        return jsonResponse(rateLimited ? 429 : submissionConflict ? 409 : 503, {
+          error: rateLimited
+            ? "Zu viele Versuche. Bitte versuchen Sie es später erneut."
+            : submissionConflict
+              ? "Dieser Testlauf wurde bereits mit anderen Angaben gespeichert. Bitte starten Sie für eine neue Auswertung einen neuen Test."
+              : "Der Lead konnte nicht dauerhaft gespeichert werden. Es wurde noch keine Erfolgsmeldung ausgelöst.",
+        });
+      }
+      result = Array.isArray(data) ? data[0] : data;
+    }
+    const storedAssessmentId = result?.assessment_id || result?.assessmentId;
+    if (!storedAssessmentId) throw new Error("assessment_id_missing");
+    const bookingReference = signBookingReference(storedAssessmentId, submissionId);
+    const newsletterStatus = result?.newsletter_status || result?.newsletterStatus || "not_requested";
+    const storedResult = result?.result && typeof result.result === "object" ? result.result : null;
+    const responseResult = result?.status === "idempotent" && storedResult ? storedResult : detailedResult;
+    const responseBaseline = result?.status === "idempotent" && storedResult ? storedResult : baseline;
+    const metaLeadEligible = result?.status === "idempotent"
+      ? result?.meta_lead_eligible === true || result?.metaLeadEligible === true
+      : consents.marketing.granted;
 
     return jsonResponse(201, {
       accepted: true,
-      assessmentId,
+      assessmentId: storedAssessmentId,
       submissionId,
-      analysisToken: signAnalysisToken(assessmentId, submissionId),
-      baseline,
+      baseline: responseBaseline,
+      result: responseResult,
       leadEventId: submissionId,
+      metaLeadEligible,
       notificationQueued: result?.status === "created",
-      telegramQueued: result?.status === "created",
+      telegramQueued: result?.status === "created" && consents.newsletter.granted,
+      newsletterStatus,
+      newsletterConfirmationQueued: result?.status === "created" && newsletterStatus === "doi_pending",
+      bookingReference,
       trackingConsentDecidedAt: trackingConsentResult?.decided_at || trackingConsentResult?.decidedAt || null,
       trackingConsentDecisionId: trackingConsentResult?.decision_id || trackingConsentResult?.decisionId || submissionId,
     });
@@ -276,12 +310,9 @@ exports.handler = async (event) => {
 };
 
 module.exports._test = {
-  AI_CONSENT_TEXT,
-  AI_CONSENT_VERSION,
-  CALLBACK_CONSENT_TEXT,
-  CALLBACK_CONSENT_VERSION,
+  NEWSLETTER_CONSENT_TEXT,
+  NEWSLETTER_CONSENT_VERSION,
   PRIVACY_VERSION,
-  normalizePhone,
   sanitizeAnswers,
   sanitizeConsents,
   sanitizeContact,

@@ -36,6 +36,33 @@ create table public.crm_contact_events (
   created_at timestamptz not null default now()
 );
 
+create table public.crm_marketing_consents (
+  id uuid primary key default extensions.gen_random_uuid(),
+  contact_id uuid not null references public.crm_contacts(id) on delete restrict,
+  channel text not null check (channel in ('email', 'phone', 'post')),
+  granted_at timestamptz not null,
+  source text not null,
+  consent_text text,
+  evidence jsonb,
+  double_optin_confirmed_at timestamptz,
+  revoked_at timestamptz,
+  revoke_source text,
+  created_at timestamptz not null default now()
+);
+create unique index crm_marketing_consents_active_uniq on public.crm_marketing_consents(contact_id, channel) where revoked_at is null;
+create index idx_marketing_consents_active on public.crm_marketing_consents(channel) where revoked_at is null;
+create index idx_marketing_consents_contact on public.crm_marketing_consents(contact_id);
+
+create view public.v_email_marketing_list as
+select distinct on (c.id)
+  c.id as contact_id, c.first_name, c.last_name, c.email, c.company,
+  mc.granted_at, mc.source, mc.double_optin_confirmed_at
+from public.crm_marketing_consents mc
+join public.crm_contacts c on c.id = mc.contact_id
+where mc.channel = 'email' and mc.revoked_at is null
+order by c.id, mc.granted_at desc;
+
 grant usage on schema public, extensions to service_role;
-grant select, insert, update, delete on public.crm_contacts, public.crm_contact_events to service_role;
+grant select, insert, update, delete on public.crm_contacts, public.crm_contact_events, public.crm_marketing_consents to service_role;
+grant select on public.v_email_marketing_list to service_role;
 grant execute on all functions in schema extensions to service_role;

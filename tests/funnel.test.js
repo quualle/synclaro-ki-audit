@@ -33,7 +33,7 @@ test("der feste Score hat stabile Randwerte und ist branchenneutral", () => {
   assert.equal(high.level, "KI-Skalierbar");
   assert.deepEqual(low.scores, otherIndustry.scores);
   assert.equal(low.complete, true);
-  assert.equal(low.assessmentVersion, "2026-07-18.v2");
+  assert.equal(low.assessmentVersion, "2026-07-19.v3");
 });
 
 test("Solo-Selbstständige erhalten passende Fragen bei identischer Bewertungslogik", () => {
@@ -57,10 +57,8 @@ test("fehlende Kernantworten führen nie zu einem vollständigen Score", () => {
 });
 
 test("Lead-Eingaben werden normalisiert und serverseitig rekonstruiert", () => {
-  assert.equal(submit.normalizePhone("0170 1234567"), "+491701234567");
-  assert.equal(submit.normalizePhone("123"), null);
   assert.deepEqual(submit.sanitizeContact({ firstName: " Ada ", lastName: " Lovelace ", company: " Analytical GmbH ", email: " ADA@EXAMPLE.COM ", phone: "0170 1234567" }), {
-    firstName: "Ada", lastName: "Lovelace", company: "Analytical GmbH", email: "ada@example.com", phone: "+491701234567",
+    firstName: "Ada", lastName: "Lovelace", company: "Analytical GmbH", email: "ada@example.com",
   });
   const firstQuestion = assessment.PHASES[0].questions[0];
   const sanitized = submit.sanitizeAnswers([
@@ -80,21 +78,22 @@ test("Lead-Eingaben werden normalisiert und serverseitig rekonstruiert", () => {
   assert.equal(soloSanitized[0].answerLabel, soloQuestion.options[1].label);
 });
 
-test("Pflicht- und Tracking-Einwilligungen sind versioniert und nicht vermischt", () => {
+test("Datenschutzhinweis, Newsletter und Tracking sind versioniert und nicht vermischt", () => {
   const result = submit.sanitizeConsents({
-    callback: { granted: true, version: consents.CALLBACK_CONSENT_VERSION },
-    aiProcessing: { granted: true, version: consents.AI_CONSENT_VERSION },
+    privacyNotice: { acknowledged: true, version: consents.PRIVACY_VERSION },
+    newsletter: { granted: true, version: consents.NEWSLETTER_CONSENT_VERSION, text: consents.NEWSLETTER_CONSENT_TEXT },
     analytics: { granted: true, version: consents.COOKIE_CONSENT_VERSION },
     marketing: { granted: false, version: consents.COOKIE_CONSENT_VERSION },
   });
-  assert.equal(result.callback.text, consents.CALLBACK_CONSENT_TEXT);
-  assert.equal(result.aiProcessing.text, consents.AI_CONSENT_TEXT);
+  assert.equal(result.privacyNotice.acknowledged, true);
+  assert.equal(result.newsletter.text, consents.NEWSLETTER_CONSENT_TEXT);
+  assert.equal(result.newsletter.granted, true);
   assert.equal(result.analytics.text, consents.ANALYTICS_CONSENT_TEXT);
   assert.equal(result.marketing.granted, false);
   assert.equal(result.marketing.grantedAt, null);
   assert.throws(() => submit.sanitizeConsents({
-    callback: { granted: true, version: consents.CALLBACK_CONSENT_VERSION },
-    aiProcessing: { granted: true, version: consents.AI_CONSENT_VERSION },
+    privacyNotice: { acknowledged: true, version: consents.PRIVACY_VERSION },
+    newsletter: { granted: false, version: consents.NEWSLETTER_CONSENT_VERSION, text: consents.NEWSLETTER_CONSENT_TEXT },
     marketing: { granted: true, version: "veraltet" },
   }), /tracking_consent_version/);
 });
@@ -144,36 +143,36 @@ test("eine ältere Grant-Antwort kann einen neueren Cross-Tab-Widerruf nicht rea
 test("vollständige Consent-Texte bleiben auch ohne Runtime-Config sichtbar", () => {
   const html = fs.readFileSync(path.join(__dirname, "../public/index.html"), "utf8");
   const app = fs.readFileSync(path.join(__dirname, "../public/app.js"), "utf8");
-  for (const text of [
-    consents.CALLBACK_CONSENT_TEXT,
-    consents.AI_CONSENT_TEXT,
-    consents.ANALYTICS_CONSENT_TEXT,
-    consents.MARKETING_CONSENT_TEXT,
-  ]) assert.equal(html.includes(text), true);
+  for (const text of [consents.ANALYTICS_CONSENT_TEXT, consents.MARKETING_CONSENT_TEXT]) assert.equal(html.includes(text), true);
+  assert.equal(app.includes(consents.NEWSLETTER_CONSENT_TEXT), true);
   assert.match(app, /renderRuntimeConfig\(\);/);
   assert.match(app, /addEventListener\("storage", handleConsentStorage\)/);
 });
 
-test("Analyse-Prompt hält freie Texte und Rohbranche vollständig von OpenAI fern", () => {
-  const redacted = analyze.redactPotentialContactData("Bitte an ada@example.com oder +49 170 1234567 melden.");
-  assert.equal(redacted.includes("ada@example.com"), false);
-  assert.equal(redacted.includes("1234567"), false);
-  assert.match(redacted, /E-Mail entfernt/);
-  assert.match(redacted, /Telefonnummer entfernt/);
-  const prompt = analyze.buildPrompt(
-    { branche: "Muster GmbH, Musterstraße 1, 80331 München", mitarbeiter: "1-5", rolle: "inhaber", hauptziel: "klarheit" },
-    [
-      { questionId: "ki_nutzung", questionType: "radio", questionLabel: "Wie wird KI genutzt?", answerLabel: "Punktuell für einzelne Aufgaben" },
-      { questionId: "haupthebel", questionType: "textarea", questionLabel: "Freitext", answerLabel: "Bitte Max Mustermann von Beispiel AG in Hauptstraße 7, 80331 München kontaktieren" },
-    ],
-    assessment.scoreAssessment(answersWith(2), { branche: "Beratung", mitarbeiter: "1-5" })
-  );
-  for (const personalText of ["Muster GmbH", "Musterstraße", "80331", "München", "Max Mustermann", "Beispiel AG", "Hauptstraße", "kontaktieren"]) {
-    assert.equal(prompt.includes(personalText), false, `${personalText} gelangte in den OpenAI-Prompt`);
-  }
-  assert.match(prompt, /Sonstige oder nicht kategorisierte Branche/);
-  assert.match(prompt, /Punktuell für einzelne Aufgaben/);
-  assert.equal(analyze.coarseIndustry("Metallbau"), "Handwerk und technische Dienstleistungen");
+test("Conversion-Gate, Formfelder und Ergebnis-CTAs bleiben transparent und barrierefrei benannt", () => {
+  const html = fs.readFileSync(path.join(__dirname, "../public/index.html"), "utf8");
+  const app = fs.readFileSync(path.join(__dirname, "../public/app.js"), "utf8");
+  const css = fs.readFileSync(path.join(__dirname, "../public/styles.css"), "utf8");
+  assert.match(html, /Am Ende erforderlich: Name, Unternehmen und E-Mail · kein Rückruf · Newsletter nur freiwillig/);
+  assert.equal((html.match(/data-calendar-cta/g) || []).length, 2);
+  assert.match(app, /id="profileText" aria-labelledby="questionTitle"/);
+  assert.match(app, /id="answerText" aria-labelledby="questionTitle"/);
+  assert.match(app, /aria-labelledby="questionTitle"/);
+  assert.doesNotMatch(app, /role="radio"|role="radiogroup"|aria-checked=/);
+  assert.match(app, /showOnlyScreen\("measuringScreen"\)/);
+  assert.match(app, /showOnlyScreen\("fullResult"\)/);
+  assert.match(app, /preview_not_sent/);
+  assert.match(css, /\.result-privacy-note[^}]*font-size: 14px/);
+  assert.match(css, /\.lever-section > \* \{ min-width: 0; \}/);
+  assert.match(css, /\.lever-section h2[^}]*overflow-wrap: anywhere/);
+});
+
+test("der frühere externe Analyse-Endpunkt ist dauerhaft deaktiviert", async () => {
+  const response = await require("../netlify/functions/analyze").handler({ httpMethod: "POST" });
+  assert.equal(response.statusCode, 410);
+  assert.match(response.body, /deterministisch/);
+  const source = fs.readFileSync(path.join(__dirname, "../netlify/functions/analyze.js"), "utf8");
+  assert.doesNotMatch(source, /OpenAI|chat\.completions|OPENAI_API_KEY/);
 });
 
 test("Attribution bleibt ohne Marketing-Consent leer und entfernt mit Consent freie Identifikatoren", () => {
@@ -311,7 +310,8 @@ test("Telegram-Benachrichtigung enthält keine Kontaktdaten und verlinkt nur ins
   assert.equal(request.body.text.includes("+491701234567"), false);
   assert.equal(request.body.text.includes("44444444-4444-4444-8444-444444444444"), false);
   assert.equal(request.body.reply_markup.inline_keyboard[0][0].url.includes("33333333-3333-4333-8333-333333333333"), false);
-  assert.match(request.body.text, /Meta · sonstige Kampagne/);
+  assert.match(request.body.text, /Double-Opt-in ausstehend/);
+  assert.doesNotMatch(request.body.text, /Score|Kampagne/);
   assert.equal(request.body.reply_markup.inline_keyboard[0][0].url, "https://crm.synclaro.de/crm/contacts");
   global.fetch = originalFetch;
   if (originalToken === undefined) delete process.env.LEAD_TELEGRAM_BOT_TOKEN; else process.env.LEAD_TELEGRAM_BOT_TOKEN = originalToken;
@@ -388,7 +388,7 @@ test("Meta-CAPI verwendet Event-ID zur Pixel-Deduplizierung und hasht PII", asyn
   assert.equal(payload.data[0].event_source_url, "https://ki-check.synclaro.de/");
   assert.equal(payload.data[0].user_data.client_ip_address, "203.0.113.10");
   assert.equal(payload.data[0].user_data.em[0], "a".repeat(64));
-  assert.equal(payload.data[0].user_data.ph[0], "b".repeat(64));
+  assert.equal(Object.hasOwn(payload.data[0].user_data, "ph"), false);
   assert.equal(Object.hasOwn(payload.data[0].user_data, "fn"), false);
   assert.equal(Object.hasOwn(payload.data[0].user_data, "ln"), false);
   assert.equal(Object.hasOwn(payload.data[0].custom_data, "score"), false);

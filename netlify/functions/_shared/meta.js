@@ -36,34 +36,34 @@ function canonicalEventSourceUrl(value) {
   return "https://ki-check.synclaro.de/";
 }
 
-async function sendMetaLead({ event = {}, contact, attribution, deliveryContext = {}, eventSourceUrl, eventTime }) {
+async function sendMetaEvent({ eventName = "Lead", event = {}, contact, attribution, deliveryContext = {}, eventSourceUrl, eventTime }) {
   const pixelId = process.env.META_PIXEL_ID;
   const accessToken = process.env.META_CAPI_ACCESS_TOKEN;
   if (!pixelId || !accessToken) return { sent: false, skipped: "not_configured" };
 
   const version = process.env.META_GRAPH_API_VERSION || "v25.0";
   const userData = {
-    em: [validatedHash(deliveryContext.emailSha256) || hashed(normalizeEmail(contact?.email))],
-    ph: [validatedHash(deliveryContext.phoneSha256) || hashed(normalizePhone(contact?.phone))],
+    em: validatedHash(deliveryContext.emailSha256) || hashed(normalizeEmail(contact?.email)),
     client_ip_address: normalizeClientIp(deliveryContext.clientIpAddress || clientIp(event)),
     client_user_agent: String(attribution.user_agent || event.headers?.["user-agent"] || event.headers?.["User-Agent"] || "").slice(0, 500) || undefined,
     fbp: String(attribution.fbp || "").slice(0, 255) || undefined,
     fbc: String(attribution.fbc || "").slice(0, 255) || undefined,
   };
+  if (userData.em) userData.em = [userData.em];
   for (const key of Object.keys(userData)) if (userData[key] === undefined) delete userData[key];
 
   const payload = {
     data: [
       {
-        event_name: "Lead",
+        event_name: eventName,
         event_time: Number.isFinite(Number(eventTime)) ? Math.floor(Number(eventTime)) : Math.floor(Date.now() / 1000),
         event_id: attribution.eventId,
         action_source: "website",
         event_source_url: canonicalEventSourceUrl(eventSourceUrl),
         user_data: userData,
         custom_data: {
-          content_name: "Synclaro AI Readiness Test",
-          content_category: "AI Readiness Assessment",
+          content_name: eventName === "Schedule" ? "Synclaro KI-Potenzialanalyse" : "Synclaro AI Readiness Test",
+          content_category: eventName === "Schedule" ? "Consultation Booking" : "AI Readiness Assessment",
         },
       },
     ],
@@ -95,4 +95,8 @@ async function sendMetaLead({ event = {}, contact, attribution, deliveryContext 
   }
 }
 
-module.exports = { canonicalEventSourceUrl, normalizeClientIp, normalizeEmail, normalizePhone, sendMetaLead, validatedHash };
+function sendMetaLead(input) {
+  return sendMetaEvent({ ...input, eventName: "Lead" });
+}
+
+module.exports = { canonicalEventSourceUrl, normalizeClientIp, normalizeEmail, normalizePhone, sendMetaEvent, sendMetaLead, validatedHash };

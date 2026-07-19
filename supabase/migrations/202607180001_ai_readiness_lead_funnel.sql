@@ -1,6 +1,8 @@
--- Synclaro AI Readiness Lead-Funnel v1
+-- Synclaro AI Readiness Micro-Funnel v2 – atomare Baseline
 -- Vor Ausführung zwingend auf einer Supabase-Branch testen und separat freigeben.
--- Diese Migration ändert bewusst KEINE bestehenden RLS-/Grant-Regeln der CRM-Tabellen.
+-- Production hat keine frühere Readiness-Migration angewandt. Übergangsobjekte aus dem ursprünglichen v1-Entwurf
+-- werden innerhalb derselben Transaktion finalisiert und sind außerhalb dieser Transaktion nie sichtbar.
+-- Bestehende RLS-/Grant-Regeln der CRM-Basistabellen werden bewusst nicht verändert.
 
 begin;
 
@@ -150,6 +152,7 @@ create table if not exists private.ai_readiness_outbox (
   id uuid primary key default gen_random_uuid(),
   assessment_id uuid not null references public.ai_readiness_assessments(id) on delete cascade,
   delivery_type text not null check (delivery_type in ('internal_notification', 'telegram_notification', 'meta_capi')),
+  dedupe_key text not null default 'assessment' check (char_length(dedupe_key) between 1 and 128),
   status text not null default 'pending' check (status in ('pending', 'processing', 'delivered', 'dead')),
   attempts smallint not null default 0 check (attempts between 0 and 12),
   available_at timestamptz not null default now(),
@@ -160,7 +163,7 @@ create table if not exists private.ai_readiness_outbox (
   delivered_at timestamptz,
   created_at timestamptz not null default now(),
   expires_at timestamptz not null default (now() + interval '24 hours'),
-  unique (assessment_id, delivery_type),
+  unique (assessment_id, delivery_type, dedupe_key),
   check (
     (status = 'processing' and locked_at is not null and lease_token is not null)
     or (status <> 'processing' and locked_at is null and lease_token is null)
@@ -1726,5 +1729,821 @@ comment on function public.authorize_ai_readiness_contact_delivery_v1(uuid, uuid
 comment on function public.claim_ai_readiness_analysis_v1(uuid, uuid, uuid) is 'Revalidates current AI-processing consent and claims an expiring single-writer lease before an external AI analysis call.';
 comment on function public.complete_ai_readiness_analysis_v1(uuid, uuid, jsonb) is 'Revalidates AI-processing consent, persists one leased result idempotently, and prevents parallel replay costs.';
 comment on function public.purge_ai_readiness_ephemeral_v1() is 'Deletes consent-gated funnel events after 90 days and old delivery/rate-limit state.';
+
+
+-- Atomare Finalisierung auf den freigegebenen Micro-Funnel v2.
+
+drop function if exists public.purge_ai_readiness_ephemeral_v1();
+drop function if exists public.record_ai_readiness_callback_use_v1(uuid, uuid, text, text, timestamptz, text);
+drop function if exists public.complete_ai_readiness_delivery_v1(uuid, uuid, boolean, text);
+drop function if exists public.claim_ai_readiness_deliveries_v1(integer);
+drop function if exists public.authorize_ai_readiness_meta_delivery_v1(uuid, uuid);
+drop function if exists public.revoke_ai_readiness_ai_consent_v1(uuid, timestamptz, text);
+drop function if exists public.revoke_ai_readiness_callback_consent_v1(uuid, timestamptz, text);
+drop function if exists public.authorize_ai_readiness_contact_delivery_v1(uuid, uuid);
+drop function if exists private.set_ai_readiness_delivery_status_v1(uuid, text, text, timestamptz);
+drop function if exists public.submit_ai_readiness_lead_v1(jsonb);
+drop function if exists public.complete_ai_readiness_analysis_v1(uuid, uuid, jsonb);
+drop function if exists public.claim_ai_readiness_analysis_v1(uuid, uuid, uuid);
+drop function if exists private.ai_readiness_phone_key(text);
+
+drop table if exists private.ai_readiness_callback_uses;
+drop table if exists private.ai_readiness_contact_consents;
+
+drop index if exists public.ai_readiness_assessments_pending_idx;
+alter table public.ai_readiness_assessments
+  drop column if exists analysis_status,
+  drop column if exists analysis_result,
+  drop column if exists analysis_lease_token,
+  drop column if exists analysis_locked_at,
+  drop column if exists analyzed_at,
+  drop column if exists callback_consent_version,
+  drop column if exists callback_consent_text,
+  drop column if exists callback_consent_hash,
+  drop column if exists callback_consent_granted_at,
+  drop column if exists callback_consent_revoked_at,
+  drop column if exists ai_consent_version,
+  drop column if exists ai_consent_text,
+  drop column if exists ai_consent_hash,
+  drop column if exists ai_consent_granted_at,
+  drop column if exists ai_consent_revoked_at,
+  add column result jsonb not null default '{}'::jsonb
+    check (jsonb_typeof(result) = 'object' and pg_column_size(result) <= 131072),
+  add column submission_fingerprint text
+    check (submission_fingerprint is null or submission_fingerprint ~ '^[0-9a-f]{64}$'),
+  add column privacy_notice_acknowledged_at timestamptz not null default now(),
+  add column newsletter_status text not null default 'not_requested'
+    check (newsletter_status in ('not_requested', 'doi_pending', 'already_active', 'confirmed')),
+  add column newsletter_marketing_consent_id uuid references public.crm_marketing_consents(id) on delete restrict,
+  add column newsletter_requested_at timestamptz,
+  add column newsletter_confirmed_at timestamptz,
+  add constraint ai_readiness_newsletter_timeline_check check (
+    (newsletter_status = 'not_requested' and newsletter_marketing_consent_id is null and newsletter_requested_at is null and newsletter_confirmed_at is null)
+    or (newsletter_status = 'doi_pending' and newsletter_marketing_consent_id is not null and newsletter_requested_at is not null and newsletter_confirmed_at is null)
+    or (newsletter_status = 'already_active' and newsletter_marketing_consent_id is not null and newsletter_requested_at is not null)
+    or (newsletter_status = 'confirmed' and newsletter_marketing_consent_id is not null and newsletter_requested_at is not null and newsletter_confirmed_at is not null)
+  );
+alter table public.ai_readiness_assessments alter column result drop default;
+
+alter table private.ai_readiness_rate_limits drop constraint if exists ai_readiness_rate_limits_scope_check;
+alter table private.ai_readiness_rate_limits add constraint ai_readiness_rate_limits_scope_check
+  check (scope in ('event_session', 'consent_session', 'lead_ip', 'lead_email'));
+
+alter table private.ai_readiness_outbox drop constraint if exists ai_readiness_outbox_delivery_type_check;
+alter table private.ai_readiness_outbox add constraint ai_readiness_outbox_delivery_type_check
+  check (delivery_type in ('internal_notification', 'telegram_notification', 'telegram_booking', 'newsletter_double_optin', 'meta_capi', 'meta_schedule'));
+
+create table if not exists private.ai_readiness_booking_receipts (
+  id uuid primary key default extensions.gen_random_uuid(),
+  booking_uid text not null unique check (char_length(booking_uid) between 6 and 160),
+  assessment_id uuid not null references public.ai_readiness_assessments(id) on delete restrict,
+  event_type_id bigint not null,
+  event_type_slug text not null check (char_length(event_type_slug) between 1 and 120),
+  body_hash text not null check (body_hash ~ '^[0-9a-f]{64}$'),
+  booking_created_at timestamptz not null,
+  received_at timestamptz not null default now()
+);
+create index if not exists ai_readiness_booking_receipts_assessment_idx on private.ai_readiness_booking_receipts(assessment_id, received_at desc);
+alter table private.ai_readiness_booking_receipts enable row level security;
+revoke all on private.ai_readiness_booking_receipts from public, anon, authenticated;
+grant select, insert, update, delete on private.ai_readiness_booking_receipts to service_role;
+
+alter table public.crm_marketing_consents
+  add column if not exists double_optin_requested_at timestamptz;
+alter table public.crm_marketing_consents drop constraint if exists crm_marketing_consents_doi_timeline_check;
+alter table public.crm_marketing_consents add constraint crm_marketing_consents_doi_timeline_check check (
+  double_optin_confirmed_at is null
+  or double_optin_requested_at is null
+  or double_optin_confirmed_at >= double_optin_requested_at
+);
+
+create or replace view public.v_email_marketing_list
+as
+select distinct on (contact.id)
+  contact.id as contact_id,
+  contact.first_name,
+  contact.last_name,
+  contact.email,
+  contact.company,
+  consent.granted_at,
+  consent.source,
+  consent.double_optin_confirmed_at
+from public.crm_marketing_consents as consent
+join public.crm_contacts as contact on contact.id = consent.contact_id
+where consent.channel = 'email'
+  and consent.revoked_at is null
+  and (consent.double_optin_requested_at is null or consent.double_optin_confirmed_at is not null)
+order by contact.id, consent.granted_at desc;
+do $$
+begin
+  if pg_catalog.current_setting('server_version_num')::integer >= 150000 then
+    execute 'alter view public.v_email_marketing_list set (security_invoker = true)';
+  end if;
+end;
+$$;
+revoke all on public.v_email_marketing_list from public, anon, authenticated;
+grant select on public.v_email_marketing_list to service_role;
+
+create or replace function private.ai_readiness_submission_fingerprint_v1(p_payload jsonb)
+returns text
+language sql
+immutable
+strict
+security invoker
+set search_path = ''
+as $$
+  select pg_catalog.encode(extensions.digest(pg_catalog.convert_to(
+    pg_catalog.jsonb_build_object(
+      'assessment_version', p_payload ->> 'assessment_version',
+      'contact', p_payload -> 'contact',
+      'profile', p_payload -> 'profile',
+      'answers', p_payload -> 'answers',
+      'newsletter', pg_catalog.jsonb_build_object(
+        'granted', coalesce((p_payload #>> '{consents,newsletter,granted}')::boolean, false),
+        'version', p_payload #>> '{consents,newsletter,version}',
+        'text', p_payload #>> '{consents,newsletter,text}'
+      )
+    )::text,
+    'UTF8'
+  ), 'sha256'), 'hex');
+$$;
+revoke all on function private.ai_readiness_submission_fingerprint_v1(jsonb) from public, anon, authenticated;
+grant execute on function private.ai_readiness_submission_fingerprint_v1(jsonb) to service_role;
+
+create or replace function public.restore_ai_readiness_lead_v1(p_payload jsonb)
+returns jsonb
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  v_submission_id uuid;
+  v_run_id uuid;
+  v_fingerprint text;
+  v_assessment public.ai_readiness_assessments%rowtype;
+begin
+  if p_payload is null or pg_catalog.jsonb_typeof(p_payload) <> 'object' or pg_catalog.pg_column_size(p_payload) > 262144
+  then raise exception 'invalid_payload'; end if;
+  v_submission_id := (p_payload ->> 'submission_id')::uuid;
+  v_run_id := (p_payload ->> 'run_id')::uuid;
+  v_fingerprint := private.ai_readiness_submission_fingerprint_v1(p_payload);
+  select assessment.* into v_assessment
+  from public.ai_readiness_assessments as assessment
+  where assessment.submission_id = v_submission_id;
+  if not found then return pg_catalog.jsonb_build_object('found', false); end if;
+  if v_assessment.run_id <> v_run_id
+    or v_assessment.session_hash <> p_payload ->> 'session_hash'
+    or v_assessment.submission_fingerprint is distinct from v_fingerprint
+  then raise exception 'submission_conflict'; end if;
+  return pg_catalog.jsonb_build_object(
+    'found', true, 'accepted', true, 'status', 'idempotent',
+    'assessment_id', v_assessment.id, 'contact_id', v_assessment.contact_id,
+    'contact_created', false, 'dedupe_status', 'idempotent',
+    'newsletter_status', v_assessment.newsletter_status,
+    'meta_lead_eligible', v_assessment.marketing_tracking_consent,
+    'result', v_assessment.result
+  );
+end;
+$$;
+revoke all on function public.restore_ai_readiness_lead_v1(jsonb) from public, anon, authenticated;
+grant execute on function public.restore_ai_readiness_lead_v1(jsonb) to service_role;
+
+create or replace function public.submit_ai_readiness_lead_v2(p_payload jsonb)
+returns jsonb
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  c_privacy_version constant text := 'privacy-ai-readiness-v2-2026-07-19';
+  c_newsletter_version constant text := 'newsletter-email-v1-2026-07-19';
+  c_newsletter_text constant text := 'Ja, ich möchte regelmäßig praxistaugliche KI-Impulse, Einladungen und Angebote von Synclaro per E-Mail erhalten. Die Anmeldung wird per Double-Opt-in bestätigt; eine Abmeldung ist jederzeit möglich.';
+  c_cookie_version constant text := 'cookie-v1-2026-07-18';
+  c_analytics_text constant text := 'Analyse: Synclaro speichert pseudonyme Funnel-Ereignisse, um Nutzung und Abbrüche des AI Readiness Tests auszuwerten. Testantworten und Kontaktdaten werden dabei nicht als Ereigniseigenschaften gespeichert.';
+  c_marketing_text constant text := 'Marketing einschließlich Meta: Synclaro darf Meta Pixel und Conversions API einsetzen, um die Kampagne zu messen und Werbung zu personalisieren. Dabei können Online-Kennungen, Browser- und Gerätedaten sowie gehashte Kontaktdaten an Meta Platforms Ireland Limited übermittelt werden.';
+  v_assessment_id uuid;
+  v_submission_id uuid;
+  v_run_id uuid;
+  v_contact_id uuid;
+  v_contact_created boolean := false;
+  v_dedupe_status text := 'new';
+  v_email text;
+  v_email_ids uuid[];
+  v_allowed boolean;
+  v_marketing_tracking boolean;
+  v_analytics boolean;
+  v_newsletter_requested boolean;
+  v_newsletter_status text := 'not_requested';
+  v_newsletter_consent_id uuid;
+  v_newsletter_requested_at timestamptz;
+  v_newsletter_confirmed_at timestamptz;
+  v_lead_fit boolean;
+  v_submission_fingerprint text;
+  v_existing_assessment public.ai_readiness_assessments%rowtype;
+  v_tracking_decision private.ai_readiness_tracking_consents%rowtype;
+  v_global_tracking_decision private.ai_readiness_tracking_consents%rowtype;
+begin
+  if p_payload is null or pg_catalog.jsonb_typeof(p_payload) <> 'object' or pg_catalog.pg_column_size(p_payload) > 262144
+  then raise exception 'invalid_payload'; end if;
+  v_assessment_id := (p_payload ->> 'assessment_id')::uuid;
+  v_submission_id := (p_payload ->> 'submission_id')::uuid;
+  v_run_id := (p_payload ->> 'run_id')::uuid;
+  v_submission_fingerprint := private.ai_readiness_submission_fingerprint_v1(p_payload);
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(v_submission_id::text, 61807));
+
+  select assessment.* into v_existing_assessment
+  from public.ai_readiness_assessments as assessment
+  where assessment.submission_id = v_submission_id;
+  if found then
+    if v_existing_assessment.run_id <> v_run_id
+      or v_existing_assessment.session_hash <> p_payload ->> 'session_hash'
+      or v_existing_assessment.submission_fingerprint is distinct from v_submission_fingerprint
+    then raise exception 'submission_conflict'; end if;
+    return pg_catalog.jsonb_build_object(
+      'accepted', true, 'status', 'idempotent', 'assessment_id', v_existing_assessment.id,
+      'contact_id', v_existing_assessment.contact_id, 'contact_created', false, 'dedupe_status', 'idempotent',
+      'newsletter_status', v_existing_assessment.newsletter_status,
+      'meta_lead_eligible', v_existing_assessment.marketing_tracking_consent,
+      'result', v_existing_assessment.result
+    );
+  end if;
+  v_assessment_id := (p_payload ->> 'assessment_id')::uuid;
+
+  if p_payload ->> 'privacy_version' <> c_privacy_version
+    or p_payload #>> '{consents,privacyNotice,version}' <> c_privacy_version
+    or coalesce((p_payload #>> '{consents,privacyNotice,acknowledged}')::boolean, false) is not true
+  then raise exception 'privacy_notice_mismatch'; end if;
+  if p_payload #>> '{consents,newsletter,version}' <> c_newsletter_version
+    or p_payload #>> '{consents,newsletter,text}' <> c_newsletter_text
+  then raise exception 'newsletter_consent_mismatch'; end if;
+  v_newsletter_requested := coalesce((p_payload #>> '{consents,newsletter,granted}')::boolean, false);
+  if pg_catalog.jsonb_typeof(p_payload -> 'result') <> 'object' or pg_catalog.pg_column_size(p_payload -> 'result') > 131072
+  then raise exception 'result_invalid'; end if;
+  if p_payload ->> 'tracking_subject_hash' !~ '^[0-9a-f]{64}$' then raise exception 'tracking_subject_invalid'; end if;
+
+  v_marketing_tracking := coalesce((p_payload #>> '{consents,marketing,granted}')::boolean, false);
+  v_analytics := coalesce((p_payload #>> '{consents,analytics,granted}')::boolean, false);
+  if p_payload #>> '{consents,marketing,version}' <> c_cookie_version
+    or p_payload #>> '{consents,analytics,version}' <> c_cookie_version
+  then raise exception 'tracking_consent_mismatch'; end if;
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(p_payload ->> 'tracking_subject_hash', 71192));
+  select * into v_tracking_decision
+  from private.ai_readiness_tracking_consents
+  where tracking_subject_hash = p_payload ->> 'tracking_subject_hash'
+    and session_hash = p_payload ->> 'session_hash'
+    and run_id = v_run_id
+  order by recorded_seq desc limit 1;
+  select * into v_global_tracking_decision
+  from private.ai_readiness_tracking_consents
+  where tracking_subject_hash = p_payload ->> 'tracking_subject_hash'
+  order by recorded_seq desc limit 1;
+  if v_tracking_decision.id is null or v_global_tracking_decision.id is null
+    or v_tracking_decision.consent_version <> c_cookie_version
+    or v_tracking_decision.analytics_consent <> v_analytics
+    or v_tracking_decision.marketing_consent <> v_marketing_tracking
+    or v_global_tracking_decision.consent_version <> c_cookie_version
+    or v_global_tracking_decision.analytics_consent <> v_analytics
+    or v_global_tracking_decision.marketing_consent <> v_marketing_tracking
+  then raise exception 'tracking_consent_not_current'; end if;
+
+  v_email := pg_catalog.lower(pg_catalog.btrim(p_payload #>> '{contact,email}'));
+  if v_email !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]{2,}$'
+    or pg_catalog.btrim(p_payload #>> '{contact,firstName}') = ''
+    or pg_catalog.btrim(p_payload #>> '{contact,lastName}') = ''
+    or pg_catalog.btrim(p_payload #>> '{contact,company}') = ''
+  then raise exception 'invalid_contact'; end if;
+
+  select rate.allowed into v_allowed from public.consume_ai_readiness_rate_limit_v1('lead_ip', p_payload ->> 'rate_ip_hash') as rate;
+  if not v_allowed then raise exception 'rate_limited'; end if;
+  select rate.allowed into v_allowed from public.consume_ai_readiness_rate_limit_v1('lead_email', p_payload ->> 'rate_email_hash') as rate;
+  if not v_allowed then raise exception 'rate_limited'; end if;
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('email:' || v_email, 61807));
+
+  select coalesce(pg_catalog.array_agg(contact.id order by contact.created_at), '{}'::uuid[]) into v_email_ids
+  from public.crm_contacts as contact where pg_catalog.lower(pg_catalog.btrim(contact.email)) = v_email;
+  if pg_catalog.cardinality(v_email_ids) = 1 then
+    v_contact_id := v_email_ids[1];
+    v_dedupe_status := 'email_match';
+  end if;
+  if v_contact_id is null then
+    v_dedupe_status := case when pg_catalog.cardinality(v_email_ids) > 1 then 'dedupe_review' else 'new' end;
+    insert into public.crm_contacts(
+      first_name, last_name, email, phone, company, contact_type, contact_source,
+      lead_source, first_touch_channel, tags, pipeline_stage, created_at, updated_at
+    ) values (
+      pg_catalog.btrim(p_payload #>> '{contact,firstName}'),
+      pg_catalog.btrim(p_payload #>> '{contact,lastName}'),
+      v_email, null, pg_catalog.btrim(p_payload #>> '{contact,company}'),
+      'lead', 'marketing', 'marketing', 'website_formular',
+      case when v_dedupe_status = 'dedupe_review'
+        then array['ai-readiness', 'ki-readiness-test', 'dedupe-review']::text[]
+        else array['ai-readiness', 'ki-readiness-test']::text[] end,
+      'neu', pg_catalog.now(), pg_catalog.now()
+    ) returning id into v_contact_id;
+    v_contact_created := true;
+  else
+    update public.crm_contacts as contact set
+      company = case when coalesce(pg_catalog.btrim(contact.company), '') = '' then pg_catalog.btrim(p_payload #>> '{contact,company}') else contact.company end,
+      tags = (select pg_catalog.array_agg(distinct item.tag) from pg_catalog.unnest(coalesce(contact.tags, '{}'::text[]) || array['ai-readiness', 'ki-readiness-test']::text[]) as item(tag)),
+      updated_at = pg_catalog.now()
+    where contact.id = v_contact_id;
+  end if;
+
+  v_lead_fit := (p_payload #>> '{profile,mitarbeiter}') in ('solo', '1-5', '6-10', '11-20')
+    and (p_payload #>> '{profile,rolle}') in ('inhaber', 'geschaeftsfuehrung');
+  if v_newsletter_requested then
+    v_newsletter_requested_at := pg_catalog.statement_timestamp();
+    insert into public.crm_marketing_consents(
+      contact_id, channel, granted_at, source, consent_text, evidence,
+      double_optin_requested_at, double_optin_confirmed_at
+    ) values (
+      v_contact_id, 'email', v_newsletter_requested_at, 'ki-readiness-test', c_newsletter_text,
+      pg_catalog.jsonb_strip_nulls(pg_catalog.jsonb_build_object(
+        'email', v_email, 'submission_id', v_submission_id, 'assessment_id', v_assessment_id,
+        'consent_version', c_newsletter_version,
+        'ip_hash', nullif(p_payload #>> '{consents,evidence,ipHash}', '')
+      )),
+      v_newsletter_requested_at, null
+    ) on conflict (contact_id, channel) where revoked_at is null do nothing;
+    select consent.id, consent.double_optin_requested_at, consent.double_optin_confirmed_at,
+      case when consent.double_optin_requested_at is not null and consent.double_optin_confirmed_at is null
+        then 'doi_pending' else 'already_active' end
+    into v_newsletter_consent_id, v_newsletter_requested_at, v_newsletter_confirmed_at, v_newsletter_status
+    from public.crm_marketing_consents as consent
+    where consent.contact_id = v_contact_id and consent.channel = 'email' and consent.revoked_at is null
+    order by consent.granted_at desc limit 1;
+    if v_newsletter_consent_id is null then raise exception 'newsletter_consent_not_persisted'; end if;
+  end if;
+
+  insert into public.ai_readiness_assessments(
+    id, submission_id, run_id, session_hash, submission_fingerprint, contact_id, assessment_version, privacy_version,
+    industry, employee_band, respondent_role, primary_goal, lead_fit,
+    answers, score_total, score_breakdown, readiness_level, result, attribution, tracking_subject_hash,
+    privacy_notice_acknowledged_at, newsletter_status, newsletter_marketing_consent_id,
+    newsletter_requested_at, newsletter_confirmed_at,
+    analytics_consent, analytics_consent_version, analytics_consent_text, analytics_consent_hash, analytics_consent_granted_at,
+    marketing_tracking_consent, marketing_consent_version, marketing_consent_text, marketing_consent_hash, marketing_consent_granted_at,
+    consent_evidence_ip_hash, consent_evidence_user_agent, meta_delivery_status
+  ) values (
+    v_assessment_id, v_submission_id, v_run_id, p_payload ->> 'session_hash', v_submission_fingerprint, v_contact_id,
+    p_payload ->> 'assessment_version', c_privacy_version,
+    p_payload #>> '{profile,branche}', p_payload #>> '{profile,mitarbeiter}', p_payload #>> '{profile,rolle}', p_payload #>> '{profile,hauptziel}', v_lead_fit,
+    p_payload -> 'answers', (p_payload #>> '{baseline,scores,total,percent}')::smallint,
+    p_payload #> '{baseline,scores}', p_payload #>> '{baseline,level}', p_payload -> 'result', p_payload -> 'attribution', p_payload ->> 'tracking_subject_hash',
+    pg_catalog.statement_timestamp(), v_newsletter_status, v_newsletter_consent_id, v_newsletter_requested_at, v_newsletter_confirmed_at,
+    v_analytics, c_cookie_version, case when v_analytics then c_analytics_text else null end,
+    case when v_analytics then pg_catalog.encode(extensions.digest(c_analytics_text, 'sha256'), 'hex') else null end,
+    case when v_analytics then v_tracking_decision.decided_at else null end,
+    v_marketing_tracking, c_cookie_version, case when v_marketing_tracking then c_marketing_text else null end,
+    case when v_marketing_tracking then pg_catalog.encode(extensions.digest(c_marketing_text, 'sha256'), 'hex') else null end,
+    case when v_marketing_tracking then v_tracking_decision.decided_at else null end,
+    nullif(p_payload #>> '{consents,evidence,ipHash}', ''), pg_catalog.left(p_payload #>> '{consents,evidence,userAgent}', 500),
+    case when v_marketing_tracking then 'pending' else 'not_requested' end
+  );
+
+  update private.ai_readiness_tracking_consents set assessment_id = v_assessment_id
+  where run_id = v_run_id and session_hash = p_payload ->> 'session_hash'
+    and tracking_subject_hash = p_payload ->> 'tracking_subject_hash' and assessment_id is null;
+
+  insert into public.crm_contact_events(contact_id, event_type, channel, source, summary, details, actor, created_at)
+  values (
+    v_contact_id, case when v_contact_created then 'erstkontakt' else 'folgekontakt' end,
+    'website_formular', 'ki_readiness_test', 'KI-Readiness-Auswertung angefordert',
+    pg_catalog.jsonb_build_object(
+      'assessment_id', v_assessment_id, 'submission_id', v_submission_id,
+      'score', (p_payload #>> '{baseline,scores,total,percent}')::smallint,
+      'readiness_level', p_payload #>> '{baseline,level}',
+      'industry', p_payload #>> '{profile,branche}', 'employee_band', p_payload #>> '{profile,mitarbeiter}',
+      'lead_fit', v_lead_fit, 'newsletter_status', v_newsletter_status,
+      'privacy_version', c_privacy_version
+    ), 'system', pg_catalog.now()
+  );
+
+  if v_analytics then
+    update public.ai_readiness_events set assessment_id = v_assessment_id
+    where session_hash = p_payload ->> 'session_hash' and run_id = v_run_id and assessment_id is null;
+  else
+    delete from public.ai_readiness_events
+    where session_hash = p_payload ->> 'session_hash' and run_id = v_run_id and assessment_id is null;
+  end if;
+
+  insert into private.ai_readiness_outbox(assessment_id, delivery_type, available_at)
+  values (v_assessment_id, 'internal_notification', pg_catalog.now()) on conflict do nothing;
+  if v_newsletter_requested then
+    insert into private.ai_readiness_outbox(assessment_id, delivery_type, available_at, delivery_payload)
+    values (v_assessment_id, 'telegram_notification', pg_catalog.now(), pg_catalog.jsonb_build_object('newsletterStatus', v_newsletter_status))
+    on conflict do nothing;
+  end if;
+  if v_newsletter_status = 'doi_pending' then
+    if coalesce(pg_catalog.btrim(p_payload ->> 'newsletter_confirmation_token'), '') = ''
+      or pg_catalog.char_length(p_payload ->> 'newsletter_confirmation_token') > 240
+    then raise exception 'newsletter_confirmation_token_invalid'; end if;
+    insert into private.ai_readiness_outbox(assessment_id, delivery_type, available_at, expires_at, delivery_payload)
+    values (
+      v_assessment_id, 'newsletter_double_optin', pg_catalog.now(), pg_catalog.now() + interval '24 hours',
+      pg_catalog.jsonb_build_object('confirmationToken', p_payload ->> 'newsletter_confirmation_token')
+    ) on conflict do nothing;
+  end if;
+  if v_marketing_tracking then
+    insert into private.ai_readiness_outbox(assessment_id, delivery_type, available_at, expires_at, delivery_payload)
+    values (
+      v_assessment_id, 'meta_capi', pg_catalog.now(), pg_catalog.now() + interval '7 days',
+      pg_catalog.jsonb_strip_nulls(pg_catalog.jsonb_build_object(
+        'clientIpAddress', nullif(pg_catalog.left(p_payload #>> '{delivery_context,clientIpAddress}', 80), ''),
+        'emailSha256', pg_catalog.encode(extensions.digest(v_email, 'sha256'), 'hex')
+      ))
+    ) on conflict do nothing;
+  end if;
+
+  delete from private.ai_readiness_rate_limits where ctid in (
+    select ctid from private.ai_readiness_rate_limits where expires_at < pg_catalog.now() limit 500
+  );
+  return pg_catalog.jsonb_build_object(
+    'accepted', true, 'status', 'created', 'assessment_id', v_assessment_id,
+    'contact_id', v_contact_id, 'contact_created', v_contact_created,
+    'dedupe_status', v_dedupe_status, 'newsletter_status', v_newsletter_status
+  );
+end;
+$$;
+revoke all on function public.submit_ai_readiness_lead_v2(jsonb) from public, anon, authenticated;
+grant execute on function public.submit_ai_readiness_lead_v2(jsonb) to service_role;
+
+create or replace function private.set_ai_readiness_delivery_status_v2(
+  p_assessment_id uuid, p_delivery_type text, p_status text, p_delivered_at timestamptz default null
+)
+returns void
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+begin
+  if p_delivery_type not in ('internal_notification', 'telegram_notification', 'telegram_booking', 'newsletter_double_optin', 'meta_capi', 'meta_schedule')
+    or p_status not in ('delivered', 'retry_pending', 'not_configured', 'dead')
+  then raise exception 'invalid_delivery_status'; end if;
+  if p_delivery_type = 'internal_notification' then
+    update public.ai_readiness_assessments set notification_status = p_status,
+      notification_delivered_at = case when p_status = 'delivered' then p_delivered_at else null end
+    where id = p_assessment_id;
+  elsif p_delivery_type = 'telegram_notification' then
+    update public.ai_readiness_assessments set telegram_delivery_status = p_status,
+      telegram_delivered_at = case when p_status = 'delivered' then p_delivered_at else null end
+    where id = p_assessment_id;
+  elsif p_delivery_type in ('meta_capi', 'meta_schedule') then
+    update public.ai_readiness_assessments set meta_delivery_status = p_status,
+      meta_delivered_at = case when p_status = 'delivered' then p_delivered_at else null end
+    where id = p_assessment_id;
+  end if;
+end;
+$$;
+revoke all on function private.set_ai_readiness_delivery_status_v2(uuid, text, text, timestamptz) from public, anon, authenticated;
+grant execute on function private.set_ai_readiness_delivery_status_v2(uuid, text, text, timestamptz) to service_role;
+
+create or replace function public.authorize_ai_readiness_delivery_v2(p_outbox_id uuid, p_lease_token uuid)
+returns jsonb
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  v_outbox private.ai_readiness_outbox%rowtype;
+  v_assessment public.ai_readiness_assessments%rowtype;
+  v_consent public.crm_marketing_consents%rowtype;
+  v_current_marketing boolean := false;
+  v_lease_valid boolean := false;
+  v_authorized boolean := false;
+begin
+  select * into v_outbox from private.ai_readiness_outbox where id = p_outbox_id;
+  if not found then return pg_catalog.jsonb_build_object('authorized', false, 'lease_valid', false); end if;
+  select * into v_assessment from public.ai_readiness_assessments where id = v_outbox.assessment_id;
+  if not found then return pg_catalog.jsonb_build_object('authorized', false, 'lease_valid', false); end if;
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(v_outbox.id::text, 71193));
+  select * into v_outbox from private.ai_readiness_outbox where id = p_outbox_id;
+  v_lease_valid := v_outbox.status = 'processing'
+    and v_outbox.lease_token is not distinct from p_lease_token
+    and v_outbox.expires_at > pg_catalog.now()
+    and v_outbox.locked_at >= pg_catalog.now() - interval '15 minutes';
+  if not v_lease_valid then return pg_catalog.jsonb_build_object('authorized', false, 'lease_valid', false); end if;
+  if v_outbox.delivery_type in ('internal_notification', 'telegram_booking') then
+    v_authorized := true;
+  elsif v_outbox.delivery_type = 'telegram_notification' then
+    v_authorized := v_assessment.newsletter_status in ('doi_pending', 'already_active', 'confirmed');
+  elsif v_outbox.delivery_type = 'newsletter_double_optin' then
+    select * into v_consent from public.crm_marketing_consents
+    where id = v_assessment.newsletter_marketing_consent_id;
+    v_authorized := found and v_consent.revoked_at is null
+      and v_consent.double_optin_requested_at is not null
+      and v_consent.double_optin_confirmed_at is null;
+  elsif v_outbox.delivery_type in ('meta_capi', 'meta_schedule') then
+    select consent.marketing_consent into v_current_marketing
+    from private.ai_readiness_tracking_consents as consent
+    where consent.tracking_subject_hash = v_assessment.tracking_subject_hash
+    order by consent.recorded_seq desc limit 1;
+    v_authorized := v_assessment.marketing_tracking_consent
+      and v_assessment.marketing_consent_revoked_at is null
+      and coalesce(v_current_marketing, false);
+  end if;
+  return pg_catalog.jsonb_build_object('authorized', v_authorized, 'lease_valid', v_lease_valid);
+end;
+$$;
+revoke all on function public.authorize_ai_readiness_delivery_v2(uuid, uuid) from public, anon, authenticated;
+grant execute on function public.authorize_ai_readiness_delivery_v2(uuid, uuid) to service_role;
+
+create or replace function public.claim_ai_readiness_deliveries_v2(p_limit integer default 4)
+returns table (
+  outbox_id uuid, lease_token uuid, assessment_id uuid, submission_id uuid, contact_id uuid,
+  delivery_type text, first_name text, last_name text, company text, email text,
+  industry text, employee_band text, respondent_role text, score_total smallint,
+  readiness_level text, attribution jsonb, delivery_payload jsonb, submitted_at timestamptz
+)
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare v_expired record;
+begin
+  if p_limit < 1 or p_limit > 10 then raise exception 'invalid_claim_limit'; end if;
+  for v_expired in
+    update private.ai_readiness_outbox as outbox set status = 'dead', delivery_payload = '{}'::jsonb,
+      last_error_code = 'expired', locked_at = null, lease_token = null
+    where outbox.status in ('pending', 'processing') and outbox.expires_at <= pg_catalog.now()
+    returning outbox.assessment_id, outbox.delivery_type
+  loop
+    perform private.set_ai_readiness_delivery_status_v2(v_expired.assessment_id, v_expired.delivery_type, 'dead', null);
+  end loop;
+
+  return query
+  with candidates as (
+    select outbox.id
+    from private.ai_readiness_outbox as outbox
+    join public.ai_readiness_assessments as assessment on assessment.id = outbox.assessment_id
+    where ((outbox.status = 'pending' and outbox.available_at <= pg_catalog.now())
+      or (outbox.status = 'processing' and outbox.locked_at < pg_catalog.now() - interval '15 minutes'))
+      and outbox.expires_at > pg_catalog.now()
+      and (
+        outbox.delivery_type in ('internal_notification', 'telegram_booking')
+        or (outbox.delivery_type = 'telegram_notification' and assessment.newsletter_status in ('doi_pending', 'already_active', 'confirmed'))
+        or (outbox.delivery_type = 'newsletter_double_optin' and assessment.newsletter_status = 'doi_pending')
+        or (outbox.delivery_type in ('meta_capi', 'meta_schedule') and assessment.marketing_tracking_consent)
+      )
+    order by outbox.available_at, outbox.created_at
+    for update of outbox skip locked limit p_limit
+  ), claimed as (
+    update private.ai_readiness_outbox as outbox
+    set status = 'processing', locked_at = pg_catalog.now(), lease_token = extensions.gen_random_uuid()
+    from candidates where outbox.id = candidates.id
+    returning outbox.id, outbox.lease_token, outbox.assessment_id, outbox.delivery_type, outbox.delivery_payload
+  )
+  select claimed.id, claimed.lease_token, assessment.id, assessment.submission_id,
+    case when claimed.delivery_type = 'internal_notification' then contact.id else null end,
+    claimed.delivery_type, null::text, null::text, null::text,
+    case when claimed.delivery_type = 'newsletter_double_optin' then contact.email else null end,
+    null::text, null::text, null::text, assessment.score_total, assessment.readiness_level,
+    assessment.attribution, claimed.delivery_payload, assessment.submitted_at
+  from claimed
+  join public.ai_readiness_assessments as assessment on assessment.id = claimed.assessment_id
+  join public.crm_contacts as contact on contact.id = assessment.contact_id;
+end;
+$$;
+revoke all on function public.claim_ai_readiness_deliveries_v2(integer) from public, anon, authenticated;
+grant execute on function public.claim_ai_readiness_deliveries_v2(integer) to service_role;
+
+create or replace function public.complete_ai_readiness_delivery_v2(
+  p_outbox_id uuid, p_lease_token uuid, p_success boolean, p_error_code text default null
+)
+returns void
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  v_attempts smallint;
+  v_assessment_id uuid;
+  v_delivery_type text;
+  v_status text;
+  v_locked_at timestamptz;
+  v_expires_at timestamptz;
+begin
+  select attempts, assessment_id, delivery_type, status, locked_at, expires_at
+  into v_attempts, v_assessment_id, v_delivery_type, v_status, v_locked_at, v_expires_at
+  from private.ai_readiness_outbox
+  where id = p_outbox_id and lease_token = p_lease_token for update;
+  if not found or v_status <> 'processing' then raise exception 'delivery_lease_invalid'; end if;
+  if v_expires_at <= pg_catalog.now() or v_locked_at < pg_catalog.now() - interval '15 minutes' then
+    update private.ai_readiness_outbox set attempts = attempts + 1, status = 'dead',
+      delivery_payload = '{}'::jsonb, locked_at = null, lease_token = null, last_error_code = 'expired'
+    where id = p_outbox_id;
+    perform private.set_ai_readiness_delivery_status_v2(v_assessment_id, v_delivery_type, 'dead', null);
+    return;
+  end if;
+  update private.ai_readiness_outbox as outbox set
+    attempts = case when p_success or p_error_code in ('not_configured', 'not_approved', 'consent_revoked') then outbox.attempts else outbox.attempts + 1 end,
+    status = case
+      when p_success then 'delivered'
+      when p_error_code in ('not_configured', 'not_approved', 'consent_revoked') then 'dead'
+      when outbox.attempts + 1 >= 8 then 'dead' else 'pending' end,
+    available_at = case when p_success or p_error_code in ('not_configured', 'not_approved', 'consent_revoked') then outbox.available_at
+      else pg_catalog.now() + pg_catalog.make_interval(secs => least(21600, (600 * pg_catalog.power(2::numeric, outbox.attempts))::integer)) end,
+    locked_at = null, lease_token = null,
+    last_error_code = case when p_success then null else pg_catalog.left(coalesce(p_error_code, 'unknown'), 80) end,
+    delivered_at = case when p_success then pg_catalog.now() else null end,
+    delivery_payload = case when p_success or p_error_code in ('not_configured', 'not_approved', 'consent_revoked') or outbox.attempts + 1 >= 8
+      then '{}'::jsonb else outbox.delivery_payload end
+  where outbox.id = p_outbox_id
+  returning outbox.status into v_status;
+  perform private.set_ai_readiness_delivery_status_v2(
+    v_assessment_id, v_delivery_type,
+    case when p_success then 'delivered'
+      when p_error_code in ('not_configured', 'not_approved') then 'not_configured'
+      when v_status = 'dead' then 'dead' else 'retry_pending' end,
+    case when p_success then pg_catalog.now() else null end
+  );
+end;
+$$;
+revoke all on function public.complete_ai_readiness_delivery_v2(uuid, uuid, boolean, text) from public, anon, authenticated;
+grant execute on function public.complete_ai_readiness_delivery_v2(uuid, uuid, boolean, text) to service_role;
+
+create or replace function public.record_ai_readiness_booking_v1(
+  p_booking_uid text,
+  p_assessment_id uuid,
+  p_submission_id uuid,
+  p_event_type_id bigint,
+  p_event_type_slug text,
+  p_body_hash text,
+  p_booking_created_at timestamptz
+)
+returns jsonb
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  v_existing private.ai_readiness_booking_receipts%rowtype;
+  v_assessment public.ai_readiness_assessments%rowtype;
+  v_email text;
+  v_current_marketing boolean := false;
+  v_booking_key text;
+  v_meta_event_id text;
+begin
+  if coalesce(pg_catalog.btrim(p_booking_uid), '') = '' or pg_catalog.char_length(p_booking_uid) > 160
+    or p_assessment_id is null or p_submission_id is null or p_event_type_id is null
+    or coalesce(pg_catalog.btrim(p_event_type_slug), '') = '' or pg_catalog.char_length(p_event_type_slug) > 120
+    or p_body_hash !~ '^[0-9a-f]{64}$'
+    or p_booking_created_at is null
+    or p_booking_created_at < pg_catalog.statement_timestamp() - interval '7 days'
+    or p_booking_created_at > pg_catalog.statement_timestamp() + interval '5 minutes'
+  then raise exception 'booking_payload_invalid'; end if;
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(p_booking_uid, 71194));
+  select * into v_existing from private.ai_readiness_booking_receipts where booking_uid = p_booking_uid;
+  if found then
+    if v_existing.assessment_id <> p_assessment_id or v_existing.event_type_id <> p_event_type_id
+      or v_existing.event_type_slug <> p_event_type_slug or v_existing.body_hash <> p_body_hash
+    then raise exception 'booking_receipt_conflict'; end if;
+    return pg_catalog.jsonb_build_object('accepted', true, 'status', 'idempotent');
+  end if;
+  select assessment.* into v_assessment
+  from public.ai_readiness_assessments as assessment
+  where assessment.id = p_assessment_id and assessment.submission_id = p_submission_id
+  for update;
+  if not found then raise exception 'booking_reference_invalid'; end if;
+  select contact.email into strict v_email from public.crm_contacts as contact where contact.id = v_assessment.contact_id;
+  v_booking_key := pg_catalog.encode(extensions.digest(p_booking_uid, 'sha256'), 'hex');
+  insert into private.ai_readiness_booking_receipts(
+    booking_uid, assessment_id, event_type_id, event_type_slug, body_hash, booking_created_at
+  ) values (
+    p_booking_uid, p_assessment_id, p_event_type_id, p_event_type_slug, p_body_hash, p_booking_created_at
+  );
+  insert into public.crm_contact_events(contact_id, event_type, channel, source, summary, details, actor, created_at)
+  values (
+    v_assessment.contact_id, 'termin', 'portal', 'calcom_ai_readiness',
+    'Kostenlose KI-Potenzialanalyse gebucht',
+    pg_catalog.jsonb_build_object(
+      'assessment_id', p_assessment_id,
+      'event_type_id', p_event_type_id,
+      'event_type_slug', p_event_type_slug,
+      'booking_uid_hash', v_booking_key
+    ), 'system', p_booking_created_at
+  );
+  insert into private.ai_readiness_outbox(assessment_id, delivery_type, dedupe_key, available_at, expires_at, delivery_payload)
+  values (
+    p_assessment_id, 'telegram_booking', v_booking_key, pg_catalog.now(), pg_catalog.now() + interval '24 hours',
+    pg_catalog.jsonb_build_object('bookingStatus', 'created')
+  ) on conflict do nothing;
+
+  select consent.marketing_consent into v_current_marketing
+  from private.ai_readiness_tracking_consents as consent
+  where consent.tracking_subject_hash = v_assessment.tracking_subject_hash
+  order by consent.recorded_seq desc limit 1;
+  if v_assessment.marketing_tracking_consent
+    and v_assessment.marketing_consent_revoked_at is null
+    and coalesce(v_current_marketing, false)
+  then
+    v_meta_event_id := 'schedule-' || pg_catalog.left(v_booking_key, 48);
+    insert into private.ai_readiness_outbox(assessment_id, delivery_type, dedupe_key, available_at, expires_at, delivery_payload)
+    values (
+      p_assessment_id, 'meta_schedule', v_booking_key, pg_catalog.now(), pg_catalog.now() + interval '7 days',
+      pg_catalog.jsonb_build_object(
+        'eventId', v_meta_event_id,
+        'eventTime', pg_catalog.floor(pg_catalog.date_part('epoch', p_booking_created_at))::bigint,
+        'emailSha256', pg_catalog.encode(extensions.digest(pg_catalog.lower(pg_catalog.btrim(v_email)), 'sha256'), 'hex')
+      )
+    ) on conflict do nothing;
+  end if;
+  return pg_catalog.jsonb_build_object('accepted', true, 'status', 'created');
+end;
+$$;
+revoke all on function public.record_ai_readiness_booking_v1(text, uuid, uuid, bigint, text, text, timestamptz) from public, anon, authenticated;
+grant execute on function public.record_ai_readiness_booking_v1(text, uuid, uuid, bigint, text, text, timestamptz) to service_role;
+
+create or replace function public.confirm_ai_readiness_newsletter_v1(p_assessment_id uuid, p_submission_id uuid)
+returns jsonb
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  v_assessment public.ai_readiness_assessments%rowtype;
+  v_consent public.crm_marketing_consents%rowtype;
+  v_new_confirmation boolean := false;
+begin
+  select * into v_assessment from public.ai_readiness_assessments
+  where id = p_assessment_id and submission_id = p_submission_id for update;
+  if not found or v_assessment.newsletter_marketing_consent_id is null
+  then return pg_catalog.jsonb_build_object('accepted', false, 'status', 'not_found'); end if;
+  select * into v_consent from public.crm_marketing_consents
+  where id = v_assessment.newsletter_marketing_consent_id for update;
+  if not found or v_consent.revoked_at is not null or v_consent.double_optin_requested_at is null
+  then return pg_catalog.jsonb_build_object('accepted', false, 'status', 'inactive'); end if;
+  if v_consent.double_optin_confirmed_at is null then
+    update public.crm_marketing_consents set double_optin_confirmed_at = pg_catalog.statement_timestamp()
+    where id = v_consent.id returning * into v_consent;
+    v_new_confirmation := true;
+  end if;
+  update public.ai_readiness_assessments set newsletter_status = 'confirmed',
+    newsletter_confirmed_at = v_consent.double_optin_confirmed_at
+  where newsletter_marketing_consent_id = v_consent.id and newsletter_status = 'doi_pending';
+  if v_new_confirmation then
+    insert into public.crm_contact_events(contact_id, event_type, channel, source, summary, details, actor, created_at)
+    values (v_assessment.contact_id, 'email', 'email', 'ki_readiness_newsletter',
+      'Double-Opt-in für Synclaro KI-Impulse bestätigt',
+      pg_catalog.jsonb_build_object('assessment_id', p_assessment_id, 'marketing_consent_id', v_consent.id),
+      'system', v_consent.double_optin_confirmed_at);
+  end if;
+  return pg_catalog.jsonb_build_object('accepted', true,
+    'status', case when v_new_confirmation then 'confirmed' else 'idempotent' end,
+    'confirmed_at', v_consent.double_optin_confirmed_at);
+end;
+$$;
+revoke all on function public.confirm_ai_readiness_newsletter_v1(uuid, uuid) from public, anon, authenticated;
+grant execute on function public.confirm_ai_readiness_newsletter_v1(uuid, uuid) to service_role;
+
+create or replace function public.purge_ai_readiness_ephemeral_v1()
+returns jsonb
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  v_events integer;
+  v_rate_limits integer;
+  v_outbox integer;
+  v_tracking_consents integer;
+  v_booking_receipts integer;
+  v_expired record;
+begin
+  for v_expired in
+    update private.ai_readiness_outbox set status = 'dead', delivery_payload = '{}'::jsonb,
+      last_error_code = 'expired', locked_at = null, lease_token = null
+    where status in ('pending', 'processing') and expires_at <= pg_catalog.now()
+    returning assessment_id, delivery_type
+  loop
+    perform private.set_ai_readiness_delivery_status_v2(v_expired.assessment_id, v_expired.delivery_type, 'dead', null);
+  end loop;
+  delete from public.ai_readiness_events where created_at < pg_catalog.now() - interval '90 days';
+  get diagnostics v_events = row_count;
+  delete from private.ai_readiness_rate_limits where expires_at < pg_catalog.now();
+  get diagnostics v_rate_limits = row_count;
+  delete from private.ai_readiness_outbox where status in ('delivered', 'dead') and created_at < pg_catalog.now() - interval '30 days';
+  get diagnostics v_outbox = row_count;
+  delete from private.ai_readiness_tracking_consents where retention_until < pg_catalog.now();
+  get diagnostics v_tracking_consents = row_count;
+  delete from private.ai_readiness_booking_receipts
+  where received_at < pg_catalog.now() - interval '90 days';
+  get diagnostics v_booking_receipts = row_count;
+  return pg_catalog.jsonb_build_object(
+    'events_deleted', v_events, 'rate_limits_deleted', v_rate_limits,
+    'outbox_deleted', v_outbox,
+    'tracking_consent_evidence_deleted', v_tracking_consents,
+    'booking_receipts_deleted', v_booking_receipts
+  );
+end;
+$$;
+revoke all on function public.purge_ai_readiness_ephemeral_v1() from public, anon, authenticated;
+grant execute on function public.purge_ai_readiness_ephemeral_v1() to service_role;
+
+comment on table public.ai_readiness_assessments is 'Server-only AI-Readiness assessments with a deterministic result and separate newsletter/Meta consent states.';
+comment on function public.submit_ai_readiness_lead_v2(jsonb) is 'Atomic, email-only AI-Readiness lead, CRM, DOI-pending consent and outbox integration; no callback and no external AI processing.';
+comment on function public.confirm_ai_readiness_newsletter_v1(uuid, uuid) is 'Idempotently confirms a server-authenticated DOI request and activates the existing append-only CRM marketing-consent row.';
+comment on function public.authorize_ai_readiness_delivery_v2(uuid, uuid) is 'Revalidates lease and the delivery-specific consent immediately before any external transfer.';
+comment on function public.purge_ai_readiness_ephemeral_v1() is 'Deletes pseudonymous funnel events and private booking replay receipts after 90 days, completed delivery state after 30 days, and expired rate-limit/tracking-consent evidence.';
 
 commit;
