@@ -26,9 +26,10 @@ Anzeigengruppe `120251380526890206`, Anzeige `120251380526870206`.
   `1497847851628194` und das Event `Lead` sind im Adset ausgewählt. Meta warnt
   erwartungsgemäß, dass dieses Event in den letzten 14 Tagen keine Aktivität
   hatte; ein consent-basiertes Pixel/CAPI-Testevent bleibt deshalb Launch-Gate.
-- Als EU-Werbetreibender/Zahlender werden sichtbar `Synclaro.de` und
-  `Johannes Jaegers` geführt. Diese Angaben sind keine stillschweigende
-  Freigabe und müssen von der Geschäftsführung bestätigt werden.
+- Als EU-Werbetreibender/Zahlender werden im Entwurf noch `Synclaro.de` und
+  `Johannes Jaegers` geführt. Das ist nach Marcos Bestätigung vom 19.07.2026
+  falsch: Zielzustand ist `Synclaro.de` / `Marco Heer`; Marco zahlt für
+  Synclaro per Kreditkarte.
 - Der öffentliche Cal-Termin `/marcoheer/ki-erstgespraech` dauert 20 Minuten und
   nutzt Google Meet. Die Beschreibung duzt; das Buchungsformular verlangt
   derzeit Name, E-Mail und „Wie sind Sie auf uns aufmerksam geworden?“ als
@@ -261,8 +262,8 @@ Keiner dieser Punkte darf stillschweigend als erledigt behandelt werden.
   durch die dokumentierte V2-Copy ersetzt.
 - [ ] Im Meta Ads Manager befinden sich keine fremden oder ungeprüften Objekte
   in derselben globalen Veröffentlichungsmenge.
-- [ ] EU-Werbetreibender und Zahlender `Synclaro.de` / `Johannes Jaegers` sind
-  durch die Geschäftsführung ausdrücklich als korrekt bestätigt.
+- [ ] EU-Werbetreibender und Zahlender sind im Meta-Entwurf auf
+  `Synclaro.de` / `Marco Heer` korrigiert; `Johannes Jaegers` ist entfernt.
 - [ ] Monitoring für Function-Fehler, tote Outbox-Aufträge, DOI-Zustellung,
   Meta-CAPI-Fehler und Cal-Signaturfehler ist einem Verantwortlichen zugeordnet.
 
@@ -463,8 +464,8 @@ und [Webhook-Signatur/Payload-Version](https://cal.com/docs/developing/guides/au
   sekundäre Qualitätsconversion.
 - [ ] Tagesbudget, CPL-/Cost-per-Schedule-Grenze, Startdatum und Zahlender sind
   namentlich bestätigt.
-- [ ] `Synclaro.de` und `Johannes Jaegers` sind als EU-Werbetreibender/Zahlender
-  tatsächlich korrekt oder wurden vor der Freigabe berichtigt.
+- [ ] `Synclaro.de` und `Marco Heer` stehen als EU-Werbetreibender/Zahlender im
+  Entwurf; die bestätigte Korrektur ist vor der Freigabe sichtbar geprüft.
 - [ ] Creative-Auswahl, Anzeige, mobile Vorschauen, automatische Meta-
   Erweiterungen und Ausschlusslisten sind bestätigt.
 

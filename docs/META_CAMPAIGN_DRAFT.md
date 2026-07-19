@@ -29,7 +29,7 @@ geprüft werden.
 | Audience-Signale | Interesse „Unternehmertum“, Arbeitgeber „Selbstständig“ und Verhalten „Inhaber von Kleinunternehmen“ | Nur als Advantage+-Vorschläge, 0–20 MA über Creative/Test qualifizieren. |
 | Pixel | Aktiver Datensatz `Website`, ID `1497847851628194`, im Adset ausgewählt | Richtigen Business Manager/Dataset vor Publish nochmals bestätigen. |
 | Optimierungs-Event | Standardevent `Lead` im Adset ausgewählt; Meta warnt erwartungsgemäß vor fehlender Aktivität in den letzten 14 Tagen | Consent-basiertes, dedupliziertes Pixel/CAPI-Testevent senden und im Events Manager prüfen, bevor der Entwurf veröffentlichbar ist. |
-| EU-Werbetreibender / Zahlender | `Synclaro.de` / `Johannes Jaegers` | Geschäftsführer bestätigt die rechtliche und wirtschaftliche Richtigkeit ausdrücklich. |
+| EU-Werbetreibender / Zahlender | Aktuell sichtbar: `Synclaro.de` / `Johannes Jaegers` – falsch | Vor Publish auf `Synclaro.de` / `Marco Heer` korrigieren. Marco hat am 19.07.2026 bestätigt, dass er für Synclaro per Kreditkarte zahlt. |
 | Anzeigen-Copy im Wizard | V2-Primärtext, Überschrift `Wie KI-ready ist Ihr Unternehmen?`, Beschreibung `Kostenloser Score + 90-Tage-Fahrplan.`, CTA `Mehr dazu`, Ziel-URL und vollständige UTM-Vorlage gesetzt | Nach dem Creative-Upload in jeder Placement-Vorschau prüfen. Keine der fünf automatisch vorgeschlagenen KI-Textvarianten ist ausgewählt. |
 | Creative-Upload | Image-Ad-Wizard vorbereitet; der direkte lokale Upload wurde von der Chrome-Erweiterung mit `Not allowed` blockiert | In der ChatGPT-Chrome-Erweiterung „Allow access to file URLs“ bewusst aktivieren, dann V2-Dateien auswählen. Keine globale Dateiberechtigung wurde autonom erweitert. |
 
@@ -221,8 +221,8 @@ fremder Drafts.
 
 - [ ] Objective `Leads`, Conversion-Ort `Website`, Event `Lead`.
 - [ ] Richtiger Ad Account, Business Manager, Pixel/Dataset und Zahlender.
-- [ ] `Synclaro.de` / `Johannes Jaegers` als EU-Werbetreibender/Zahlender durch
-  die Geschäftsführung ausdrücklich bestätigt oder vor Publish korrigiert.
+- [ ] Im Meta-Entwurf steht `Synclaro.de` / `Marco Heer` als
+  EU-Werbetreibender/Zahlender; `Johannes Jaegers` ist vollständig entfernt.
 - [ ] Deutschland, branchenoffener ICP, keine ungewollte enge
   Interessenbeschränkung.
 - [ ] 25-€-Tagesbudget oder abweichend schriftlich freigegebener Betrag.
