@@ -36,9 +36,9 @@
     "audience": { "@type": "BusinessAudience", "audienceType": "Selbstständige und kleine Unternehmen" }
   }
   </script>
-  <link rel="stylesheet" href="/styles.css?v=20260719.1">
+  <link rel="stylesheet" href="/styles.css?v=20260719.2">
   <script src="/consent-state.js?v=20260718.1" defer></script>
-  <script src="/app.js?v=20260719.1" defer></script>
+  <script src="/app.js?v=20260719.2" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Zum Inhalt springen</a>
@@ -47,8 +47,8 @@
   <header class="site-nav" id="siteNav">
     <div class="shell nav-inner">
       <a class="brand" href="#top" aria-label="Synclaro AI Readiness Test">
-        <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="14"/><path d="M20 6v28M6 20h28"/></svg>
-        <span>Synclaro</span><small>AI Readiness</small>
+        <img class="brand-logo" src="/assets/synclaro-logo-weiss.png" alt="Synclaro">
+        <small>AI Readiness</small>
       </a>
       <button class="button button-small button-accent" type="button" data-start-test>Test starten</button>
     </div>
@@ -183,36 +183,10 @@
     </div>
   </section>
 
-  <section class="transition-screen" id="transitionScreen" aria-live="polite" hidden>
-    <div class="transition-map" aria-hidden="true"><i></i><i></i><i></i><i></i><b></b></div>
-    <div class="transition-content">
-      <p class="kicker" id="transitionKicker">PHASE 1 VON 3</p>
-      <h2 id="transitionTitle" tabindex="-1">Ihr Fundament wird vorbereitet.</h2>
-      <p id="transitionText">Die nächste Runde startet gleich.</p>
-      <div class="loading-line"><i></i></div>
-    </div>
-  </section>
-
-  <section class="score-screen" id="scorePreview" hidden></section>
-
-  <section class="measuring-screen" id="measuringScreen" aria-live="polite" hidden>
-    <div class="measuring-card">
-      <p class="kicker">Ihre Auswertung wird vorbereitet</p>
-      <h2 id="measuringTitle" tabindex="-1">Aus Antworten wird eine klare Reihenfolge.</h2>
-      <ol id="measuringSteps">
-        <li><i></i><span>Angaben sicher gespeichert</span></li>
-        <li><i></i><span>Score und Antwortmuster geprüft</span></li>
-        <li><i></i><span>Empfehlungen priorisiert</span></li>
-        <li><i></i><span>90-Tage-Fahrplan aufgebaut</span></li>
-      </ol>
-      <p id="measuringStatus">Bitte einen Moment …</p>
-    </div>
-  </section>
-
   <section class="result-screen" id="fullResult" role="dialog" aria-modal="true" aria-labelledby="resultTitle" hidden>
     <header class="result-nav">
       <a class="brand" id="resultHomeLink" href="#top" aria-label="Ergebnis schließen und zur Synclaro-Startseite zurückkehren">
-        <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="14"/><path d="M20 6v28M6 20h28"/></svg><span>Synclaro</span>
+        <img class="brand-logo" src="/assets/synclaro-logo-weiss.png" alt="Synclaro">
       </a>
       <div class="result-nav-actions">
         <button class="text-button" id="restartResult" type="button">Neu starten</button>
@@ -223,34 +197,35 @@
     </header>
     <div class="result-hero">
       <div class="shell result-hero-grid">
-        <div class="result-score"><strong id="resultScore">0</strong><span>/100</span><small id="resultLevel">—</small></div>
-        <div><p class="kicker">Ihre persönliche Einordnung</p><h1 id="resultTitle" tabindex="-1">Ihr Readiness-Profil</h1><p id="resultVerdict"></p></div>
+        <div class="result-score score-dial" id="resultScoreDial" role="img" aria-label="Readiness-Score wird geladen">
+          <svg viewBox="0 0 210 210" aria-hidden="true"><circle class="dial-base" cx="105" cy="105" r="92"></circle><circle class="dial-value" id="resultScoreRing" cx="105" cy="105" r="92"></circle></svg>
+          <div><strong id="resultScore">0</strong><span>/100</span><small id="resultLevel">—</small></div>
+        </div>
+        <div><p class="kicker">Ihre persönliche Einordnung</p><h1 id="resultTitle" tabindex="-1">Ihr Readiness-Profil</h1><p class="result-context" id="resultContext"></p><p id="resultVerdict"></p></div>
       </div>
+      <div class="shell result-signals" id="resultSignals" aria-label="Wichtigste Ergebniswerte"></div>
     </div>
     <div class="shell result-content">
-      <section class="result-section">
-        <div class="section-heading compact"><p class="kicker">Vier Felder</p><h2>Wo Ihr Fundament trägt.</h2></div>
-        <div class="result-breakdown" id="resultBreakdown"></div>
-      </section>
-      <section class="result-section lever-section">
-        <div><p class="kicker">Größter Hebel</p><h2 id="leverTitle"></h2><p id="leverReason"></p></div>
-        <div class="time-indicator"><small>Potenzialindikator</small><strong id="timePotential"></strong><p id="timeNote"></p></div>
+      <section class="result-section use-case-section" aria-labelledby="industryUseCaseTitle">
+        <div class="use-case-heading"><p class="kicker dark">Ihr Chancen-Memo</p><h2 id="industryUseCaseTitle">Drei konkrete KI-Chancen für Ihr Unternehmen.</h2><p id="industryUseCaseIntro"></p></div>
+        <aside class="result-focus-note" id="resultFocusNote" hidden></aside>
+        <div class="use-case-grid" id="useCases"></div>
       </section>
       <section class="booking-card">
-        <div><p class="kicker">Ihr nächster sinnvoller Schritt</p><h2>Kostenlose KI-Potenzialanalyse mit Marco.</h2><p>Ordnen Sie Ihren Score in 20 Minuten ein, prüfen Sie den wirtschaftlich stärksten KI-Hebel und bestimmen Sie den sinnvollsten nächsten Schritt. Sie entscheiden selbst, ob und wann Sie buchen.</p></div>
+        <div><p class="kicker">Ihr nächster sinnvoller Schritt</p><h2 id="bookingTitle">Kostenlose KI-Potenzialanalyse mit Marco.</h2><p id="bookingCopy">Ordnen Sie Ihren Score in 20 Minuten ein und prüfen Sie den wirtschaftlich stärksten KI-Hebel.</p></div>
         <a class="button button-accent button-large" id="calendarCta" data-calendar-cta href="https://cal.com/marcoheer/ki-erstgespraech" target="_blank" rel="noopener">Kostenlosen Termin buchen</a>
       </section>
       <aside class="newsletter-result-note" id="newsletterResultNote" role="status" hidden></aside>
       <section class="result-section">
-        <div class="section-heading compact"><p class="kicker">Prioritäten</p><h2>Drei sinnvolle nächste Schritte.</h2></div>
-        <div class="recommendations" id="recommendations"></div>
+        <div class="section-heading compact"><p class="kicker">Vier Felder</p><h2>Was trägt – und was zuerst stabil werden muss.</h2></div>
+        <div class="result-breakdown" id="resultBreakdown"></div>
       </section>
-      <section class="result-section">
-        <div class="section-heading compact"><p class="kicker">90 Tage</p><h2>Vom Test zur messbaren Umsetzung.</h2></div>
+      <section class="result-section roadmap-section">
+        <div class="section-heading compact"><p class="kicker">90 Tage</p><h2>Vom passenden Fall zum messbaren Pilot.</h2></div>
         <div class="roadmap" id="roadmap"></div>
       </section>
       <section class="booking-card booking-card-final">
-        <div><p class="kicker">Aus Klarheit wird Umsetzung</p><h2>Welcher Hebel lohnt sich für Ihr Unternehmen zuerst?</h2><p>Prüfen Sie Ihren Score und den sinnvollsten nächsten Schritt kostenlos mit Marco. Sie buchen freiwillig; es entsteht keine Verpflichtung.</p></div>
+        <div><p class="kicker">Aus Klarheit wird Umsetzung</p><h2 id="finalBookingTitle">Welcher Hebel lohnt sich für Ihr Unternehmen zuerst?</h2><p>Prüfen Sie Ihren Score und den sinnvollsten nächsten Schritt kostenlos mit Marco. Sie buchen freiwillig; es entsteht keine Verpflichtung.</p></div>
         <a class="button button-accent button-large" data-calendar-cta href="https://cal.com/marcoheer/ki-erstgespraech" target="_blank" rel="noopener">Kostenlosen Termin mit Marco buchen</a>
       </section>
       <p class="diagnostic-note" id="diagnosticNote"></p>

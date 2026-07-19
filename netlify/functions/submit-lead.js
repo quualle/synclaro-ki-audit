@@ -180,7 +180,7 @@ exports.handler = async (event) => {
     const contact = sanitizeContact(payload.contact);
     const consents = sanitizeConsents(payload.consents);
     const attribution = sanitizeAttribution(payload.attribution, event, submissionId, consents.marketing.granted);
-    const detailedResult = buildDeterministicResult(baseline, profile);
+    const detailedResult = buildDeterministicResult(baseline, profile, answers);
 
     if (!isProduction()) {
       return jsonResponse(201, {

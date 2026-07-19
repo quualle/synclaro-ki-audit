@@ -5,14 +5,14 @@
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
   const API = "/.netlify/functions";
   const CONSENT_STATE = window.SynclaroConsentState;
-  const STATE_KEY = "synclaro_ai_readiness_state_v6";
+  const STATE_KEY = "synclaro_ai_readiness_state_v7";
   const CONSENT_KEY = "synclaro_ai_readiness_consent_v1";
   const CONSENT_SUBJECT_KEY = "synclaro_ai_readiness_consent_subject_v1";
   const ATTRIBUTION_KEY = "synclaro_ai_readiness_attribution_v1";
   const CONSENT_MAX_AGE_MS = 180 * 24 * 60 * 60 * 1000;
   const SESSION_MAX_AGE_MS = 2 * 60 * 60 * 1000;
   const DEFAULT_CONFIG = {
-    assessmentVersion: "2026-07-19.v3",
+    assessmentVersion: "2026-07-19.v4",
     privacyVersion: "privacy-ai-readiness-v2-2026-07-19",
     cookieConsentVersion: "cookie-v1-2026-07-18",
     newsletterConsent: { version: "newsletter-email-v1-2026-07-19", text: "Ja, ich möchte regelmäßig praxistaugliche KI-Impulse, Einladungen und Angebote von Synclaro per E-Mail erhalten. Die Anmeldung wird per Double-Opt-in bestätigt; eine Abmeldung ist jederzeit möglich." },
@@ -74,9 +74,9 @@
       id: "branche",
       type: "text",
       kicker: "Unternehmensprofil · 4 von 4",
-      label: "In welcher Branche ist Ihr Unternehmen tätig?",
-      help: "Eine kurze, konkrete Bezeichnung genügt.",
-      placeholder: "z. B. Steuerberatung, Agentur, Online-Handel, Metallbau",
+      label: "Was bietet Ihr Unternehmen an – und in welcher Branche?",
+      help: "Eine kurze, konkrete Bezeichnung hilft, passende Anwendungsfälle auszuwählen.",
+      placeholder: "z. B. Gebäudereinigung für Büros oder Steuerberatung für Arztpraxen",
     },
   ];
   const CONTACT_STEPS = [
@@ -102,7 +102,6 @@
   let sessionPromise = null;
   let trackingConsentPromise = null;
   let freshSessionRequired = false;
-  let transitionStarted = 0;
   let toastTimer = null;
   let landingTracked = false;
   let landingTrackPromise = null;
@@ -196,7 +195,7 @@
   function visibleInteractionLayer() {
     const consentLayer = $("#consentLayer");
     if (!consentLayer.hidden) return consentLayer;
-    return ["assessmentApp", "transitionScreen", "measuringScreen", "fullResult"]
+    return ["assessmentApp", "fullResult"]
       .map((id) => $(`#${id}`))
       .find((element) => !element.hidden) || null;
   }
@@ -210,11 +209,7 @@
     if (layer.id === "assessmentApp") {
       return $("#questionTitle", layer) || $("#closeButton", layer);
     }
-    const targets = {
-      transitionScreen: "#transitionTitle",
-      measuringScreen: "#measuringTitle",
-      fullResult: "#resultTitle",
-    };
+    const targets = { fullResult: "#resultTitle" };
     return $(targets[layer.id] || "", layer);
   }
 
@@ -307,7 +302,7 @@
   }
 
   const interactionObserver = new MutationObserver(refreshInteractionLayer);
-  ["consentLayer", "assessmentApp", "transitionScreen", "measuringScreen", "fullResult"]
+  ["consentLayer", "assessmentApp", "fullResult"]
     .forEach((id) => interactionObserver.observe($(`#${id}`), { attributes: true, attributeFilter: ["hidden"] }));
   addEventListener("keydown", handleModalKeyboard);
 
@@ -862,7 +857,7 @@
   }
 
   function hideAllScreens() {
-    ["assessmentApp", "transitionScreen", "scorePreview", "measuringScreen", "fullResult"].forEach((id) => { $(`#${id}`).hidden = true; });
+    ["assessmentApp", "fullResult"].forEach((id) => { $(`#${id}`).hidden = true; });
     refreshInteractionLayer();
   }
 
@@ -1001,35 +996,29 @@
 
   async function startAssessment() {
     state.stage = "assessment";
-    await moveToPhase(0, "Ihr Readiness-Profil startet.", "Wir beginnen mit dem Fundament: Prozesse, Daten und wiederkehrende Arbeit.");
+    await moveToPhase(0);
   }
 
-  async function moveToPhase(index, title, text) {
-    $("#assessmentApp").hidden = true;
-    $("#transitionScreen").hidden = false;
+  async function moveToPhase(index) {
+    showOnlyScreen("assessmentApp");
     document.body.classList.add("modal-open");
-    transitionStarted = Date.now();
-    $("#transitionKicker").textContent = `PHASE ${index + 1} VON 3`;
-    $("#transitionTitle").textContent = title;
-    $("#transitionText").textContent = text;
-    requestAnimationFrame(() => $("#transitionTitle").focus({ preventScroll: true }));
+    const loadingTimer = setTimeout(() => {
+      $("#questionHost").innerHTML = `<article class="question-card phase-loading" role="status"><p class="question-index">Phase ${index + 1} von 3</p><h1 id="questionTitle" tabindex="-1">Der nächste Abschnitt wird sicher geladen.</h1><p class="question-help">Ihre bisherigen Antworten bleiben erhalten.</p></article>`;
+      focusQuestionTitle();
+    }, 400);
     try {
       const phase = state.phases[index] || await fetchPhase(index + 1);
+      clearTimeout(loadingTimer);
       state.phases[index] = phase;
-      const wait = Math.max(0, 900 - (Date.now() - transitionStarted));
-      await new Promise((resolve) => setTimeout(resolve, wait));
       state.phaseIndex = index;
       state.questionIndex = 0;
-      $("#transitionScreen").hidden = true;
-      $("#assessmentApp").hidden = false;
       renderQuestion();
       track("phase_started", { phase: String(index + 1), question_count: phase.questions.length }, index + 1);
     } catch {
-      $("#transitionScreen").hidden = true;
-      $("#assessmentApp").hidden = false;
+      clearTimeout(loadingTimer);
       $("#questionHost").innerHTML = `<article class="question-card"><p class="question-index">Verbindung unterbrochen</p><h1 id="questionTitle" tabindex="-1">Die nächste Runde konnte nicht sicher geladen werden.</h1><p class="question-help">Ihre bisherigen Antworten bleiben in dieser Browsersitzung erhalten.</p><div class="question-actions"><button class="button button-accent" id="retryPhase" type="button">Erneut versuchen</button></div></article>`;
       focusQuestionTitle();
-      $("#retryPhase").addEventListener("click", () => moveToPhase(index, title, text));
+      $("#retryPhase").addEventListener("click", () => moveToPhase(index));
     }
   }
 
@@ -1055,11 +1044,18 @@
     const questionIndex = optionalContext
       ? `${phase.phaseTitle} · optionaler Kontext, nicht Teil der 12 Kernfragen`
       : `${phase.phaseTitle} · ${coreQuestionNumber} von ${coreQuestions.length}`;
-    let body = `<article class="question-card"><p class="question-index">${esc(questionIndex)}</p><h1 id="questionTitle" tabindex="-1">${esc(question.label)}</h1>`;
+    const phaseContext = state.questionIndex === 0
+      ? `<aside class="phase-context"><strong>${esc(phase.phaseIntro)}</strong><span>${esc(phase.transitionInsight || "Dieser Abschnitt ordnet den nächsten Teil Ihres Readiness-Profils ein.")}</span></aside>`
+      : "";
+    const helper = question.type === "textarea"
+      ? question.help || "Optional — ein oder zwei konkrete Sätze genügen. Bitte keine Namen, Kontakt- oder Kundendaten eingeben."
+      : question.help || "";
+    const describedBy = helper ? ' aria-describedby="questionHelp"' : "";
+    let body = `<article class="question-card"><p class="question-index">${esc(questionIndex)}</p>${phaseContext}<h1 id="questionTitle" tabindex="-1"${describedBy}>${esc(question.label)}</h1>${helper ? `<p class="question-help" id="questionHelp">${esc(helper)}</p>` : ""}`;
     if (question.type === "textarea") {
-      body += `<p class="question-help">Optional — ein oder zwei konkrete Sätze genügen. Bitte keine Namen, Kontakt- oder Kundendaten eingeben.</p><div class="question-field"><textarea id="answerText" aria-labelledby="questionTitle" maxlength="700" placeholder="${esc(question.placeholder || "Ihre Antwort …")}"></textarea></div><div class="question-actions"><button class="button button-accent" id="answerNext" type="button">Weiter</button><button class="text-button" id="answerSkip" type="button">Überspringen</button></div>`;
+      body += `<div class="question-field"><textarea id="answerText" aria-labelledby="questionTitle" aria-describedby="questionHelp" maxlength="700" placeholder="${esc(question.placeholder || "Ihre Antwort …")}"></textarea></div><div class="question-actions"><button class="button button-accent" id="answerNext" type="button">Weiter</button><button class="text-button" id="answerSkip" type="button">Überspringen</button></div>`;
     } else {
-      body += `<div class="option-list" role="group" aria-labelledby="questionTitle">${(question.options || []).map((option) => optionHtml(option, existing?.answer === option.value)).join("")}</div>`;
+      body += `<div class="option-list" role="group" aria-labelledby="questionTitle"${helper ? ' aria-describedby="questionHelp"' : ""}>${(question.options || []).map((option) => optionHtml(option, existing?.answer === option.value)).join("")}</div>`;
     }
     body += "</article>";
     $("#questionHost").innerHTML = body;
@@ -1116,10 +1112,7 @@
     }
     track("phase_completed", { phase: String(state.phaseIndex + 1), question_count: phase.questions.length }, state.phaseIndex + 1);
     if (state.phaseIndex >= 2) return startContactCapture();
-    const nextIndex = state.phaseIndex + 1;
-    const nextTitle = nextIndex === 1 ? "Das Fundament steht. Jetzt zählt der Alltag." : "Potenzial erkannt. Jetzt zählt Umsetzung.";
-    const insight = phase.transitionInsight || "Ihre Antworten werden zur nächsten Runde verdichtet.";
-    moveToPhase(nextIndex, nextTitle, insight);
+    moveToPhase(state.phaseIndex + 1);
   }
 
   function goBack() {
@@ -1199,9 +1192,14 @@
   }
 
   function breakdownHtml(baseline, detailed = false) {
+    const balanced = baseline.advisory?.diagnosis?.balanced === true;
+    const strongest = balanced ? null : baseline.advisory?.diagnosis?.strongest?.key;
+    const weakest = balanced ? null : baseline.advisory?.diagnosis?.weakest?.key;
     return Object.entries(DIMENSIONS).map(([key, dimension]) => {
       const score = baseline.scores[key]?.percent || 0;
-      return `<article class="score-row"><div class="score-row-head"><strong>${esc(dimension.label)}</strong><span>${score}/100</span></div><div class="score-bar"><i data-width="${score}"></i></div><p>${esc(detailed && baseline.scores[key]?.summary ? baseline.scores[key].summary : dimension.short)}</p></article>`;
+      const marker = key === strongest ? "Stärke" : key === weakest ? "Fokus" : "Teilwert";
+      const classes = ["score-row", key === strongest ? "is-strength" : "", key === weakest ? "is-focus" : ""].filter(Boolean).join(" ");
+      return `<article class="${classes}"><div class="score-row-head"><strong>${esc(dimension.label)}</strong><span><small>${marker}</small>${score}/100</span></div><div class="score-bar" role="progressbar" aria-label="${esc(dimension.label)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${score}"><i data-width="${score}"></i></div><p>${esc(detailed && baseline.scores[key]?.summary ? baseline.scores[key].summary : dimension.short)}</p></article>`;
     }).join("");
   }
 
@@ -1209,23 +1207,14 @@
     requestAnimationFrame(() => setTimeout(() => $$('[data-width]', root).forEach((bar) => { bar.style.width = `${bar.dataset.width}%`; }), 80));
   }
 
-  async function startContactCapture() {
+  function startContactCapture() {
     state.baseline = scoreAssessment();
     state.stage = "contact";
     state.contactIndex = Math.max(0, Math.min(CONTACT_STEPS.length - 1, state.contactIndex || 0));
     formOpenedAt = Date.now();
     saveState();
-    $("#assessmentApp").hidden = true;
-    $("#transitionScreen").hidden = false;
-    $("#transitionKicker").textContent = "FRAGEN ABGESCHLOSSEN";
-    $("#transitionTitle").textContent = "Ihre Antworten sind vollständig.";
-    $("#transitionText").textContent = "Vier kurze Angaben noch: Vorname, Nachname, Unternehmen und E-Mail. Danach ordnen wir Ihre Auswertung zu und zeigen Score, Prioritäten und 90-Tage-Fahrplan. Kein Rückruf; Newsletter nur freiwillig.";
-    requestAnimationFrame(() => $("#transitionTitle").focus({ preventScroll: true }));
     track("phase_completed", { phase: "assessment", question_count: state.answers.length }, 17);
     metaEvent("AIReadinessCompleted", { assessment_version: config.assessmentVersion });
-    await new Promise((resolve) => setTimeout(resolve, 900));
-    $("#transitionScreen").hidden = true;
-    $("#assessmentApp").hidden = false;
     renderContactStep();
     track("lead_form_viewed", { employee_band: state.profile.mitarbeiter }, 17);
   }
@@ -1261,8 +1250,12 @@
       <p class="result-privacy-note">Mit Klick auf „Meinen Readiness-Score anzeigen“ verarbeiten wir Ihre Angaben zur Zuordnung, Speicherung und unmittelbaren Anzeige der Auswertung. Die Newsletter-Einwilligung ist freiwillig und nicht Voraussetzung. <a href="https://synclaro.de/datenschutz#ki-readiness-test" target="_blank" rel="noopener">Datenschutzhinweise</a></p>
       <input class="form-honeypot" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
       <div class="form-error" id="leadFormError" role="alert" hidden></div>` : "";
+    const contactIntro = state.contactIndex === 0
+      ? '<aside class="phase-context contact-intro"><strong>Ihr Score ist berechnet.</strong><span>Noch vier Angaben für die sichere Zuordnung und Anzeige: Vorname, Nachname, Unternehmen und E-Mail. Kein Rückruf; Newsletter nur freiwillig.</span></aside>'
+      : "";
     $("#questionHost").innerHTML = `<form class="question-card contact-step" id="contactStepForm" novalidate>
       <p class="question-index">Fast geschafft · ${state.contactIndex + 1} von ${CONTACT_STEPS.length}</p>
+      ${contactIntro}
       <h1 id="questionTitle" tabindex="-1">${esc(step.label)}</h1>
       <div class="question-field"><input ${inputAttributes} value="${esc(stored)}"><small class="field-error" id="contactFieldError" hidden>${esc(step.error)}</small></div>
       ${finalContent}
@@ -1371,39 +1364,15 @@
       saveState();
       track("lead_submitted", { score: state.baseline.scores.total.percent, employee_band: state.profile.mitarbeiter }, 17);
       if (result.metaLeadEligible) metaEvent("Lead", {}, { eventID: result.leadEventId || state.submissionId });
-      await showMeasuringAndAnalyze(result);
+      state.result = result.result || localDetailedResult(state.baseline);
+      saveState();
+      renderFullResult();
     } catch (error) {
       errorBox.textContent = error.message || "Der Lead konnte nicht sicher gespeichert werden. Bitte versuchen Sie es erneut.";
       errorBox.hidden = false;
       button.disabled = false;
       button.textContent = "Meinen Readiness-Score anzeigen";
     }
-  }
-
-  async function showMeasuringAndAnalyze(submissionResult) {
-    showOnlyScreen("measuringScreen");
-    document.body.classList.add("modal-open");
-    requestAnimationFrame(() => $("#measuringTitle").focus({ preventScroll: true }));
-    const steps = $$("#measuringSteps li");
-    steps[0].classList.add("done");
-    steps[1].classList.add("active");
-    const animation = animateMeasuring(steps);
-    await new Promise((resolve) => setTimeout(resolve, submissionResult.preview ? 900 : 450));
-    const result = submissionResult.result || localDetailedResult(state.baseline);
-    await animation;
-    state.result = result;
-    saveState();
-    renderFullResult();
-  }
-
-  async function animateMeasuring(steps) {
-    for (let index = 1; index < steps.length; index += 1) {
-      steps.forEach((step, stepIndex) => step.classList.toggle("active", stepIndex === index));
-      await new Promise((resolve) => setTimeout(resolve, 620));
-      steps[index].classList.remove("active");
-      steps[index].classList.add("done");
-    }
-    $("#measuringStatus").textContent = "Auswertung ist bereit.";
   }
 
   function localDetailedResult(baseline) {
@@ -1471,21 +1440,106 @@
     };
   }
 
+  function advisoryForResult(result) {
+    if (result.advisory?.opportunities?.length) return result.advisory;
+    const rankedDimensions = Object.entries(DIMENSIONS)
+      .map(([key, value]) => ({ key, label: value.label, score: result.scores[key]?.percent || 0 }))
+      .sort((a, b) => a.score - b.score || a.key.localeCompare(b.key));
+    const spread = rankedDimensions.at(-1).score - rankedDimensions[0].score;
+    const balanced = spread <= 5;
+    const legacy = (result.empfehlungen || []).slice(0, 3).map((item, index) => ({
+      id: `legacy-${index + 1}`,
+      role: index === 0 ? "primary" : "secondary",
+      status: { key: "prepare", label: "Individuell prüfen", explanation: "Dieser ältere Ergebnisstand enthält noch keine branchenspezifische Pilotbewertung." },
+      title: item.titel,
+      fitReason: item.beobachtung,
+      today: item.beobachtung,
+      assist: item.naechsterSchritt,
+      human: "Die verantwortliche Person prüft Ergebnis und nächsten Schritt.",
+      effect: "Der Ablauf wird klarer, ohne Entscheidungen ungeprüft zu automatisieren.",
+      metric: "Zeit, Qualität oder Fehlerquote vor und nach dem Test",
+      prerequisite: "Ein klar abgegrenzter Ablauf und ein dokumentierter Ausgangswert.",
+      nextStep: item.naechsterSchritt,
+    }));
+    return {
+      industry: { entered: state.profile.branche || "Ihr Unternehmen", label: "Ihr Unternehmen", fallback: true },
+      goal: { label: "den wirtschaftlich sinnvollen KI-Einstieg finden" },
+      diagnosis: {
+        balanced,
+        spread,
+        strongest: balanced ? null : rankedDimensions.at(-1),
+        weakest: balanced ? null : rankedDimensions[0],
+      },
+      pilotWindow: { value: "noch offen", label: "Startfenster" },
+      focusNote: null,
+      opportunities: legacy,
+    };
+  }
+
+  function opportunityHtml(item, index) {
+    const status = item.status || { key: "prepare", label: "Individuell prüfen", explanation: "" };
+    const flow = [
+      ["Heute", item.today],
+      ["KI unterstützt", item.assist],
+      ["Mensch prüft", item.human],
+      ["Greifbarer Effekt", item.effect],
+    ];
+    return `<article class="use-case-card${index === 0 ? " is-primary" : ""}">
+      <div class="use-case-head"><span>0${index + 1}</span><small class="use-case-status ${esc(status.key)}">${esc(status.label)}</small></div>
+      <h3>${esc(item.title)}</h3>
+      <p class="use-case-fit"><strong>Warum das zu Ihren Antworten passt:</strong> ${esc(item.fitReason)}</p>
+      <div class="use-case-flow">${flow.map(([label, text]) => `<div><small>${esc(label)}</small><p>${esc(text)}</p></div>`).join("")}</div>
+      <div class="use-case-meta"><p><small>Im Pilot messen</small><strong>${esc(item.metric)}</strong></p><p><small>Voraussetzung</small><strong>${esc(item.prerequisite)}</strong></p></div>
+      ${status.explanation ? `<p class="use-case-readiness">${esc(status.explanation)}</p>` : ""}
+      ${index === 0 ? `<a class="button button-accent use-case-inline-cta" href="${esc(config.calendarUrl)}" data-calendar-cta>Diesen Anwendungsfall kostenlos mit Marco prüfen</a>` : ""}
+    </article>`;
+  }
+
   function renderFullResult() {
     const result = state.result;
+    const advisory = advisoryForResult(result);
+    result.advisory ||= advisory;
     state.stage = "result";
     showOnlyScreen("fullResult");
     document.body.classList.add("modal-open");
-    $("#resultScore").textContent = result.scores.total.percent;
+    const totalScore = result.scores.total.percent;
+    $("#resultScore").textContent = totalScore;
     $("#resultLevel").textContent = result.level;
     $("#resultVerdict").textContent = result.gesamteinschaetzung;
+    $("#resultContext").textContent = `${advisory.industry.entered} · Ziel: ${advisory.goal.label}`;
+    const scoreRing = $("#resultScoreRing");
+    scoreRing.style.strokeDashoffset = `${578 - (Math.max(0, Math.min(100, totalScore)) / 100) * 578}`;
+    $("#resultScoreDial").setAttribute("aria-label", `Gesamter Readiness-Score: ${totalScore} von 100. ${result.level}.`);
+    const diagnosis = advisory.diagnosis || {};
+    const resultSignals = diagnosis.balanced
+      ? [
+          { value: `${totalScore}/100`, label: "Vier Teilwerte eng beieinander" },
+          { value: `${diagnosis.spread || 0} Punkte`, label: "Spannweite · kein Einzelengpass" },
+          advisory.pilotWindow,
+        ]
+      : [
+          { value: `${diagnosis.strongest.score}/100`, label: `Stärkstes Fundament · ${diagnosis.strongest.label}` },
+          { value: `${diagnosis.weakest.score}/100`, label: `Größter Fokus · ${diagnosis.weakest.label}` },
+          advisory.pilotWindow,
+        ];
+    $("#resultSignals").innerHTML = resultSignals.map((signal) => `<article><strong>${esc(signal.value)}</strong><span>${esc(signal.label)}</span></article>`).join("");
+    $("#industryUseCaseTitle").textContent = `Drei konkrete KI-Chancen für ${advisory.industry.entered}.`;
+    $("#industryUseCaseIntro").textContent = `Nicht als allgemeine Tool-Liste: Die Reihenfolge verbindet Ihre Branche, Ihr Ziel „${advisory.goal.label}“ und Ihre tatsächlichen Antwortwerte.`;
+    $("#useCases").innerHTML = advisory.opportunities.slice(0, 3).map(opportunityHtml).join("");
+    const focusNote = $("#resultFocusNote");
+    if (advisory.focusNote) {
+      focusNote.innerHTML = `<small>Ihr freiwilliger 90-Tage-Fokus</small><strong>„${esc(advisory.focusNote)}“</strong>`;
+      focusNote.hidden = false;
+    } else {
+      focusNote.hidden = true;
+      focusNote.replaceChildren();
+    }
     $("#resultBreakdown").innerHTML = breakdownHtml(result, true);
     animateBars($("#resultBreakdown"));
-    $("#leverTitle").textContent = result.groessterHebel?.titel || "Ihr sinnvollster nächster Schritt";
-    $("#leverReason").textContent = result.groessterHebel?.begruendung || "Beginnen Sie dort, wo Aufwand und Wirkung am klarsten messbar sind.";
-    $("#timePotential").textContent = result.timePotential?.label || "—";
-    $("#timeNote").textContent = result.timePotential?.note || "Orientierungswert, kein Leistungsversprechen.";
-    $("#recommendations").innerHTML = (result.empfehlungen || []).map((item, index) => `<article class="recommendation"><span>0${index + 1}</span><div><h3>${esc(item.titel)}</h3><p>${esc(item.beobachtung)}</p><p class="next-step"><strong>Diese Woche:</strong> ${esc(item.naechsterSchritt)}</p></div><div class="tags"><span class="tag">Aufwand ${esc(item.aufwand)}</span><span class="tag accent">Wirkung ${esc(item.wirkung)}</span></div></article>`).join("");
+    const primary = advisory.opportunities[0];
+    $("#bookingTitle").textContent = `„${primary.title}“ mit Marco auf Umsetzbarkeit prüfen.`;
+    $("#bookingCopy").textContent = `In 20 Minuten prüfen Sie gemeinsam, ob der Anwendungsfall mit Ihren heutigen Systemen sinnvoll startbar ist, welche Voraussetzung zuerst fehlt und woran Sie einen Pilot messen würden.`;
+    $("#finalBookingTitle").textContent = `Ist „${primary.title}“ wirklich Ihr stärkster erster Hebel?`;
     const roadmap = result.roadmap || {};
     $("#roadmap").innerHTML = ["phase1", "phase2", "phase3"].map((key) => roadmap[key]).filter(Boolean).map((phase) => `<article><small>${esc(phase.zeitraum)}</small><h3>${esc(phase.titel)}</h3><ul>${(phase.punkte || []).map((point) => `<li>${esc(point)}</li>`).join("")}</ul></article>`).join("");
     $("#diagnosticNote").textContent = result.diagnosticNote || "Strukturierte Selbsteinschätzung; keine Zertifizierung oder Erfolgsgarantie.";
@@ -1509,9 +1563,10 @@
     calendar.searchParams.set("utm_campaign", "ai_readiness_result");
     if (state.bookingReference) calendar.searchParams.set("readiness_ref", state.bookingReference);
     $$('[data-calendar-cta]').forEach((cta) => { cta.href = calendar.toString(); });
+    $("#useCases").querySelectorAll("[data-calendar-cta]").forEach((cta) => cta.addEventListener("click", () => track("calendar_cta_clicked", { score: state.result?.scores?.total?.percent || 0 }, 19)));
     window.scrollTo(0, 0);
     requestAnimationFrame(() => $("#resultTitle").focus({ preventScroll: true }));
-    track("report_viewed", { score: result.scores.total.percent, level: result.level }, 18);
+    track("report_viewed", { score: totalScore, level: result.level }, 18);
     saveState();
   }
 
