@@ -1,16 +1,16 @@
 # Finaler Tracking-Delta-Check
 
-Stand: 19.07.2026 · Zielbranch `feat/funnel-preview-refinement` · nicht live
+Stand: 19.07.2026 · Zielbranch `feat/readiness-contact-handoff` · nicht live
 
 ## Prüfgegenstand
 
 Geprüft wurde ausschließlich das letzte Delta für Consent, Analytics-
-Properties, objektgenaue Meta-Attribution, die korrigierten Creatives und die
-ehrliche Launch-Übergabe.
+Properties, objektgenaue Meta-Attribution, die korrigierten Creatives, den
+sequenziellen Kontakt-Handoff und die ehrliche Launch-Übergabe.
 
 ## Builder-Nachweise
 
-- `npm test`: 58/58 bestanden.
+- `npm test`: 61/61 bestanden.
 - `npm run test:migration`: lokale Migration und Lead-Funnel-Integration
   bestanden.
 - `npm audit --audit-level=high`: 0 bekannte Schwachstellen.
@@ -20,6 +20,10 @@ ehrliche Launch-Übergabe.
 - `git diff --check`: bestanden.
 - Drei Creative-PNGs mit „8 adaptive Fragen“ neu gerendert, Maße und RGB-
   Ausgabe geprüft sowie visuell abgenommen.
+- PR #2 wurde in den gegen `main` gerichteten PR #3 integriert. Der
+  Kontakt-Handoff reicht Campaign-, Adset- und Ad-ID nur nach Marketing-
+  Consent weiter; freie Identifikatoren werden verworfen und PII-verdächtige
+  Placement-Suffixe auf die Plattform reduziert.
 
 ## Interner Critic
 

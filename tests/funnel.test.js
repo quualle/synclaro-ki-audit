@@ -445,13 +445,17 @@ test("Tracking-Properties verwerfen Antworten, Kontaktdaten und freie Kampagnenw
 
 test("Readiness-Handoff trägt nur signierte Zuordnung und freigegebene Meta-Kampagnenwerte", () => {
   const reference = `${"a".repeat(40)}.${"b".repeat(40)}`;
+  const campaignId = "120251380526880206";
+  const adsetId = "120251380526890206";
+  const adId = "120251380526870206";
   const withoutMarketing = new URL(handoff.buildContactHandoff({
     contactUrl: "https://synclaro.de/kontakt/",
     bookingReference: reference,
     marketingConsent: false,
     attribution: {
       utm_source: "meta", utm_medium: "paid_social", utm_campaign: "ai_readiness_de_prospecting_v1",
-      utm_content: "STATIC V2 | Anzeige 01", placement: "instagram_stories", fbclid: "secret-click-id",
+      utm_id: campaignId, utm_term: adsetId, utm_content: adId,
+      placement: "instagram_stories", fbclid: "secret-click-id",
     },
   }));
   assert.equal(withoutMarketing.searchParams.get("flow"), "ai-readiness");
@@ -465,7 +469,8 @@ test("Readiness-Handoff trägt nur signierte Zuordnung und freigegebene Meta-Kam
     marketingConsent: true,
     attribution: {
       utm_source: "meta", utm_medium: "paid_social", utm_campaign: "meta_ai_readiness_de_prospecting_v1",
-      utm_content: "STATIC V2 | Anzeige 01", placement: "instagram_stories", fbclid: "secret-click-id",
+      utm_id: campaignId, utm_term: adsetId, utm_content: adId,
+      placement: "instagram_stories", fbclid: "secret-click-id",
     },
   }));
   assert.equal(withMarketing.origin, "https://synclaro.de");
@@ -473,7 +478,9 @@ test("Readiness-Handoff trägt nur signierte Zuordnung und freigegebene Meta-Kam
   assert.equal(withMarketing.searchParams.get("utm_source"), "meta");
   assert.equal(withMarketing.searchParams.get("utm_medium"), "paid_social");
   assert.equal(withMarketing.searchParams.get("utm_campaign"), "ai_readiness_de_prospecting_v1");
-  assert.equal(withMarketing.searchParams.get("utm_content"), "STATIC V2 | Anzeige 01");
+  assert.equal(withMarketing.searchParams.get("utm_id"), campaignId);
+  assert.equal(withMarketing.searchParams.get("utm_term"), adsetId);
+  assert.equal(withMarketing.searchParams.get("utm_content"), adId);
   assert.equal(withMarketing.searchParams.get("placement"), "instagram_stories");
   assert.equal(withMarketing.searchParams.has("fbclid"), false);
 });
@@ -484,12 +491,30 @@ test("Readiness-Handoff verwirft PII, unbekannte Kampagnen und ungültige Refere
     marketingConsent: true,
     attribution: {
       utm_source: "meta", utm_medium: "paid_social", utm_campaign: "ada@example.com",
-      utm_content: "ada@example.com", placement: "email_feed",
+      utm_id: "+491701234567", utm_term: "Ada Beispiel", utm_content: "ada@example.com",
+      placement: "instagram_ada_example_com",
     },
   }));
   assert.equal(url.searchParams.has("readiness_ref"), false);
   assert.equal(url.searchParams.has("utm_source"), false);
   assert.equal(url.toString().includes("ada"), false);
+});
+
+test("Readiness-Handoff reduziert PII-verdächtige Placement-Suffixe und verwirft freie Meta-IDs", () => {
+  const url = new URL(handoff.buildContactHandoff({
+    marketingConsent: true,
+    attribution: {
+      utm_source: "meta", utm_medium: "paid_social", utm_campaign: "ai_readiness_de_prospecting_v1",
+      utm_id: "+491701234567", utm_term: "Ada Beispiel", utm_content: "ada@example.com",
+      placement: "instagram_ada_example_com",
+    },
+  }));
+  assert.equal(url.searchParams.has("utm_id"), false);
+  assert.equal(url.searchParams.has("utm_term"), false);
+  assert.equal(url.searchParams.has("utm_content"), false);
+  assert.equal(url.searchParams.get("placement"), "instagram");
+  assert.equal(url.toString().includes("ada"), false);
+  assert.equal(url.toString().includes("491701234567"), false);
 });
 
 test("Analytics-Events benötigen eine aktuelle, versionierte Einwilligung", () => {

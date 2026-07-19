@@ -118,7 +118,7 @@ create table if not exists public.ai_readiness_events (
   event_name text not null check (event_name in (
     'landing_viewed', 'test_started', 'profile_completed', 'phase_started', 'phase_completed',
     'result_preview_viewed', 'lead_form_viewed', 'lead_form_validation_error',
-    'lead_submitted', 'report_viewed', 'calendar_cta_clicked', 'consent_updated',
+    'lead_submitted', 'report_viewed', 'contact_handoff_clicked', 'consent_updated',
     'scroll_depth', 'session_duration'
   )),
   step smallint check (step between 0 and 100),
@@ -492,7 +492,7 @@ begin
     or p_event_name not in (
       'landing_viewed', 'test_started', 'profile_completed', 'phase_started', 'phase_completed',
       'result_preview_viewed', 'lead_form_viewed', 'lead_form_validation_error',
-      'lead_submitted', 'report_viewed', 'calendar_cta_clicked', 'consent_updated',
+      'lead_submitted', 'report_viewed', 'contact_handoff_clicked', 'consent_updated',
       'scroll_depth', 'session_duration'
     )
     or p_properties is null or pg_catalog.jsonb_typeof(p_properties) <> 'object'
