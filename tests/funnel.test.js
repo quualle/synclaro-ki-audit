@@ -6,14 +6,17 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const assessment = require("../netlify/functions/_shared/assessment");
+const advisory = require("../netlify/functions/_shared/advisory");
 const consents = require("../netlify/functions/_shared/consents");
 const deliveries = require("../netlify/functions/_shared/deliveries");
 const meta = require("../netlify/functions/_shared/meta");
 const security = require("../netlify/functions/_shared/security");
 const session = require("../netlify/functions/_shared/session");
 const supabaseAdmin = require("../netlify/functions/_shared/supabase");
-const submit = require("../netlify/functions/submit-lead")._test;
+const submitModule = require("../netlify/functions/_shared/submit-lead-handler");
+const submit = submitModule._test;
 const analyze = require("../netlify/functions/analyze")._test;
+const resultBuilder = require("../netlify/functions/_shared/result");
 const tracking = require("../netlify/functions/track-event")._test;
 const consentState = require("../public/consent-state");
 
@@ -21,6 +24,19 @@ function answersWith(value) {
   return assessment.PHASES.flatMap((phase) => phase.questions)
     .filter((question) => question.dimension)
     .map((question) => ({ questionId: question.id, answer: String(value), answerLabel: question.options[value - 1].label }));
+}
+
+function adaptiveAnswersWith(value) {
+  return [
+    "prozess_standardisierung",
+    "wissen_verteilung",
+    "ki_nutzung",
+    "verantwortung",
+    "daten_zugriff",
+    "team_digital",
+    "ki_leitplanken",
+    "erfolgsmessung",
+  ].map((questionId) => ({ questionId, answer: String(value) }));
 }
 
 test("der feste Score hat stabile Randwerte und ist branchenneutral", () => {
@@ -33,7 +49,17 @@ test("der feste Score hat stabile Randwerte und ist branchenneutral", () => {
   assert.equal(high.level, "KI-Skalierbar");
   assert.deepEqual(low.scores, otherIndustry.scores);
   assert.equal(low.complete, true);
-  assert.equal(low.assessmentVersion, "2026-07-19.v3");
+  assert.equal(low.assessmentVersion, "2026-07-19.v5");
+});
+
+test("der adaptive Score benötigt exakt zwei Messanker je Dimension", () => {
+  const low = assessment.scoreAdaptiveAssessment(adaptiveAnswersWith(1), { branche: "Beratung", mitarbeiter: "solo" });
+  const high = assessment.scoreAdaptiveAssessment(adaptiveAnswersWith(4), { branche: "Metallbau", mitarbeiter: "1-5" });
+  assert.equal(low.complete, true);
+  assert.equal(low.scores.total.percent, 0);
+  assert.equal(high.scores.total.percent, 100);
+  assert.deepEqual(low.coverage, { prozesse_daten: 2, team_wissen: 2, ki_praxis: 2, umsetzungskraft: 2 });
+  assert.equal(assessment.scoreAdaptiveAssessment(adaptiveAnswersWith(2).slice(1), {}).complete, false);
 });
 
 test("Solo-Selbstständige erhalten passende Fragen bei identischer Bewertungslogik", () => {
@@ -45,7 +71,7 @@ test("Solo-Selbstständige erhalten passende Fragen bei identischer Bewertungslo
     .join(" ");
   assert.match(soloLabels, /eigenen Alltag|Arbeitswissen/);
   assert.doesNotMatch(soloLabels, /Das Team|andere bleiben|Schlüsselperson spontan ausfällt|je nach Person|Köpfe|gemeinsamen Regeln|mündliche Absprachen|wir wollen|Verantwortliche|Testgruppe|haben wir/);
-  assert.notEqual(soloPhase.questions[0].label, teamPhase.questions[0].label);
+  assert.notDeepEqual(soloPhase.questions[0].options, teamPhase.questions[0].options);
   assert.equal(assessment.scoreAssessment(answersWith(1), { mitarbeiter: "solo" }).scores.total.percent, 0);
   assert.equal(assessment.scoreAssessment(answersWith(4), { mitarbeiter: "solo" }).scores.total.percent, 100);
 });
@@ -153,18 +179,39 @@ test("Conversion-Gate, Formfelder und Ergebnis-CTAs bleiben transparent und barr
   const html = fs.readFileSync(path.join(__dirname, "../public/index.html"), "utf8");
   const app = fs.readFileSync(path.join(__dirname, "../public/app.js"), "utf8");
   const css = fs.readFileSync(path.join(__dirname, "../public/styles.css"), "utf8");
-  assert.match(html, /Am Ende erforderlich: Name, Unternehmen und E-Mail · kein Rückruf · Newsletter nur freiwillig/);
+  assert.match(html, /Am Ende: Name, Unternehmen und E-Mail · kein Rückruf · Newsletter freiwillig/);
   assert.equal((html.match(/data-calendar-cta/g) || []).length, 2);
   assert.match(app, /id="profileText" aria-labelledby="questionTitle"/);
   assert.match(app, /id="answerText" aria-labelledby="questionTitle"/);
   assert.match(app, /aria-labelledby="questionTitle"/);
   assert.doesNotMatch(app, /role="radio"|role="radiogroup"|aria-checked=/);
-  assert.match(app, /showOnlyScreen\("measuringScreen"\)/);
+  assert.doesNotMatch(html, /id="(?:transitionScreen|scorePreview|measuringScreen)"/);
+  assert.doesNotMatch(app, /showMeasuringAndAnalyze|animateMeasuring|setTimeout\(resolve, 1200\)/);
   assert.match(app, /showOnlyScreen\("fullResult"\)/);
   assert.match(app, /const TOTAL_JOURNEY_STEPS = PROFILE_STEPS\.length \+ CORE_QUESTION_COUNT \+ OPTIONAL_CONTEXT_COUNT \+ CONTACT_STEPS\.length/);
   assert.match(app, /Math\.ceil\(\(total - completed\) \* \.19\)/);
-  assert.equal((app.match(/updateProgress\([^;]+TOTAL_JOURNEY_STEPS\);/g) || []).length, 3);
-  assert.match(app, /optionaler Kontext, nicht Teil der 12 Kernfragen/);
+  assert.equal((app.match(/updateProgress\([^;]+TOTAL_JOURNEY_STEPS\);/g) || []).length, 4);
+  assert.match(app, /optional, nicht Teil des Scores/);
+  assert.match(app, /GPT‑5\.5/);
+  assert.match(app, /Kontaktdaten an OpenRouter/);
+  assert.match(app, /new AbortController\(\)/);
+  assert.match(app, /applyConsentEffects\(\{ allowGrants: false \}\)/);
+  assert.match(app, /function applyConsentEffects\(\{ allowGrants = true \} = \{\}\)/);
+  assert.match(app, /allowGrants && consent\.marketing/);
+  assert.match(app, /const incomingWasServerConfirmed = Boolean\(/);
+  assert.match(app, /const synced = await syncTrackingConsent\(\)/);
+  assert.match(app, /storageGeneration !== storageConsentGeneration/);
+  assert.match(app, /question_count: CORE_QUESTION_COUNT/);
+  assert.doesNotMatch(app, /adaptive_question_started/);
+  assert.match(app, /session: "\/api\/readiness-session"/);
+  assert.match(app, /question: "\/api\/readiness-question"/);
+  assert.match(app, /result: "\/api\/readiness-result"/);
+  assert.doesNotMatch(app, /`\$\{API\}\/(?:start-session|generate-questions|submit-lead)`/);
+  assert.match(app, /adaptiveRequestController\?\.abort\(\)/);
+  assert.match(app, /generation !== adaptiveRequestGeneration/);
+  assert.match(app, /function cancelAnswerAdvance\(\)/);
+  assert.match(app, /other\.disabled = true/);
+  assert.match(app, /generation !== answerAdvanceGeneration/);
   assert.match(app, /\["assessmentApp", "fullResult"\]\.includes\(layer\.id\)/);
   assert.match(app, /\$\("#closeResult"\)\.addEventListener\("click", closeTest\)/);
   assert.match(app, /\$\("#resultHomeLink"\)\.addEventListener/);
@@ -174,6 +221,12 @@ test("Conversion-Gate, Formfelder und Ergebnis-CTAs bleiben transparent und barr
   assert.match(css, /\.result-privacy-note[^}]*font-size: 14px/);
   assert.match(css, /\.lever-section > \* \{ min-width: 0; \}/);
   assert.match(css, /\.lever-section h2[^}]*overflow-wrap: anywhere/);
+  assert.match(html, /class="brand-logo" src="\/assets\/synclaro-logo-weiss\.png"/);
+  assert.match(html, /id="resultScoreDial"/);
+  assert.match(html, /id="useCases"/);
+  assert.match(app, /Diesen Anwendungsfall kostenlos mit Marco prüfen/);
+  assert.match(app, /role="progressbar"/);
+  assert.doesNotMatch(app, /Math\.max\(0, 900 -/);
   for (const page of [
     "newsletter-abgemeldet.html",
     "newsletter-abmeldung-fehlgeschlagen.html",
@@ -201,22 +254,37 @@ test("Attribution bleibt ohne Marketing-Consent leer und entfernt mit Consent fr
     utm_source: "meta",
     utm_medium: "paid_social",
     utm_campaign: "ai_readiness_de_prospecting_v1",
-    utm_content: "ada@example.com",
+    utm_id: "120251380526880206",
+    utm_term: "120251380526890206",
+    utm_content: "120251380526870206",
     placement: "instagram_stories",
     fbclid: "abc-123",
     fbp: "fb.1.1234567890.abc",
   };
   const denied = submit.sanitizeAttribution(raw, event, "55555555-5555-4555-8555-555555555555", false);
   assert.equal(denied.landingUrl, "https://ki-check.synclaro.de/");
-  for (const key of ["referrer", "utm_source", "utm_campaign", "utm_content", "placement", "fbclid", "fbp", "user_agent"]) {
+  for (const key of ["referrer", "utm_source", "utm_campaign", "utm_id", "utm_term", "utm_content", "placement", "fbclid", "fbp", "user_agent"]) {
     assert.equal(denied[key], "");
   }
   const granted = submit.sanitizeAttribution(raw, event, "55555555-5555-4555-8555-555555555555", true);
   assert.equal(granted.referrer, "https://example.com");
   assert.equal(granted.utm_campaign, "ai_readiness_de_prospecting_v1");
-  assert.equal(granted.utm_content, "");
+  assert.equal(granted.utm_id, "120251380526880206");
+  assert.equal(granted.utm_term, "120251380526890206");
+  assert.equal(granted.utm_content, "120251380526870206");
   assert.equal(granted.placement, "instagram_stories");
   assert.equal(granted.fbclid, "abc-123");
+  const injected = submit.sanitizeAttribution({
+    ...raw,
+    utm_id: "+491701234567",
+    utm_term: "Ada Beispiel",
+    utm_content: "ada@example.com",
+    placement: "instagram_ada_example_com",
+  }, event, "55555555-5555-4555-8555-555555555555", true);
+  assert.equal(injected.utm_id, "");
+  assert.equal(injected.utm_term, "");
+  assert.equal(injected.utm_content, "");
+  assert.equal(injected.placement, "instagram");
 });
 
 test("deterministische Detailanalyse liefert die sichtbare Gesamteinschätzung", () => {
@@ -243,9 +311,132 @@ test("deterministische Solo-Analyse unterstellt weder Team noch Delegation", () 
   assert.doesNotMatch(text, /im Team|Das Team|verantwortliche Person|Nutzergruppe/);
 });
 
+test("Branche und Antwortsignale ändern konkrete Chancen, niemals den Score", () => {
+  const baseAnswers = answersWith(2);
+  const cleaningProfile = { branche: "Gebäudereinigung für Büros", mitarbeiter: "6-10", rolle: "inhaber", hauptziel: "zeit" };
+  const consultingProfile = { branche: "Unternehmensberatung", mitarbeiter: "6-10", rolle: "inhaber", hauptziel: "zeit" };
+  const cleaningBaseline = assessment.scoreAssessment(baseAnswers, cleaningProfile);
+  const consultingBaseline = assessment.scoreAssessment(baseAnswers, consultingProfile);
+  const cleaning = resultBuilder.buildDeterministicResult(cleaningBaseline, cleaningProfile, baseAnswers);
+  const consulting = resultBuilder.buildDeterministicResult(consultingBaseline, consultingProfile, baseAnswers);
+  assert.equal(cleaning.scores.total.percent, consulting.scores.total.percent);
+  assert.equal(cleaning.advisory.industry.key, "reinigung");
+  assert.equal(consulting.advisory.industry.key, "beratung");
+  assert.notDeepEqual(cleaning.advisory.opportunities.map((item) => item.id), consulting.advisory.opportunities.map((item) => item.id));
+  assert.equal(cleaning.advisory.opportunities.length, 3);
+  assert.equal(cleaning.resultVersion, "2026-07-19.v5");
+});
+
+test("ein konkreter 90-Tage-Fokus priorisiert den passenden Branchenfall deterministisch", () => {
+  const profile = { branche: "Reinigungsfirma", mitarbeiter: "1-5", rolle: "inhaber", hauptziel: "zeit" };
+  const answers = [...answersWith(2), {
+    questionId: "haupthebel",
+    questionType: "textarea",
+    answer: "Zahlungserinnerungen zuverlässiger vorbereiten",
+    answerLabel: "Zahlungserinnerungen zuverlässiger vorbereiten",
+  }];
+  const baseline = assessment.scoreAssessment(answers, profile);
+  const first = resultBuilder.buildDeterministicResult(baseline, profile, answers);
+  const second = resultBuilder.buildDeterministicResult(baseline, profile, answers);
+  assert.equal(first.advisory.opportunities[0].id, "cleaning-payment-reminder");
+  assert.deepEqual(first.advisory, second.advisory);
+  assert.match(first.advisory.opportunities[0].fitReason, /90-Tage-Ziel/);
+});
+
+test("Pilotstatus trennt Relevanz sauber von Umsetzungsbereitschaft", () => {
+  const profile = { branche: "Metallbau", mitarbeiter: "1-5", rolle: "inhaber", hauptziel: "qualitaet" };
+  const lowAnswers = answersWith(1);
+  const highAnswers = answersWith(4);
+  const low = resultBuilder.buildDeterministicResult(assessment.scoreAssessment(lowAnswers, profile), profile, lowAnswers);
+  const high = resultBuilder.buildDeterministicResult(assessment.scoreAssessment(highAnswers, profile), profile, highAnswers);
+  assert.equal(low.advisory.opportunities[0].status.key, "foundation_first");
+  assert.equal(high.advisory.opportunities[0].status.key, "pilot_ready");
+  assert.doesNotMatch(JSON.stringify(high), /noch nicht robust|noch nicht durchgängig verlässlich|größten Entwicklungsbedarf/);
+});
+
+test("unbekannte Branchen fallen sicher auf branchenoffene Fälle zurück", () => {
+  const result = advisory.classifyIndustry("Spezialservice für Messestände");
+  assert.equal(result.key, "allgemein");
+  assert.equal(result.fallback, true);
+  assert.equal(result.cases.length, 3);
+});
+
+test("Branchenbegriffe werden nicht über Teilwörter falsch zugeordnet", () => {
+  assert.equal(advisory.classifyIndustry("Maschinenbau und Fertigung").key, "fertigung");
+  assert.equal(advisory.classifyIndustry("Bauunternehmen im Hochbau").key, "handwerk");
+  assert.equal(advisory.classifyIndustry("Sanitärbetrieb").key, "handwerk");
+  assert.equal(advisory.classifyIndustry("Softwareentwicklung für Handwerksbetriebe").key, "it");
+  assert.equal(advisory.classifyIndustry("Online-Shop für Sanitärbedarf").key, "handel");
+  assert.equal(advisory.classifyIndustry("Facility Management für Büroimmobilien").key, "immobilien");
+  assert.equal(advisory.classifyIndustry("Steuerungssoftware für Industrieanlagen").key, "it");
+  assert.equal(advisory.classifyIndustry("Workshop- und KI-Beratung für Führungskräfte").key, "beratung");
+  assert.equal(advisory.classifyIndustry("Netzwerkberatung für kleine Unternehmen").key, "beratung");
+  assert.equal(advisory.classifyIndustry("Praxisnahe KI-Beratung").key, "beratung");
+  assert.equal(advisory.classifyIndustry("Wohnzimmermöbel-Onlinehandel").key, "handel");
+  assert.notEqual(advisory.classifyIndustry("Dachverband für soziale Träger").key, "handwerk");
+  assert.equal(advisory.classifyIndustry("Content-Management-Software").key, "it");
+  assert.equal(advisory.classifyIndustry("Weiterbildungsakademie").key, "bildung");
+});
+
+test("ausgeglichene Teilwerte erfinden weder Stärke noch Fokus", () => {
+  const profile = { branche: "Unternehmensberatung", mitarbeiter: "1-5", rolle: "inhaber", hauptziel: "klarheit" };
+  const answers = answersWith(2);
+  const result = resultBuilder.buildDeterministicResult(assessment.scoreAssessment(answers, profile), profile, answers);
+  assert.equal(result.advisory.diagnosis.balanced, true);
+  assert.equal(result.advisory.diagnosis.spread, 0);
+  assert.equal(result.advisory.diagnosis.strongest, null);
+  assert.equal(result.advisory.diagnosis.weakest, null);
+  assert.match(result.gesamteinschaetzung, /kein Bereich sticht als einzelner Engpass hervor/);
+});
+
 test("Tracking-Properties verwerfen Antworten, Kontaktdaten und freie Kampagnenwerte", () => {
-  const result = tracking.sanitizeProperties({ score: 47, phase: "2", email: "ada@example.com", phone: "+49170", answers: [{ answer: "x" }], utm_campaign: "ada@example.com", placement: "instagram_stories", preview: false });
-  assert.deepEqual(result, { score: 47, phase: "2", utm_campaign: "other", placement: "instagram_stories", preview: false });
+  const result = tracking.sanitizeProperties({
+    assessment_version: "2026-07-19.v5",
+    question_count: 8,
+    score: 47,
+    depth: 75,
+    phase: "assessment",
+    employee_band: "1-5",
+    respondent_role: "inhaber",
+    level: "KI-Startklar",
+    field: "email",
+    error_code: "required_or_invalid",
+    duration_bucket: "31-120",
+    email: "ada@example.com",
+    phone: "+49170",
+    answers: [{ answer: "x" }],
+    utm_campaign: "ada@example.com",
+    placement: "instagram_stories",
+    preview: false,
+  });
+  assert.deepEqual(result, {
+    assessment_version: "2026-07-19.v5",
+    question_count: 8,
+    score: 47,
+    depth: 75,
+    phase: "assessment",
+    employee_band: "1-5",
+    respondent_role: "inhaber",
+    level: "KI-Startklar",
+    field: "email",
+    error_code: "required_or_invalid",
+    duration_bucket: "31-120",
+    utm_campaign: "other",
+    placement: "instagram_stories",
+    preview: false,
+  });
+  const injected = tracking.sanitizeProperties(Object.fromEntries([
+    "assessment_version", "phase", "employee_band", "respondent_role", "question_count", "score", "level", "field",
+    "error_code", "depth", "duration_bucket", "preview",
+  ].map((key) => [key, "ada@example.com"])));
+  assert.equal(JSON.stringify(injected).includes("ada"), false);
+  const encodedPlacement = tracking.sanitizeProperties({
+    placement: "instagram_ada_example_com",
+    utm_campaign: "facebook_491701234567",
+  });
+  assert.deepEqual(encodedPlacement, { placement: "instagram", utm_campaign: "other" });
+  assert.equal(JSON.stringify(encodedPlacement).includes("ada"), false);
+  assert.equal(JSON.stringify(encodedPlacement).includes("491701234567"), false);
 });
 
 test("Analytics-Events benötigen eine aktuelle, versionierte Einwilligung", () => {

@@ -1,5 +1,9 @@
 # AI-Readiness-Funnel – finale Production-QA
 
+> **Historischer Vorlauf:** Für den aktuellen adaptiven Tracking-Abschluss ist
+> [`2026-07-19-final-tracking-delta-qa.md`](./2026-07-19-final-tracking-delta-qa.md)
+> maßgeblich.
+
 Stand: 19.07.2026 · Branch `feat/meta-ai-readiness-funnel`
 
 ## Ergebnis

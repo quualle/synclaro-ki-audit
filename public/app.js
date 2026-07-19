@@ -4,16 +4,21 @@
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
   const API = "/.netlify/functions";
+  const READINESS_API = {
+    session: "/api/readiness-session",
+    question: "/api/readiness-question",
+    result: "/api/readiness-result",
+  };
   const CONSENT_STATE = window.SynclaroConsentState;
-  const STATE_KEY = "synclaro_ai_readiness_state_v6";
+  const STATE_KEY = "synclaro_ai_readiness_state_v8";
   const CONSENT_KEY = "synclaro_ai_readiness_consent_v1";
   const CONSENT_SUBJECT_KEY = "synclaro_ai_readiness_consent_subject_v1";
   const ATTRIBUTION_KEY = "synclaro_ai_readiness_attribution_v1";
   const CONSENT_MAX_AGE_MS = 180 * 24 * 60 * 60 * 1000;
   const SESSION_MAX_AGE_MS = 2 * 60 * 60 * 1000;
   const DEFAULT_CONFIG = {
-    assessmentVersion: "2026-07-19.v3",
-    privacyVersion: "privacy-ai-readiness-v2-2026-07-19",
+    assessmentVersion: "2026-07-19.v5",
+    privacyVersion: "privacy-ai-readiness-v3-2026-07-19",
     cookieConsentVersion: "cookie-v1-2026-07-18",
     newsletterConsent: { version: "newsletter-email-v1-2026-07-19", text: "Ja, ich möchte regelmäßig praxistaugliche KI-Impulse, Einladungen und Angebote von Synclaro per E-Mail erhalten. Die Anmeldung wird per Double-Opt-in bestätigt; eine Abmeldung ist jederzeit möglich." },
     analyticsConsent: { version: "cookie-v1-2026-07-18", text: "Analyse: Synclaro speichert pseudonyme Funnel-Ereignisse, um Nutzung und Abbrüche des AI Readiness Tests auszuwerten. Testantworten und Kontaktdaten werden dabei nicht als Ereigniseigenschaften gespeichert." },
@@ -74,9 +79,9 @@
       id: "branche",
       type: "text",
       kicker: "Unternehmensprofil · 4 von 4",
-      label: "In welcher Branche ist Ihr Unternehmen tätig?",
-      help: "Eine kurze, konkrete Bezeichnung genügt.",
-      placeholder: "z. B. Steuerberatung, Agentur, Online-Handel, Metallbau",
+      label: "Was bietet Ihr Unternehmen an – und in welcher Branche?",
+      help: "Eine kurze, konkrete Bezeichnung hilft, passende Anwendungsfälle auszuwählen.",
+      placeholder: "z. B. Gebäudereinigung für Büros oder Steuerberatung für Arztpraxen",
     },
   ];
   const CONTACT_STEPS = [
@@ -85,9 +90,19 @@
     { id: "company", label: "Für welches Unternehmen machen Sie den Test?", autocomplete: "organization", maxlength: 160, error: "Bitte nennen Sie Ihr Unternehmen oder Ihre selbstständige Tätigkeit." },
     { id: "email", label: "Welche E-Mail-Adresse gehört zu Ihrer Auswertung?", autocomplete: "email", maxlength: 254, type: "email", inputmode: "email", error: "Bitte geben Sie eine gültige E-Mail-Adresse ein." },
   ];
-  const CORE_QUESTION_COUNT = 12;
+  const ADAPTIVE_VERSION = "adaptive-v1";
+  const AI_PROCESSING_VERSION = "ai-processing-v1-2026-07-19";
+  const CORE_QUESTION_COUNT = 8;
   const OPTIONAL_CONTEXT_COUNT = 1;
   const TOTAL_JOURNEY_STEPS = PROFILE_STEPS.length + CORE_QUESTION_COUNT + OPTIONAL_CONTEXT_COUNT + CONTACT_STEPS.length;
+  const OPTIONAL_CONTEXT_QUESTION = {
+    id: "haupthebel",
+    type: "textarea",
+    required: false,
+    label: "Welcher Arbeitsablauf soll in den nächsten 90 Tagen spürbar besser laufen?",
+    help: "Optional: Nennen Sie möglichst Ablauf und gewünschten Effekt. Bitte keine Personen-, Kunden- oder vertraulichen Daten eingeben.",
+    placeholder: "Zum Beispiel: Angebote schneller erstellen oder Terminausfälle reduzieren …",
+  };
 
   let config = { ...DEFAULT_CONFIG };
   let consent = { necessary: true, analytics: false, marketing: false, version: DEFAULT_CONFIG.cookieConsentVersion, grantedAt: null, globalDecisionId: null };
@@ -102,12 +117,16 @@
   let sessionPromise = null;
   let trackingConsentPromise = null;
   let freshSessionRequired = false;
-  let transitionStarted = 0;
   let toastTimer = null;
+  let adaptiveRequestController = null;
+  let adaptiveRequestGeneration = 0;
+  let answerAdvanceTimer = null;
+  let answerAdvanceGeneration = 0;
   let landingTracked = false;
   let landingTrackPromise = null;
   let consentSaving = false;
   let pendingConsentIntent = null;
+  let storageConsentGeneration = 0;
   let consentReturnFocus = null;
   let testReturnFocus = null;
   let currentInteractionLayer = null;
@@ -144,8 +163,7 @@
       stage: "landing",
       profile: {},
       profileIndex: 0,
-      phases: [],
-      phaseIndex: -1,
+      questions: [],
       questionIndex: 0,
       answers: [],
       contact: {},
@@ -196,7 +214,7 @@
   function visibleInteractionLayer() {
     const consentLayer = $("#consentLayer");
     if (!consentLayer.hidden) return consentLayer;
-    return ["assessmentApp", "transitionScreen", "measuringScreen", "fullResult"]
+    return ["assessmentApp", "fullResult"]
       .map((id) => $(`#${id}`))
       .find((element) => !element.hidden) || null;
   }
@@ -210,11 +228,7 @@
     if (layer.id === "assessmentApp") {
       return $("#questionTitle", layer) || $("#closeButton", layer);
     }
-    const targets = {
-      transitionScreen: "#transitionTitle",
-      measuringScreen: "#measuringTitle",
-      fullResult: "#resultTitle",
-    };
+    const targets = { fullResult: "#resultTitle" };
     return $(targets[layer.id] || "", layer);
   }
 
@@ -307,7 +321,7 @@
   }
 
   const interactionObserver = new MutationObserver(refreshInteractionLayer);
-  ["consentLayer", "assessmentApp", "transitionScreen", "measuringScreen", "fullResult"]
+  ["consentLayer", "assessmentApp", "fullResult"]
     .forEach((id) => interactionObserver.observe($(`#${id}`), { attributes: true, attributeFilter: ["hidden"] }));
   addEventListener("keydown", handleModalKeyboard);
 
@@ -354,7 +368,7 @@
       const saved = JSON.parse(sessionStorage.getItem(STATE_KEY) || "null");
       const freshEnough = saved && Number(saved.savedAt) > Date.now() - (2 * 60 * 60 * 1000);
       const validStage = ["profile", "assessment", "contact", "result"].includes(saved?.stage);
-      if (!freshEnough || !validStage || !saved.profile || !Array.isArray(saved.answers) || !Array.isArray(saved.phases)) return false;
+      if (!freshEnough || !validStage || !saved.profile || !Array.isArray(saved.answers) || !Array.isArray(saved.questions)) return false;
       state = { ...freshState(), ...saved };
       $$('[data-start-test]').forEach((button) => { button.firstChild.textContent = "Test fortsetzen "; });
       return true;
@@ -423,6 +437,7 @@
 
   function handleConsentStorage(event) {
     if (event.key !== CONSENT_KEY) return;
+    const storageGeneration = ++storageConsentGeneration;
     let incoming = null;
     try { incoming = JSON.parse(event.newValue || "null"); } catch {}
     if (!storedConsentIsValid(incoming)) {
@@ -453,22 +468,54 @@
       consent.globalDecisionId = incomingGlobalDecisionId || consent.globalDecisionId || null;
       consent.analytics = consent.analytics && incoming.analytics === true;
       consent.marketing = consent.marketing && incoming.marketing === true;
-      if (!consent.analytics || !consent.marketing) applyConsentEffects();
+      if (!consent.analytics || !consent.marketing) applyConsentEffects({ allowGrants: false });
       return;
     }
     if (!choiceChanged) {
       consent.globalDecisionId = incomingGlobalDecisionId || consent.globalDecisionId || null;
       return;
     }
+    const incomingWasServerConfirmed = Boolean(
+      incoming.decisionId
+      && incoming.decisionId === incomingGlobalDecisionId
+      && Number.isFinite(Date.parse(incoming.grantedAt || "")),
+    );
     consent = {
       necessary: true,
       ...incoming,
+      analytics: incomingWasServerConfirmed && incoming.analytics === true,
+      marketing: incomingWasServerConfirmed && incoming.marketing === true,
       globalDecisionId: incomingGlobalDecisionId,
       decisionId: null,
       syncedSessionIssuedAt: null,
       syncedRunId: null,
     };
-    applyConsentEffects();
+    applyConsentEffects({ allowGrants: false });
+    if (!incomingWasServerConfirmed || (!consent.analytics && !consent.marketing)) return;
+    const expectedAnalytics = consent.analytics;
+    const expectedMarketing = consent.marketing;
+    void (async () => {
+      const synced = await syncTrackingConsent();
+      if (storageGeneration !== storageConsentGeneration
+        || pendingConsentIntent
+        || consent.analytics !== expectedAnalytics
+        || consent.marketing !== expectedMarketing) return;
+      if (!synced) {
+        consent = {
+          ...consent,
+          analytics: false,
+          marketing: false,
+          grantedAt: null,
+          decisionId: null,
+          syncedSessionIssuedAt: null,
+          syncedRunId: null,
+        };
+        applyConsentEffects();
+        toast("Tracking bleibt aus, weil die Entscheidung aus dem anderen Tab nicht sicher bestätigt werden konnte.");
+        return;
+      }
+      applyConsentEffects();
+    })();
   }
 
   async function syncTrackingConsent({ rebaseOnStale = false, intentId = null } = {}) {
@@ -510,7 +557,7 @@
             globalDecisionId: queuedObservation.decisionId || consent.globalDecisionId || null,
           };
           pendingConsentIntent.observedDecision = null;
-          applyConsentEffects();
+          applyConsentEffects({ allowGrants: false });
           if (!queuedObservation.decisionId) return false;
           previousDecisionId = queuedObservation.decisionId;
         }
@@ -546,7 +593,7 @@
               targetAnalytics = targetAnalytics && result.currentAnalytics === true;
               targetMarketing = targetMarketing && result.currentMarketing === true;
               consent = { ...consent, analytics: targetAnalytics, marketing: targetMarketing };
-              applyConsentEffects();
+              applyConsentEffects({ allowGrants: false });
               continue;
             }
             if (!pendingConsentIntent) {
@@ -589,7 +636,7 @@
               globalDecisionId: observed.decisionId || consent.globalDecisionId || null,
             };
             pendingConsentIntent.observedDecision = null;
-            applyConsentEffects();
+            applyConsentEffects({ allowGrants: false });
             if (acceptedResolution.canAdoptObserved) {
               const matchesAccepted = targetAnalytics === requestAnalytics
                 && targetMarketing === requestMarketing;
@@ -655,7 +702,7 @@
       observationSerial: 0,
       observedDecision: null,
     };
-    if (!consent.analytics || !consent.marketing) applyConsentEffects();
+    applyConsentEffects({ allowGrants: false });
     try {
       const synced = await syncTrackingConsent({ rebaseOnStale: true, intentId });
       if (!synced && (consent.analytics || consent.marketing || previous.analytics || previous.marketing)) {
@@ -681,10 +728,10 @@
     }
   }
 
-  function applyConsentEffects() {
+  function applyConsentEffects({ allowGrants = true } = {}) {
     $("#analyticsToggle").checked = consent.analytics;
     $("#marketingToggle").checked = consent.marketing;
-    if (consent.analytics && !landingTracked && !landingTrackPromise) {
+    if (allowGrants && consent.analytics && !landingTracked && !landingTrackPromise) {
       const pendingLandingTrack = (async () => {
         const ready = await ensureTrackingDecisionForCurrentRun();
         if (!ready || !consent.analytics || landingTracked) return false;
@@ -697,11 +744,11 @@
         if (landingTrackPromise === pendingLandingTrack) landingTrackPromise = null;
       });
     }
-    if (consent.marketing) {
+    if (allowGrants && consent.marketing) {
       restoreConsentedAttribution();
       try { sessionStorage.setItem(ATTRIBUTION_KEY, JSON.stringify(attribution)); } catch {}
       loadMeta();
-    } else {
+    } else if (!consent.marketing) {
       if (typeof window.fbq === "function") window.fbq("consent", "revoke");
       try { sessionStorage.removeItem(ATTRIBUTION_KEY); } catch {}
       ["_fbp", "_fbc"].forEach((name) => { document.cookie = `${name}=; Max-Age=0; Path=/; SameSite=Lax` });
@@ -813,7 +860,7 @@
       sessionReady = false;
       await configPromise;
       try {
-        const response = await fetch(`${API}/start-session`, {
+        const response = await fetch(READINESS_API.session, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ fresh: requestFresh }),
@@ -862,7 +909,7 @@
   }
 
   function hideAllScreens() {
-    ["assessmentApp", "transitionScreen", "scorePreview", "measuringScreen", "fullResult"].forEach((id) => { $(`#${id}`).hidden = true; });
+    ["assessmentApp", "fullResult"].forEach((id) => { $(`#${id}`).hidden = true; });
     refreshInteractionLayer();
   }
 
@@ -885,7 +932,7 @@
       renderProfile();
       return;
     }
-    if (state.stage === "assessment" && currentPhase() && currentQuestion()) {
+    if (state.stage === "assessment" && currentQuestion()) {
       hideAllScreens();
       $("#assessmentApp").hidden = false;
       document.body.classList.add("modal-open");
@@ -939,7 +986,10 @@
     const current = state.profile[item.id] || "";
     let body = `<article class="question-card"><p class="question-index">${esc(item.kicker)}</p><h1 id="questionTitle" tabindex="-1">${esc(item.label)}</h1>${item.help ? `<p class="question-help">${esc(item.help)}</p>` : ""}`;
     if (item.type === "text") {
-      body += `<div class="question-field"><input id="profileText" aria-labelledby="questionTitle" maxlength="80" autocomplete="off" placeholder="${esc(item.placeholder)}"></div><div class="question-actions"><button class="button button-accent" id="profileNext" type="button">Weiter</button></div>`;
+      const aiNotice = item.id === "branche"
+        ? `<aside class="ai-processing-note"><strong>Ab hier arbeitet die Diagnose adaptiv.</strong><span>Für die Auswahl der nächsten Frage übermitteln wir Branche, Größe, Rolle, Ziel und Testantworten ohne Kontaktdaten an OpenRouter und das Modell GPT‑5.5. Bitte geben Sie keine Personen-, Kunden- oder vertraulichen Daten ein.</span></aside>`
+        : "";
+      body += `<div class="question-field"><input id="profileText" aria-labelledby="questionTitle" maxlength="80" autocomplete="off" placeholder="${esc(item.placeholder)}"></div>${aiNotice}<div class="question-actions"><button class="button button-accent" id="profileNext" type="button">${item.id === "branche" ? "Adaptive Diagnose starten" : "Weiter"}</button></div>`;
     } else {
       body += `<div class="option-list" role="group" aria-labelledby="questionTitle">${item.options.map((option) => optionHtml(option, current === option.value)).join("")}</div>`;
     }
@@ -960,14 +1010,25 @@
     } else {
       focusQuestionTitle();
       $$(".option", $("#questionHost")).forEach((button) => button.addEventListener("click", () => {
+        if (button.dataset.locked) return;
+        cancelAnswerAdvance();
+        const generation = answerAdvanceGeneration;
+        const profileIndex = state.profileIndex;
+        const itemId = item.id;
         state.profile[item.id] = button.dataset.value;
         $$(".option", $("#questionHost")).forEach((other) => {
           const selected = other === button;
           other.classList.toggle("selected", selected);
           other.setAttribute("aria-pressed", selected ? "true" : "false");
+          other.dataset.locked = "true";
+          other.disabled = true;
         });
         saveState();
-        setTimeout(advanceProfile, 190);
+        answerAdvanceTimer = setTimeout(() => {
+          answerAdvanceTimer = null;
+          if (generation !== answerAdvanceGeneration || state.stage !== "profile" || state.profileIndex !== profileIndex || PROFILE_STEPS[state.profileIndex]?.id !== itemId) return;
+          advanceProfile();
+        }, 190);
       }));
     }
     saveState();
@@ -978,88 +1039,138 @@
       state.profileIndex += 1;
       transitionQuestion(renderProfile);
     } else {
+      cancelAdaptiveQuestionRequest();
+      state.questions = [];
+      state.answers = [];
+      state.questionIndex = 0;
       saveState();
       track("profile_completed", { employee_band: state.profile.mitarbeiter, respondent_role: state.profile.rolle }, 4);
-      startAssessment();
+      void startAssessment();
     }
   }
 
-  async function fetchPhase(step) {
-    const payload = { companyProfile: state.profile, previousAnswers: state.answers, stepNumber: step };
-    let lastError = null;
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      try {
-        const response = await fetch(`${API}/generate-questions`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const phase = await response.json();
-        if (!Array.isArray(phase.questions) || !phase.questions.length) throw new Error("schema");
-        return phase;
-      } catch (error) { lastError = error; }
+  function validAdaptiveQuestion(question, index) {
+    if (!question || typeof question !== "object") return false;
+    if (!question.id || !question.dimension || question.type !== "radio" || question.required !== true) return false;
+    if (!Array.isArray(question.options) || question.options.length !== 4) return false;
+    if (!question.options.every((option, optionIndex) => option.value === String(optionIndex + 1) && String(option.label || "").trim())) return false;
+    return !state.questions.slice(0, index).some((item) => item.id === question.id);
+  }
+
+  function cancelAdaptiveQuestionRequest() {
+    adaptiveRequestGeneration += 1;
+    adaptiveRequestController?.abort();
+    adaptiveRequestController = null;
+  }
+
+  function cancelAnswerAdvance() {
+    answerAdvanceGeneration += 1;
+    if (answerAdvanceTimer) clearTimeout(answerAdvanceTimer);
+    answerAdvanceTimer = null;
+  }
+
+  async function fetchAdaptiveQuestion(index, signal) {
+    const response = await fetch(READINESS_API.question, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal,
+      body: JSON.stringify({
+        protocolVersion: ADAPTIVE_VERSION,
+        companyProfile: state.profile,
+        previousAnswers: state.answers
+          .filter((answer) => answer.questionType !== "textarea")
+          .map((answer) => ({ questionId: answer.questionId, value: answer.answer })),
+        questionNumber: index + 1,
+        aiProcessing: { acknowledged: true, version: AI_PROCESSING_VERSION },
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || `HTTP ${response.status}`);
+    if (payload.totalQuestions !== CORE_QUESTION_COUNT || !validAdaptiveQuestion(payload.question, index)) throw new Error("schema");
+    return { ...payload.question, selectionMode: payload.selectionMode || "fallback", modelLabel: payload.modelLabel || null };
+  }
+
+  function renderAdaptiveLoading(index) {
+    state.stage = "assessment";
+    showOnlyScreen("assessmentApp");
+    document.body.classList.add("modal-open");
+    updateProgress(`Adaptive Diagnose · Frage ${index + 1}/${CORE_QUESTION_COUNT}`, PROFILE_STEPS.length + index, TOTAL_JOURNEY_STEPS);
+    $("#backButton").style.visibility = "visible";
+    $("#questionHost").innerHTML = `<article class="question-card adaptive-loading" role="status" aria-live="polite">
+      <p class="question-index">Adaptive Diagnose · Frage ${index + 1} von ${CORE_QUESTION_COUNT}</p>
+      <h1 id="questionTitle" tabindex="-1">Ihre Antwort schärft die nächste Frage.</h1>
+      <p class="question-help">GPT‑5.5 prüft, welcher Messanker in Ihrem Branchenkontext jetzt den größten Erkenntnisgewinn liefert.</p>
+      <div class="adaptive-loading-steps" aria-hidden="true"><span>Profil verstanden</span><span>Antwort eingeordnet</span><span class="active">Folgefrage gewählt</span></div>
+    </article>`;
+    focusQuestionTitle();
+  }
+
+  async function loadAdaptiveQuestion(index) {
+    cancelAdaptiveQuestionRequest();
+    if (state.questions[index]) {
+      state.questionIndex = index;
+      renderQuestion();
+      return;
     }
-    throw lastError || new Error("phase");
+    const generation = adaptiveRequestGeneration;
+    const controller = new AbortController();
+    adaptiveRequestController = controller;
+    state.questionIndex = index;
+    saveState();
+    renderAdaptiveLoading(index);
+    try {
+      const question = await fetchAdaptiveQuestion(index, controller.signal);
+      if (generation !== adaptiveRequestGeneration || controller.signal.aborted || state.stage !== "assessment" || state.questionIndex !== index) return;
+      state.questions[index] = question;
+      state.questionIndex = index;
+      saveState();
+      renderQuestion();
+    } catch (error) {
+      if (generation !== adaptiveRequestGeneration || controller.signal.aborted || error?.name === "AbortError") return;
+      $("#questionHost").innerHTML = `<article class="question-card"><p class="question-index">Verbindung unterbrochen</p><h1 id="questionTitle" tabindex="-1">Die nächste Frage konnte nicht sicher geladen werden.</h1><p class="question-help">Ihre bisherigen Antworten bleiben in dieser Browsersitzung erhalten. Bei einem Modellfehler liefert der Server automatisch eine geprüfte Ersatzfrage; hier ist die Verbindung selbst abgebrochen.</p><div class="question-actions"><button class="button button-accent" id="retryQuestion" type="button">Erneut versuchen</button></div></article>`;
+      focusQuestionTitle();
+      $("#retryQuestion").addEventListener("click", () => loadAdaptiveQuestion(index));
+    } finally {
+      if (generation === adaptiveRequestGeneration) adaptiveRequestController = null;
+    }
   }
 
   async function startAssessment() {
     state.stage = "assessment";
-    await moveToPhase(0, "Ihr Readiness-Profil startet.", "Wir beginnen mit dem Fundament: Prozesse, Daten und wiederkehrende Arbeit.");
+    state.questionIndex = Math.max(0, Math.min(state.questionIndex || 0, state.questions.length - 1));
+    if (currentQuestion()) renderQuestion();
+    else await loadAdaptiveQuestion(0);
   }
 
-  async function moveToPhase(index, title, text) {
-    $("#assessmentApp").hidden = true;
-    $("#transitionScreen").hidden = false;
-    document.body.classList.add("modal-open");
-    transitionStarted = Date.now();
-    $("#transitionKicker").textContent = `PHASE ${index + 1} VON 3`;
-    $("#transitionTitle").textContent = title;
-    $("#transitionText").textContent = text;
-    requestAnimationFrame(() => $("#transitionTitle").focus({ preventScroll: true }));
-    try {
-      const phase = state.phases[index] || await fetchPhase(index + 1);
-      state.phases[index] = phase;
-      const wait = Math.max(0, 900 - (Date.now() - transitionStarted));
-      await new Promise((resolve) => setTimeout(resolve, wait));
-      state.phaseIndex = index;
-      state.questionIndex = 0;
-      $("#transitionScreen").hidden = true;
-      $("#assessmentApp").hidden = false;
-      renderQuestion();
-      track("phase_started", { phase: String(index + 1), question_count: phase.questions.length }, index + 1);
-    } catch {
-      $("#transitionScreen").hidden = true;
-      $("#assessmentApp").hidden = false;
-      $("#questionHost").innerHTML = `<article class="question-card"><p class="question-index">Verbindung unterbrochen</p><h1 id="questionTitle" tabindex="-1">Die nächste Runde konnte nicht sicher geladen werden.</h1><p class="question-help">Ihre bisherigen Antworten bleiben in dieser Browsersitzung erhalten.</p><div class="question-actions"><button class="button button-accent" id="retryPhase" type="button">Erneut versuchen</button></div></article>`;
-      focusQuestionTitle();
-      $("#retryPhase").addEventListener("click", () => moveToPhase(index, title, text));
-    }
-  }
-
-  function currentPhase() { return state.phases[state.phaseIndex]; }
-  function currentQuestion() { return currentPhase()?.questions[state.questionIndex]; }
+  function currentQuestion() { return state.questions[state.questionIndex]; }
   function existingAnswer(id) { return state.answers.find((answer) => answer.questionId === id); }
 
   function renderQuestion() {
-    const phase = currentPhase();
     const question = currentQuestion();
-    if (!phase || !question) return;
-    const phaseQuestionsBefore = state.phases.slice(0, state.phaseIndex).reduce((sum, item) => sum + item.questions.length, 0);
-    const completed = PROFILE_STEPS.length + phaseQuestionsBefore + state.questionIndex;
+    if (!question) return;
+    const completed = PROFILE_STEPS.length + state.questionIndex;
     const optionalContext = question.required === false;
-    const coreQuestions = phase.questions.filter((item) => item.required !== false);
-    const coreQuestionNumber = phase.questions.slice(0, state.questionIndex + 1).filter((item) => item.required !== false).length;
     const progressLabel = optionalContext
-      ? `Phase ${state.phaseIndex + 1}/3 · optionaler Kontext`
-      : `Phase ${state.phaseIndex + 1}/3 · Frage ${coreQuestionNumber}/${coreQuestions.length}`;
+      ? "Adaptive Diagnose · optionaler Kontext"
+      : `Adaptive Diagnose · Frage ${state.questionIndex + 1}/${CORE_QUESTION_COUNT}`;
     updateProgress(progressLabel, completed, TOTAL_JOURNEY_STEPS);
     $("#backButton").style.visibility = "visible";
     const existing = existingAnswer(question.id);
     const questionIndex = optionalContext
-      ? `${phase.phaseTitle} · optionaler Kontext, nicht Teil der 12 Kernfragen`
-      : `${phase.phaseTitle} · ${coreQuestionNumber} von ${coreQuestions.length}`;
-    let body = `<article class="question-card"><p class="question-index">${esc(questionIndex)}</p><h1 id="questionTitle" tabindex="-1">${esc(question.label)}</h1>`;
+      ? "Ihr konkreter Fokus · optional, nicht Teil des Scores"
+      : `${esc(DIMENSIONS[question.dimension]?.label || "Readiness")} · ${state.questionIndex + 1} von ${CORE_QUESTION_COUNT}`;
+    const rationale = !optionalContext && question.whyNow
+      ? `<aside class="adaptive-rationale"><strong>Warum diese Frage jetzt?</strong><span>${esc(question.whyNow)}</span></aside>`
+      : "";
+    const helper = question.type === "textarea"
+      ? question.help || "Optional — ein oder zwei konkrete Sätze genügen. Bitte keine Namen, Kontakt- oder Kundendaten eingeben."
+      : question.help || "";
+    const describedBy = helper ? ' aria-describedby="questionHelp"' : "";
+    let body = `<article class="question-card"><p class="question-index">${questionIndex}</p>${rationale}<h1 id="questionTitle" tabindex="-1"${describedBy}>${esc(question.label)}</h1>${helper ? `<p class="question-help" id="questionHelp">${esc(helper)}</p>` : ""}`;
     if (question.type === "textarea") {
-      body += `<p class="question-help">Optional — ein oder zwei konkrete Sätze genügen. Bitte keine Namen, Kontakt- oder Kundendaten eingeben.</p><div class="question-field"><textarea id="answerText" aria-labelledby="questionTitle" maxlength="700" placeholder="${esc(question.placeholder || "Ihre Antwort …")}"></textarea></div><div class="question-actions"><button class="button button-accent" id="answerNext" type="button">Weiter</button><button class="text-button" id="answerSkip" type="button">Überspringen</button></div>`;
+      body += `<div class="question-field"><textarea id="answerText" aria-labelledby="questionTitle" aria-describedby="questionHelp" maxlength="700" placeholder="${esc(question.placeholder || "Ihre Antwort …")}"></textarea></div><div class="question-actions"><button class="button button-accent" id="answerNext" type="button">Weiter</button><button class="text-button" id="answerSkip" type="button">Überspringen</button></div>`;
     } else {
-      body += `<div class="option-list" role="group" aria-labelledby="questionTitle">${(question.options || []).map((option) => optionHtml(option, existing?.answer === option.value)).join("")}</div>`;
+      body += `<div class="option-list" role="group" aria-labelledby="questionTitle"${helper ? ' aria-describedby="questionHelp"' : ""}>${(question.options || []).map((option) => optionHtml(option, existing?.answer === option.value)).join("")}</div>`;
     }
     body += "</article>";
     $("#questionHost").innerHTML = body;
@@ -1077,21 +1188,36 @@
       focusQuestionTitle();
       $$(".option", $("#questionHost")).forEach((button) => button.addEventListener("click", () => {
         if (button.dataset.locked) return;
+        cancelAnswerAdvance();
+        const generation = answerAdvanceGeneration;
+        const questionId = question.id;
         $$(".option", $("#questionHost")).forEach((other) => {
           const selected = other === button;
           other.classList.toggle("selected", selected);
           other.setAttribute("aria-pressed", selected ? "true" : "false");
+          other.dataset.locked = "true";
+          other.disabled = true;
         });
         const option = question.options.find((item) => item.value === button.dataset.value);
         recordAnswer(question, option.value, option.label);
-        button.dataset.locked = "true";
-        setTimeout(advanceQuestion, 190);
+        answerAdvanceTimer = setTimeout(() => {
+          answerAdvanceTimer = null;
+          if (generation !== answerAdvanceGeneration || state.stage !== "assessment" || currentQuestion()?.id !== questionId) return;
+          void advanceQuestion();
+        }, 190);
       }));
     }
     saveState();
   }
 
   function recordAnswer(question, answer, answerLabel) {
+    const previous = existingAnswer(question.id);
+    const pathChanged = previous && previous.answer !== answer;
+    if (pathChanged && state.questionIndex < state.questions.length - 1) {
+      const retainedIds = new Set(state.questions.slice(0, state.questionIndex + 1).map((item) => item.id));
+      state.answers = state.answers.filter((item) => retainedIds.has(item.questionId));
+      state.questions = state.questions.slice(0, state.questionIndex + 1);
+    }
     const entry = {
       questionId: question.id,
       questionLabel: question.label,
@@ -1099,7 +1225,7 @@
       dimension: question.dimension || null,
       answer,
       answerLabel,
-      phase: state.phaseIndex + 1,
+      sequence: state.questionIndex + 1,
     };
     const index = state.answers.findIndex((item) => item.questionId === question.id);
     if (index >= 0) state.answers[index] = entry;
@@ -1107,22 +1233,28 @@
     saveState();
   }
 
-  function advanceQuestion() {
-    const phase = currentPhase();
-    if (state.questionIndex < phase.questions.length - 1) {
-      state.questionIndex += 1;
+  async function advanceQuestion() {
+    const question = currentQuestion();
+    if (question?.required === false) return startContactCapture();
+    const nextIndex = state.questionIndex + 1;
+    if (nextIndex === CORE_QUESTION_COUNT) {
+      state.questions[nextIndex] = OPTIONAL_CONTEXT_QUESTION;
+      state.questionIndex = nextIndex;
+      saveState();
       transitionQuestion(renderQuestion);
       return;
     }
-    track("phase_completed", { phase: String(state.phaseIndex + 1), question_count: phase.questions.length }, state.phaseIndex + 1);
-    if (state.phaseIndex >= 2) return startContactCapture();
-    const nextIndex = state.phaseIndex + 1;
-    const nextTitle = nextIndex === 1 ? "Das Fundament steht. Jetzt zählt der Alltag." : "Potenzial erkannt. Jetzt zählt Umsetzung.";
-    const insight = phase.transitionInsight || "Ihre Antworten werden zur nächsten Runde verdichtet.";
-    moveToPhase(nextIndex, nextTitle, insight);
+    if (state.questions[nextIndex]) {
+      state.questionIndex = nextIndex;
+      transitionQuestion(renderQuestion);
+      return;
+    }
+    await loadAdaptiveQuestion(nextIndex);
   }
 
   function goBack() {
+    cancelAnswerAdvance();
+    cancelAdaptiveQuestionRequest();
     if (state.stage === "profile") {
       if (state.profileIndex > 0) { state.profileIndex -= 1; transitionQuestion(renderProfile); }
       return;
@@ -1133,8 +1265,7 @@
         transitionQuestion(renderContactStep);
       } else {
         state.stage = "assessment";
-        state.phaseIndex = 2;
-        state.questionIndex = currentPhase().questions.length - 1;
+        state.questionIndex = state.questions.length - 1;
         transitionQuestion(renderQuestion);
       }
       saveState();
@@ -1144,10 +1275,6 @@
     if (state.questionIndex > 0) {
       state.questionIndex -= 1;
       transitionQuestion(renderQuestion);
-    } else if (state.phaseIndex > 0) {
-      state.phaseIndex -= 1;
-      state.questionIndex = currentPhase().questions.length - 1;
-      transitionQuestion(renderQuestion);
     } else {
       state.stage = "profile";
       state.profileIndex = PROFILE_STEPS.length - 1;
@@ -1156,6 +1283,8 @@
   }
 
   function closeTest() {
+    cancelAnswerAdvance();
+    cancelAdaptiveQuestionRequest();
     hideAllScreens();
     window.scrollTo({ top: 0, behavior: "smooth" });
     const returnTarget = testReturnFocus;
@@ -1199,9 +1328,14 @@
   }
 
   function breakdownHtml(baseline, detailed = false) {
+    const balanced = baseline.advisory?.diagnosis?.balanced === true;
+    const strongest = balanced ? null : baseline.advisory?.diagnosis?.strongest?.key;
+    const weakest = balanced ? null : baseline.advisory?.diagnosis?.weakest?.key;
     return Object.entries(DIMENSIONS).map(([key, dimension]) => {
       const score = baseline.scores[key]?.percent || 0;
-      return `<article class="score-row"><div class="score-row-head"><strong>${esc(dimension.label)}</strong><span>${score}/100</span></div><div class="score-bar"><i data-width="${score}"></i></div><p>${esc(detailed && baseline.scores[key]?.summary ? baseline.scores[key].summary : dimension.short)}</p></article>`;
+      const marker = key === strongest ? "Stärke" : key === weakest ? "Fokus" : "Teilwert";
+      const classes = ["score-row", key === strongest ? "is-strength" : "", key === weakest ? "is-focus" : ""].filter(Boolean).join(" ");
+      return `<article class="${classes}"><div class="score-row-head"><strong>${esc(dimension.label)}</strong><span><small>${marker}</small>${score}/100</span></div><div class="score-bar" role="progressbar" aria-label="${esc(dimension.label)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${score}"><i data-width="${score}"></i></div><p>${esc(detailed && baseline.scores[key]?.summary ? baseline.scores[key].summary : dimension.short)}</p></article>`;
     }).join("");
   }
 
@@ -1209,25 +1343,18 @@
     requestAnimationFrame(() => setTimeout(() => $$('[data-width]', root).forEach((bar) => { bar.style.width = `${bar.dataset.width}%`; }), 80));
   }
 
-  async function startContactCapture() {
+  function startContactCapture() {
+    cancelAnswerAdvance();
+    cancelAdaptiveQuestionRequest();
     state.baseline = scoreAssessment();
     state.stage = "contact";
     state.contactIndex = Math.max(0, Math.min(CONTACT_STEPS.length - 1, state.contactIndex || 0));
     formOpenedAt = Date.now();
     saveState();
-    $("#assessmentApp").hidden = true;
-    $("#transitionScreen").hidden = false;
-    $("#transitionKicker").textContent = "FRAGEN ABGESCHLOSSEN";
-    $("#transitionTitle").textContent = "Ihre Antworten sind vollständig.";
-    $("#transitionText").textContent = "Vier kurze Angaben noch: Vorname, Nachname, Unternehmen und E-Mail. Danach ordnen wir Ihre Auswertung zu und zeigen Score, Prioritäten und 90-Tage-Fahrplan. Kein Rückruf; Newsletter nur freiwillig.";
-    requestAnimationFrame(() => $("#transitionTitle").focus({ preventScroll: true }));
-    track("phase_completed", { phase: "assessment", question_count: state.answers.length }, 17);
+    track("phase_completed", { phase: "assessment", question_count: CORE_QUESTION_COUNT }, PROFILE_STEPS.length + CORE_QUESTION_COUNT + OPTIONAL_CONTEXT_COUNT);
     metaEvent("AIReadinessCompleted", { assessment_version: config.assessmentVersion });
-    await new Promise((resolve) => setTimeout(resolve, 900));
-    $("#transitionScreen").hidden = true;
-    $("#assessmentApp").hidden = false;
     renderContactStep();
-    track("lead_form_viewed", { employee_band: state.profile.mitarbeiter }, 17);
+    track("lead_form_viewed", { employee_band: state.profile.mitarbeiter }, PROFILE_STEPS.length + CORE_QUESTION_COUNT + OPTIONAL_CONTEXT_COUNT);
   }
 
   function validContactValue(step, value) {
@@ -1258,15 +1385,19 @@
     ].filter(Boolean).join(" ");
     const finalContent = isFinal ? `
       <label class="check-row newsletter-choice"><input type="checkbox" name="newsletter"${newsletterChecked ? " checked" : ""}><span><strong>Freiwillige KI-Impulse per E-Mail</strong><small>${esc(config.newsletterConsent.text)}</small></span></label>
-      <p class="result-privacy-note">Mit Klick auf „Meinen Readiness-Score anzeigen“ verarbeiten wir Ihre Angaben zur Zuordnung, Speicherung und unmittelbaren Anzeige der Auswertung. Die Newsletter-Einwilligung ist freiwillig und nicht Voraussetzung. <a href="https://synclaro.de/datenschutz#ki-readiness-test" target="_blank" rel="noopener">Datenschutzhinweise</a></p>
+      <p class="result-privacy-note">Mit Klick auf „Meine Auswertung erstellen“ verarbeiten wir Ihre Angaben zur Zuordnung, Speicherung und unmittelbaren Anzeige. Das Modell erhält weiterhin keine Kontakt- oder Trackingdaten. Die Newsletter-Einwilligung ist freiwillig. <a href="https://synclaro.de/datenschutz#ki-readiness-test" target="_blank" rel="noopener">Datenschutzhinweise</a></p>
       <input class="form-honeypot" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
       <div class="form-error" id="leadFormError" role="alert" hidden></div>` : "";
+    const contactIntro = state.contactIndex === 0
+      ? '<aside class="phase-context contact-intro"><strong>Ihre Diagnosefragen sind vollständig.</strong><span>Noch vier Angaben für die sichere Zuordnung und Anzeige: Vorname, Nachname, Unternehmen und E-Mail. Kein Rückruf; Newsletter nur freiwillig.</span></aside>'
+      : "";
     $("#questionHost").innerHTML = `<form class="question-card contact-step" id="contactStepForm" novalidate>
       <p class="question-index">Fast geschafft · ${state.contactIndex + 1} von ${CONTACT_STEPS.length}</p>
+      ${contactIntro}
       <h1 id="questionTitle" tabindex="-1">${esc(step.label)}</h1>
       <div class="question-field"><input ${inputAttributes} value="${esc(stored)}"><small class="field-error" id="contactFieldError" hidden>${esc(step.error)}</small></div>
       ${finalContent}
-      <div class="question-actions"><button class="button button-accent${isFinal ? " button-large" : ""}" id="contactNext" type="submit">${isFinal ? "Meinen Readiness-Score anzeigen" : "Weiter"}</button></div>
+      <div class="question-actions"><button class="button button-accent${isFinal ? " button-large" : ""}" id="contactNext" type="submit">${isFinal ? "Meine Auswertung erstellen" : "Weiter"}</button></div>
       ${isFinal && !config.production ? '<p class="preview-notice">Preview-Modus: Es werden keine Lead-, E-Mail-, Meta- oder Telegram-Daten übertragen.</p>' : ""}
     </form>`;
     const form = $("#contactStepForm");
@@ -1285,7 +1416,7 @@
         input.setAttribute("aria-invalid", "true");
         $("#contactFieldError").hidden = false;
         input.focus();
-        track("lead_form_validation_error", { field: step.id, error_code: "required_or_invalid" }, 17 + state.contactIndex);
+        track("lead_form_validation_error", { field: step.id, error_code: "required_or_invalid" }, PROFILE_STEPS.length + CORE_QUESTION_COUNT + OPTIONAL_CONTEXT_COUNT + state.contactIndex);
         return;
       }
       state.contact[step.id] = value;
@@ -1310,12 +1441,12 @@
     errorBox.hidden = true;
     const button = $("#contactNext");
     button.disabled = true;
-    button.textContent = "Wird sicher gespeichert …";
+    button.textContent = "Ihre KI-Auswertung entsteht …";
     if (!(await ensureSession())) {
       errorBox.textContent = "Die sichere Testsitzung konnte nicht erneuert werden. Bitte versuchen Sie es erneut.";
       errorBox.hidden = false;
       button.disabled = false;
-      button.textContent = "Meinen Readiness-Score anzeigen";
+      button.textContent = "Meine Auswertung erstellen";
       return;
     }
     if (!(await ensureTrackingDecisionForCurrentRun())) {
@@ -1338,6 +1469,8 @@
       formOpenedAt: new Date(formOpenedAt || Date.now()).toISOString(),
       companyProfile: state.profile,
       answers: state.answers,
+      adaptiveVersion: ADAPTIVE_VERSION,
+      aiProcessing: { acknowledged: true, version: AI_PROCESSING_VERSION },
       contact,
       attribution: metaAttribution(),
       consents: {
@@ -1352,7 +1485,7 @@
       },
     };
     try {
-      const response = await fetch(`${API}/submit-lead`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const response = await fetch(READINESS_API.result, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const result = await response.json().catch(() => ({}));
       if (!response.ok || !result.accepted) throw new Error(result.error || "Der Lead konnte nicht sicher gespeichert werden.");
       if (!result.assessmentId) {
@@ -1369,41 +1502,17 @@
       state.newsletterStatus = result.newsletterStatus || (result.preview && state.contact.newsletter ? "preview_not_sent" : state.contact.newsletter ? "doi_pending" : "not_requested");
       state.baseline = result.baseline || state.baseline;
       saveState();
-      track("lead_submitted", { score: state.baseline.scores.total.percent, employee_band: state.profile.mitarbeiter }, 17);
+      track("lead_submitted", { score: state.baseline.scores.total.percent, employee_band: state.profile.mitarbeiter }, PROFILE_STEPS.length + CORE_QUESTION_COUNT + OPTIONAL_CONTEXT_COUNT);
       if (result.metaLeadEligible) metaEvent("Lead", {}, { eventID: result.leadEventId || state.submissionId });
-      await showMeasuringAndAnalyze(result);
+      state.result = result.result || localDetailedResult(state.baseline);
+      saveState();
+      renderFullResult();
     } catch (error) {
       errorBox.textContent = error.message || "Der Lead konnte nicht sicher gespeichert werden. Bitte versuchen Sie es erneut.";
       errorBox.hidden = false;
       button.disabled = false;
-      button.textContent = "Meinen Readiness-Score anzeigen";
+      button.textContent = "Meine Auswertung erstellen";
     }
-  }
-
-  async function showMeasuringAndAnalyze(submissionResult) {
-    showOnlyScreen("measuringScreen");
-    document.body.classList.add("modal-open");
-    requestAnimationFrame(() => $("#measuringTitle").focus({ preventScroll: true }));
-    const steps = $$("#measuringSteps li");
-    steps[0].classList.add("done");
-    steps[1].classList.add("active");
-    const animation = animateMeasuring(steps);
-    await new Promise((resolve) => setTimeout(resolve, submissionResult.preview ? 900 : 450));
-    const result = submissionResult.result || localDetailedResult(state.baseline);
-    await animation;
-    state.result = result;
-    saveState();
-    renderFullResult();
-  }
-
-  async function animateMeasuring(steps) {
-    for (let index = 1; index < steps.length; index += 1) {
-      steps.forEach((step, stepIndex) => step.classList.toggle("active", stepIndex === index));
-      await new Promise((resolve) => setTimeout(resolve, 620));
-      steps[index].classList.remove("active");
-      steps[index].classList.add("done");
-    }
-    $("#measuringStatus").textContent = "Auswertung ist bereit.";
   }
 
   function localDetailedResult(baseline) {
@@ -1467,25 +1576,116 @@
         phase2: { zeitraum: "Tage 31–60", titel: "Klein testen", punkte: [recos[1].naechsterSchritt, state.profile.mitarbeiter === "solo" ? "Test in einem klar abgegrenzten eigenen Arbeitsablauf durchführen" : "Test mit einer klaren Nutzergruppe durchführen"] },
         phase3: { zeitraum: "Tage 61–90", titel: "Wirkung entscheiden", punkte: [recos[2].naechsterSchritt, "Ergebnis messen und nächste Stufe bewusst freigeben"] },
       },
-      diagnosticNote: "Strukturierte Selbsteinschätzung mit fester Bewertungslogik; keine Zertifizierung oder Erfolgsgarantie.",
+      diagnosticNote: "Adaptive Selbsteinschätzung mit festen Messankern; keine Zertifizierung oder Erfolgsgarantie.",
     };
+  }
+
+  function advisoryForResult(result) {
+    if (result.advisory?.opportunities?.length) return result.advisory;
+    const rankedDimensions = Object.entries(DIMENSIONS)
+      .map(([key, value]) => ({ key, label: value.label, score: result.scores[key]?.percent || 0 }))
+      .sort((a, b) => a.score - b.score || a.key.localeCompare(b.key));
+    const spread = rankedDimensions.at(-1).score - rankedDimensions[0].score;
+    const balanced = spread <= 5;
+    const legacy = (result.empfehlungen || []).slice(0, 3).map((item, index) => ({
+      id: `legacy-${index + 1}`,
+      role: index === 0 ? "primary" : "secondary",
+      status: { key: "prepare", label: "Individuell prüfen", explanation: "Dieser ältere Ergebnisstand enthält noch keine branchenspezifische Pilotbewertung." },
+      title: item.titel,
+      fitReason: item.beobachtung,
+      today: item.beobachtung,
+      assist: item.naechsterSchritt,
+      human: "Die verantwortliche Person prüft Ergebnis und nächsten Schritt.",
+      effect: "Der Ablauf wird klarer, ohne Entscheidungen ungeprüft zu automatisieren.",
+      metric: "Zeit, Qualität oder Fehlerquote vor und nach dem Test",
+      prerequisite: "Ein klar abgegrenzter Ablauf und ein dokumentierter Ausgangswert.",
+      nextStep: item.naechsterSchritt,
+    }));
+    return {
+      industry: { entered: state.profile.branche || "Ihr Unternehmen", label: "Ihr Unternehmen", fallback: true },
+      goal: { label: "den wirtschaftlich sinnvollen KI-Einstieg finden" },
+      diagnosis: {
+        balanced,
+        spread,
+        strongest: balanced ? null : rankedDimensions.at(-1),
+        weakest: balanced ? null : rankedDimensions[0],
+      },
+      pilotWindow: { value: "noch offen", label: "Startfenster" },
+      focusNote: null,
+      opportunities: legacy,
+    };
+  }
+
+  function opportunityHtml(item, index) {
+    const status = item.status || { key: "prepare", label: "Individuell prüfen", explanation: "" };
+    const flow = [
+      ["Heute", item.today],
+      ["KI unterstützt", item.assist],
+      ["Mensch prüft", item.human],
+      ["Greifbarer Effekt", item.effect],
+    ];
+    return `<article class="use-case-card${index === 0 ? " is-primary" : ""}">
+      <div class="use-case-head"><span>0${index + 1}</span><small class="use-case-status ${esc(status.key)}">${esc(status.label)}</small></div>
+      <h3>${esc(item.title)}</h3>
+      <p class="use-case-fit"><strong>Warum das zu Ihren Antworten passt:</strong> ${esc(item.fitReason)}</p>
+      <div class="use-case-flow">${flow.map(([label, text]) => `<div><small>${esc(label)}</small><p>${esc(text)}</p></div>`).join("")}</div>
+      <div class="use-case-meta"><p><small>Im Pilot messen</small><strong>${esc(item.metric)}</strong></p><p><small>Voraussetzung</small><strong>${esc(item.prerequisite)}</strong></p></div>
+      ${status.explanation ? `<p class="use-case-readiness">${esc(status.explanation)}</p>` : ""}
+      ${index === 0 ? `<a class="button button-accent use-case-inline-cta" href="${esc(config.calendarUrl)}" data-calendar-cta>Diesen Anwendungsfall kostenlos mit Marco prüfen</a>` : ""}
+    </article>`;
   }
 
   function renderFullResult() {
     const result = state.result;
+    const advisory = advisoryForResult(result);
+    result.advisory ||= advisory;
     state.stage = "result";
     showOnlyScreen("fullResult");
     document.body.classList.add("modal-open");
-    $("#resultScore").textContent = result.scores.total.percent;
+    const totalScore = result.scores.total.percent;
+    $("#resultScore").textContent = totalScore;
     $("#resultLevel").textContent = result.level;
     $("#resultVerdict").textContent = result.gesamteinschaetzung;
+    $("#resultContext").textContent = `${advisory.industry.entered} · Ziel: ${advisory.goal.label}`;
+    const analysisBadge = $("#analysisBadge");
+    const frontierAnalysis = result.analysisMode === "frontier_adaptive";
+    analysisBadge.textContent = frontierAnalysis
+      ? `Vertieft mit ${result.analysisModel || "Frontier-KI"} · Score aus festen Messankern`
+      : "Robuste Basisauswertung · Score aus festen Messankern";
+    analysisBadge.classList.toggle("is-ai", frontierAnalysis);
+    const scoreRing = $("#resultScoreRing");
+    scoreRing.style.strokeDashoffset = `${578 - (Math.max(0, Math.min(100, totalScore)) / 100) * 578}`;
+    $("#resultScoreDial").setAttribute("aria-label", `Gesamter Readiness-Score: ${totalScore} von 100. ${result.level}.`);
+    const diagnosis = advisory.diagnosis || {};
+    const resultSignals = diagnosis.balanced
+      ? [
+          { value: `${totalScore}/100`, label: "Vier Teilwerte eng beieinander" },
+          { value: `${diagnosis.spread || 0} Punkte`, label: "Spannweite · kein Einzelengpass" },
+          advisory.pilotWindow,
+        ]
+      : [
+          { value: `${diagnosis.strongest.score}/100`, label: `Stärkstes Fundament · ${diagnosis.strongest.label}` },
+          { value: `${diagnosis.weakest.score}/100`, label: `Größter Fokus · ${diagnosis.weakest.label}` },
+          advisory.pilotWindow,
+        ];
+    $("#resultSignals").innerHTML = resultSignals.map((signal) => `<article><strong>${esc(signal.value)}</strong><span>${esc(signal.label)}</span></article>`).join("");
+    $("#industryUseCaseTitle").textContent = `Drei konkrete KI-Chancen für ${advisory.industry.entered}.`;
+    $("#industryUseCaseIntro").textContent = `Nicht als allgemeine Tool-Liste: Die Reihenfolge verbindet Ihre Branche, Ihr Ziel „${advisory.goal.label}“ und Ihre tatsächlichen Antwortwerte.`;
+    $("#useCases").innerHTML = advisory.opportunities.slice(0, 3).map(opportunityHtml).join("");
+    const focusNote = $("#resultFocusNote");
+    if (advisory.focusNote) {
+      focusNote.innerHTML = `<small>Ihr freiwilliger 90-Tage-Fokus</small><strong>„${esc(advisory.focusNote)}“</strong>`;
+      focusNote.hidden = false;
+    } else {
+      focusNote.hidden = true;
+      focusNote.replaceChildren();
+    }
     $("#resultBreakdown").innerHTML = breakdownHtml(result, true);
     animateBars($("#resultBreakdown"));
-    $("#leverTitle").textContent = result.groessterHebel?.titel || "Ihr sinnvollster nächster Schritt";
-    $("#leverReason").textContent = result.groessterHebel?.begruendung || "Beginnen Sie dort, wo Aufwand und Wirkung am klarsten messbar sind.";
-    $("#timePotential").textContent = result.timePotential?.label || "—";
-    $("#timeNote").textContent = result.timePotential?.note || "Orientierungswert, kein Leistungsversprechen.";
-    $("#recommendations").innerHTML = (result.empfehlungen || []).map((item, index) => `<article class="recommendation"><span>0${index + 1}</span><div><h3>${esc(item.titel)}</h3><p>${esc(item.beobachtung)}</p><p class="next-step"><strong>Diese Woche:</strong> ${esc(item.naechsterSchritt)}</p></div><div class="tags"><span class="tag">Aufwand ${esc(item.aufwand)}</span><span class="tag accent">Wirkung ${esc(item.wirkung)}</span></div></article>`).join("");
+    const primary = advisory.opportunities[0];
+    $("#bookingTitle").textContent = `„${primary.title}“ mit Marco auf Umsetzbarkeit prüfen.`;
+    $("#bookingCopy").textContent = `In 20 Minuten prüfen Sie gemeinsam, ob der Anwendungsfall mit Ihren heutigen Systemen sinnvoll startbar ist, welche Voraussetzung zuerst fehlt und woran Sie einen Pilot messen würden.`;
+    $("#finalBookingTitle").textContent = `Ist „${primary.title}“ wirklich Ihr stärkster erster Hebel?`;
     const roadmap = result.roadmap || {};
     $("#roadmap").innerHTML = ["phase1", "phase2", "phase3"].map((key) => roadmap[key]).filter(Boolean).map((phase) => `<article><small>${esc(phase.zeitraum)}</small><h3>${esc(phase.titel)}</h3><ul>${(phase.punkte || []).map((point) => `<li>${esc(point)}</li>`).join("")}</ul></article>`).join("");
     $("#diagnosticNote").textContent = result.diagnosticNote || "Strukturierte Selbsteinschätzung; keine Zertifizierung oder Erfolgsgarantie.";
@@ -1509,9 +1709,10 @@
     calendar.searchParams.set("utm_campaign", "ai_readiness_result");
     if (state.bookingReference) calendar.searchParams.set("readiness_ref", state.bookingReference);
     $$('[data-calendar-cta]').forEach((cta) => { cta.href = calendar.toString(); });
+    $("#useCases").querySelectorAll("[data-calendar-cta]").forEach((cta) => cta.addEventListener("click", () => track("calendar_cta_clicked", { score: state.result?.scores?.total?.percent || 0 }, 19)));
     window.scrollTo(0, 0);
     requestAnimationFrame(() => $("#resultTitle").focus({ preventScroll: true }));
-    track("report_viewed", { score: result.scores.total.percent, level: result.level }, 18);
+    track("report_viewed", { score: totalScore, level: result.level }, 18);
     saveState();
   }
 

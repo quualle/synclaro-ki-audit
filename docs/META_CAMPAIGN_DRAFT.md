@@ -6,11 +6,14 @@ Dieses Dokument ist die Freigabevorlage für den Meta Ads Manager. Der sichtbare
 Draft wurde am 19.07.2026 geprüft und über seine drei exakten Objekt-IDs
 eindeutig identifiziert. Die sichtbaren Namen tragen noch den älteren
 V2-Namen. Der nachgeschärfte V2-Primärtext, die Überschrift, Beschreibung,
-Ziel-URL, UTM-Parameter, der aktive Website-Pixel und das Optimierungsereignis
-`Lead` sind im Entwurf gesetzt. Zusätzlich wurde „Inhaber von
+Ziel-URL, die bisherige namensbasierte UTM-Vorlage, der aktive Website-Pixel
+und das Optimierungsereignis `Lead` sind im Entwurf gesetzt. Die unten
+definierte objektgenaue ID-Vorlage ist noch nicht in Meta übernommen.
+Zusätzlich wurde „Inhaber von
 Kleinunternehmen“ als unverbindliches Advantage+-Seed-Signal ergänzt. Es wurde
-nichts veröffentlicht. Der Creative-Wizard kann erst nach freigeschaltetem
-Dateiupload mit dem lokalen V2-Bild abgeschlossen werden.
+nichts veröffentlicht. Die drei lokalen V2-Rasterdateien sind auf „8 adaptive
+Fragen“ korrigiert und visuell geprüft. Der Creative-Wizard kann erst nach
+freigeschaltetem Dateiupload mit diesen Dateien abgeschlossen werden.
 Nicht sichtbare oder nachträglich geänderte Werte gelten nicht als freigegeben;
 unmittelbar vor dem Publish müssen alle drei Ebenen erneut gegen diesen Entwurf
 geprüft werden.
@@ -30,8 +33,8 @@ geprüft werden.
 | Pixel | Aktiver Datensatz `Website`, ID `1497847851628194`, im Adset ausgewählt | Richtigen Business Manager/Dataset vor Publish nochmals bestätigen. |
 | Optimierungs-Event | Standardevent `Lead` im Adset ausgewählt; Meta warnt erwartungsgemäß vor fehlender Aktivität in den letzten 14 Tagen | Consent-basiertes, dedupliziertes Pixel/CAPI-Testevent senden und im Events Manager prüfen, bevor der Entwurf veröffentlichbar ist. |
 | EU-Werbetreibender / Zahlender | `Synclaro.de` / `Johannes Jaegers` | Geschäftsführer bestätigt die rechtliche und wirtschaftliche Richtigkeit ausdrücklich. |
-| Anzeigen-Copy im Wizard | V2-Primärtext, Überschrift `Wie KI-ready ist Ihr Unternehmen?`, Beschreibung `Kostenloser Score + 90-Tage-Fahrplan.`, CTA `Mehr dazu`, Ziel-URL und vollständige UTM-Vorlage gesetzt | Nach dem Creative-Upload in jeder Placement-Vorschau prüfen. Keine der fünf automatisch vorgeschlagenen KI-Textvarianten ist ausgewählt. |
-| Creative-Upload | Image-Ad-Wizard vorbereitet; der direkte lokale Upload wurde von der Chrome-Erweiterung mit `Not allowed` blockiert | In der ChatGPT-Chrome-Erweiterung „Allow access to file URLs“ bewusst aktivieren, dann V2-Dateien auswählen. Keine globale Dateiberechtigung wurde autonom erweitert. |
+| Anzeigen-Copy im Wizard | V2-Primärtext, Überschrift `Wie KI-ready ist Ihr Unternehmen?`, Beschreibung `Kostenloser Score + 90-Tage-Fahrplan.`, CTA `Mehr dazu`, Ziel-URL und die ältere namensbasierte UTM-Vorlage gesetzt | Die UTM-Vorlage auf die unten dokumentierten Objekt-ID-Makros umstellen und danach jede Placement-Vorschau prüfen. Keine der fünf automatisch vorgeschlagenen KI-Textvarianten ist ausgewählt. |
+| Creative-Upload | Image-Ad-Wizard vorbereitet; die lokalen 4:5-, 1:1- und 9:16-Dateien sind auf „8 adaptive Fragen“ korrigiert und geprüft. Der direkte lokale Upload wurde von der Chrome-Erweiterung mit `Not allowed` blockiert. | Browser-Verbindung und lokalen Dateizugriff bewusst freigeben, dann ausschließlich die drei V2-PNGs auswählen. Keine globale Dateiberechtigung wurde autonom erweitert. |
 
 ## Kampagnenziel und Funnel-Logik
 
@@ -147,9 +150,13 @@ Vorhandene, lokal geprüfte statische Varianten:
   `/Users/marcoheer/Desktop/Synclaro/werbemittel/ai-readiness/synclaro-ai-readiness-meta-9x16-v2.svg`
 
 Creative-Versprechen: „Wie bereit ist Ihr Unternehmen für echten KI-Nutzen?“,
-„12 präzise Fragen“, „ca. 4 Min.“, „konkrete nächste Schritte“, kostenlos,
+„8 adaptive Fragen“, „ca. 4 Min.“, „konkrete nächste Schritte“, kostenlos,
 für Selbstständige, Inhaber und kleine Unternehmen mit 0–20 Mitarbeitenden,
 branchenoffen. Das entspricht dem Funnelvertrag.
+
+Die ältere Datei `synclaro-ai-readiness-meta-4x5-upload.jpg` sowie sämtliche
+V1-Dateien bleiben ausdrücklich vom Upload ausgeschlossen; sie enthalten
+veraltete Aussagen zum Test.
 
 Das ursprünglich genannte Video
 `/Users/marcoheer/Downloads/893c091eaeed43b1bdd03d6b623120b4.MOV`
@@ -186,15 +193,21 @@ angeboten. Keine unbelegten Einspar-, Umsatz- oder Erfolgsgarantien verwenden.
 
 ## URL und Attribution
 
-Ziel inklusive Vorlage:
+Soll-Ziel inklusive noch einzutragender Vorlage:
 
 ```text
-https://ki-check.synclaro.de/?utm_source=meta&utm_medium=paid_social&utm_campaign=ai_readiness_de_prospecting_v1&utm_content={{ad.name}}&utm_term={{placement}}&placement={{placement}}
+https://ki-check.synclaro.de/?utm_source=meta&utm_medium=paid_social&utm_campaign=ai_readiness_de_prospecting_v1&utm_id={{campaign.id}}&utm_term={{adset.id}}&utm_content={{ad.id}}&placement={{placement}}
 ```
 
-Vor Publish in einer echten Anzeigenvorschau anklicken. Die Landingpage entfernt
-Trackingparameter nach der Erfassung aus der sichtbaren Browser-URL und
-persistiert Attribution nur mit Marketing-Consent.
+Damit bleiben Kampagne, Anzeigengruppe und Anzeige auch nach Umbenennungen
+objektgenau zuordenbar; `placement` bleibt separat erhalten. Vor Publish muss
+Meta alle vier Makros in einer echten Anzeigenvorschau auflösen. Die Landingpage
+entfernt Trackingparameter nach der Erfassung aus der sichtbaren Browser-URL
+und persistiert Attribution nur mit Marketing-Consent.
+
+`marketing/promotion-plan.md` beschreibt einen früheren Handwerks-/Premium-
+Ansatz und ist keine Freigabequelle für diese Kampagne. Maßgeblich ist
+ausschließlich dieses Dokument.
 
 ## Messplan
 
@@ -202,7 +215,7 @@ Nicht nur CPM oder Reichweite bewerten. Die entscheidende Kette lautet:
 
 1. Ausgehende Klickrate und Landingpage-Aufrufe;
 2. Startquote des Tests;
-3. Abschlussquote der zwölf Kernfragen;
+3. Abschlussquote der acht adaptiven Kernfragen;
 4. Quote von Kontaktphase zu gespeichertem, ICP-passendem `Lead`;
 5. Kosten pro `Lead`, getrennt nach Solo / 1–5 / 6–10 / 11–20;
 6. freiwillige Newsletter-Auswahl und tatsächliche DOI-Bestätigung;

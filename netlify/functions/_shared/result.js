@@ -1,9 +1,20 @@
 "use strict";
 
 const { DIMENSIONS } = require("./assessment");
+const { buildAdvisory } = require("./advisory");
 
-function buildDeterministicResult(baseline, profile = {}) {
+const RESULT_VERSION = "2026-07-19.v5";
+
+function dimensionSummary(label, score) {
+  if (score < 25) return `${label} braucht vor einem KI-Pilot zuerst einen klaren, verlässlichen Grundrahmen.`;
+  if (score < 50) return `${label} ist im Aufbau: erste Grundlagen bestehen, tragen aber noch nicht durchgängig.`;
+  if (score < 75) return `${label} ist bereits eine tragfähige Basis für einen klar begrenzten Pilot.`;
+  return `${label} ist eine belastbare Stärke und kann einen anspruchsvolleren Pilot gut stützen.`;
+}
+
+function buildDeterministicResult(baseline, profile = {}, answers = []) {
   const solo = profile.mitarbeiter === "solo";
+  const advisory = buildAdvisory(baseline, profile, answers);
   const developing = {
     prozesse_daten: ["Einen Kernprozess messbar machen", "Ihre Antworten zeigen, dass Informationen und Arbeitsschritte noch nicht durchgängig verlässlich zusammenlaufen.", "Wählen Sie einen häufigen Ablauf und halten Sie Eingang, Schritte, Prüfpunkte und Ergebnis auf einer Seite fest."],
     team_wissen: solo
@@ -51,18 +62,27 @@ function buildDeterministicResult(baseline, profile = {}) {
     const copy = copyFor(key);
     return { titel: copy[0], beobachtung: copy[1], naechsterSchritt: copy[2], aufwand: index ? "mittel" : "gering", wirkung: index ? "hoch" : "sehr hoch" };
   });
+  const primary = advisory.opportunities[0];
+  const industryLabel = advisory.industry.entered || advisory.industry.label;
+  const scores = Object.fromEntries(Object.entries(baseline.scores).map(([key, value]) => {
+    if (key === "total") return [key, value];
+    return [key, { ...value, summary: dimensionSummary(DIMENSIONS[key].label, value.percent) }];
+  }));
   return {
     ...baseline,
-    gesamteinschaetzung: `Mit ${baseline.scores.total.percent} von 100 Punkten liegt Ihr Unternehmen im Reifegrad „${baseline.level}“. ${comparison} Beginnen Sie mit einem eng begrenzten Test, dessen Wirkung vorher messbar ist.`,
-    groessterHebel: { titel: leverage[0], begruendung: leverage[1] },
+    resultVersion: RESULT_VERSION,
+    scores,
+    advisory,
+    gesamteinschaetzung: `Für Ihr Unternehmen im Bereich „${industryLabel}“ ergibt sich ein Readiness-Score von ${baseline.scores.total.percent} von 100 Punkten. ${comparison} Auf Basis Ihrer Ziele und Antworten ist „${primary.title}“ der konkret passendste erste Prüfpunkt — mit menschlicher Freigabe und einer vorher festgelegten Messgröße.`,
+    groessterHebel: { titel: primary.title || leverage[0], begruendung: `${primary.fitReason} ${primary.status.explanation}` },
     empfehlungen: recommendations,
     roadmap: {
-      phase1: { zeitraum: "Tage 1–30", titel: "Fundament klären", punkte: [recommendations[0].naechsterSchritt, "Ausgangswert und Ziel dokumentieren"] },
-      phase2: { zeitraum: "Tage 31–60", titel: "Klein testen", punkte: [recommendations[1].naechsterSchritt, solo ? "Test in einem klar abgegrenzten eigenen Arbeitsablauf durchführen" : "Test mit einer klaren Nutzergruppe durchführen"] },
-      phase3: { zeitraum: "Tage 61–90", titel: "Wirkung entscheiden", punkte: [recommendations[2].naechsterSchritt, "Ergebnis messen und nächste Stufe bewusst freigeben"] },
+      phase1: { zeitraum: "Tage 1–30", titel: "Pilot sauber abgrenzen", punkte: [primary.nextStep, primary.prerequisite] },
+      phase2: { zeitraum: "Tage 31–60", titel: "Mit echten Fällen testen", punkte: [solo ? "Den Ablauf mit einer kleinen Serie eigener realer Fälle vergleichen" : "Den Ablauf mit einer kleinen Testgruppe und realen Fällen vergleichen", `Vorher und nachher messen: ${primary.metric}`] },
+      phase3: { zeitraum: "Tage 61–90", titel: "Wirkung bewusst entscheiden", punkte: ["Ergebnisse und Fehler gemeinsam auswerten", "Fortführen, anpassen oder stoppen — erst danach über eine Ausweitung entscheiden"] },
     },
-    diagnosticNote: "Strukturierte Selbsteinschätzung mit fester Bewertungslogik; keine Zertifizierung oder Erfolgsgarantie.",
+    diagnosticNote: "Adaptive Selbsteinschätzung mit festen Messankern; keine Zertifizierung oder Erfolgsgarantie.",
   };
 }
 
-module.exports = { buildDeterministicResult };
+module.exports = { RESULT_VERSION, buildDeterministicResult, dimensionSummary };

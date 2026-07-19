@@ -1,6 +1,8 @@
 "use strict";
 
-const ASSESSMENT_VERSION = "2026-07-19.v3";
+const ASSESSMENT_VERSION = "2026-07-19.v5";
+const ADAPTIVE_CORE_COUNT = 8;
+const ADAPTIVE_QUESTIONS_PER_DIMENSION = 2;
 
 const DIMENSIONS = {
   prozesse_daten: {
@@ -35,12 +37,13 @@ const PHASES = [
         dimension: "prozesse_daten",
         type: "radio",
         required: true,
-        label: "Wie verlässlich laufen Ihre wichtigsten Abläufe heute?",
+        label: "Wie klar und einheitlich sind Ihre wichtigsten Abläufe geregelt?",
+        help: "Denken Sie an einen häufigen Ablauf, etwa Anfrage → Leistung → Rechnung. Entscheidend ist der tatsächliche Alltag.",
         options: [
-          { value: "1", label: "Meist nach Erfahrung, Zuruf oder Einzelwissen" },
-          { value: "2", label: "Teilweise dokumentiert, je nach Person unterschiedlich" },
-          { value: "3", label: "Überwiegend klar und digital unterstützt" },
-          { value: "4", label: "Durchgängig standardisiert und messbar" },
+          { value: "1", label: "Situationsabhängig — Erfahrung, Zuruf oder Gedächtnis bestimmen den Ablauf" },
+          { value: "2", label: "Teilweise geregelt — einige Schritte sind dokumentiert, andere variieren" },
+          { value: "3", label: "Weitgehend einheitlich — die meisten Schritte sind klar und digital unterstützt" },
+          { value: "4", label: "Durchgängig geregelt — Schritte, Zuständigkeiten und Ergebnisse sind messbar" },
         ],
       },
       {
@@ -48,12 +51,13 @@ const PHASES = [
         dimension: "prozesse_daten",
         type: "radio",
         required: true,
-        label: "Wie gut finden Sie die Informationen, die Sie für Entscheidungen brauchen?",
+        label: "Wie schnell finden Sie verlässliche Informationen für eine Entscheidung?",
+        help: "Denken Sie an aktuelle Kunden-, Auftrags-, Finanz- oder Prozessinformationen.",
         options: [
-          { value: "1", label: "Über Ordner, Postfächer und Köpfe verteilt" },
-          { value: "2", label: "Es gibt zentrale Orte, aber mit spürbaren Lücken" },
-          { value: "3", label: "Meist zentral, aktuell und gut auffindbar" },
-          { value: "4", label: "Zentral, strukturiert und direkt auswertbar" },
+          { value: "1", label: "Aufwendig — über Ordner, Postfächer oder Einzelnotizen verteilt" },
+          { value: "2", label: "Mit Suche — zentrale Orte bestehen, aber mit Lücken" },
+          { value: "3", label: "Schnell — meist zentral, aktuell und auffindbar" },
+          { value: "4", label: "Direkt — strukturiert und ohne Nacharbeit auswertbar" },
         ],
       },
       {
@@ -61,12 +65,13 @@ const PHASES = [
         dimension: "prozesse_daten",
         type: "radio",
         required: true,
-        label: "Wie oft werden Informationen zwischen Programmen oder Listen von Hand übertragen?",
+        label: "Wie oft übertragen Sie Informationen von Hand zwischen Programmen, Listen oder E-Mails?",
+        help: "Dazu zählen Kopieren, Abtippen, CSV-Exporte und doppelte Eingaben.",
         options: [
-          { value: "1", label: "Mehrmals täglich" },
-          { value: "2", label: "Regelmäßig im Wochenverlauf" },
-          { value: "3", label: "Nur an einzelnen Stellen" },
-          { value: "4", label: "Kaum — die wichtigsten Systeme greifen ineinander" },
+          { value: "1", label: "Sehr häufig — mehrmals täglich" },
+          { value: "2", label: "Regelmäßig — mindestens wöchentlich" },
+          { value: "3", label: "Selten — nur an einzelnen Stellen" },
+          { value: "4", label: "Nie oder fast nie — die wichtigsten Systeme greifen ineinander" },
         ],
       },
       {
@@ -74,11 +79,12 @@ const PHASES = [
         dimension: "prozesse_daten",
         type: "radio",
         required: true,
-        label: "Wie stark bindet wiederkehrende Verwaltung Ihre Arbeitszeit?",
+        label: "Wie viel Arbeitszeit bindet wiederkehrende Verwaltung?",
+        help: "Zum Beispiel Vorbereitung, Übertragung, Abstimmung, Erinnerungen oder Dokumentation.",
         options: [
-          { value: "1", label: "Sehr stark — sie verdrängt wichtigere Arbeit" },
-          { value: "2", label: "Spürbar — jede Woche bleiben Stunden liegen" },
-          { value: "3", label: "Überschaubar — einzelne Zeitfresser sind noch da" },
+          { value: "1", label: "Sehr viel — sie bestimmt große Teile des Arbeitstags" },
+          { value: "2", label: "Spürbar — jede Woche mehrere Stunden" },
+          { value: "3", label: "Begrenzt — einzelne Zeitfresser bestehen noch" },
           { value: "4", label: "Kaum — Routinen laufen weitgehend effizient" },
         ],
       },
@@ -93,12 +99,13 @@ const PHASES = [
         dimension: "team_wissen",
         type: "radio",
         required: true,
-        label: "Was passiert, wenn eine Schlüsselperson spontan ausfällt?",
+        label: "Wie verlässlich bleibt wichtiges Arbeitswissen verfügbar?",
+        help: "Bewerten Sie, ob eine Aufgabe nach einer Unterbrechung ohne Wissensverlust fortgeführt werden kann.",
         options: [
-          { value: "1", label: "Wichtige Abläufe geraten ins Stocken" },
-          { value: "2", label: "Das Team kommt weiter, aber mit vielen Rückfragen" },
-          { value: "3", label: "Das meiste Wissen ist dokumentiert und auffindbar" },
-          { value: "4", label: "Aufgaben und Wissen sind bewusst redundant organisiert" },
+          { value: "1", label: "Kaum — entscheidendes Wissen steckt in einzelnen Köpfen" },
+          { value: "2", label: "Teilweise — Notizen bestehen, Suchen oder Rückfragen bleiben häufig" },
+          { value: "3", label: "Meist — wichtiges Wissen ist dokumentiert und auffindbar" },
+          { value: "4", label: "Systematisch — Wissen ist in Vorlagen, Checklisten und Systemen gesichert" },
         ],
       },
       {
@@ -106,12 +113,13 @@ const PHASES = [
         dimension: "team_wissen",
         type: "radio",
         required: true,
-        label: "Wie gut werden neue digitale Arbeitsweisen im Unternehmen angenommen?",
+        label: "Wie konsequent werden neue digitale Arbeitsweisen nach der Einführung genutzt?",
+        help: "Denken Sie an die zuletzt eingeführte digitale Arbeitsweise – nicht an die allgemeine Technikoffenheit.",
         options: [
-          { value: "1", label: "Sie scheitern häufig an Skepsis oder Überlastung" },
-          { value: "2", label: "Einzelne ziehen mit, andere bleiben bei alten Wegen" },
-          { value: "3", label: "Mit guter Einführung werden sie zuverlässig genutzt" },
-          { value: "4", label: "Das Team testet und verbessert neue Wege aktiv" },
+          { value: "1", label: "Kaum — neue Wege versanden meist unter Zeitdruck" },
+          { value: "2", label: "Unregelmäßig — alte Wege bleiben parallel bestehen" },
+          { value: "3", label: "Überwiegend — nach klarer Einführung werden sie verlässlich genutzt" },
+          { value: "4", label: "Konsequent — neue Wege werden genutzt, dokumentiert und verbessert" },
         ],
       },
       {
@@ -119,12 +127,13 @@ const PHASES = [
         dimension: "ki_praxis",
         type: "radio",
         required: true,
-        label: "Wie wird KI heute in Ihrem Unternehmen genutzt?",
+        label: "Wie fest ist KI heute in Ihren Arbeitsabläufen verankert?",
+        help: "Bewerten Sie die betriebliche Nutzung, nicht einzelne private Versuche.",
         options: [
-          { value: "1", label: "Noch gar nicht oder nur privat ausprobiert" },
-          { value: "2", label: "Punktuell für einzelne Aufgaben" },
-          { value: "3", label: "Für mehrere klare Aufgaben im Arbeitsalltag" },
-          { value: "4", label: "Als fester, dokumentierter Bestandteil wichtiger Abläufe" },
+          { value: "1", label: "Gar nicht — noch keine betriebliche Nutzung" },
+          { value: "2", label: "Punktuell — spontan für einzelne Aufgaben" },
+          { value: "3", label: "Regelmäßig — für mehrere klar definierte Aufgaben" },
+          { value: "4", label: "Systematisch — dokumentierter Bestandteil wichtiger Abläufe" },
         ],
       },
       {
@@ -132,12 +141,13 @@ const PHASES = [
         dimension: "ki_praxis",
         type: "radio",
         required: true,
-        label: "Wie klar sind Regeln für Datenschutz, Qualität und Freigaben bei KI?",
+        label: "Wie verbindlich sind Regeln für Datenschutz, Ergebniskontrolle und Freigaben bei KI?",
+        help: "Denken Sie an sensible Daten, fehlerhafte KI-Antworten und die Freigabe wichtiger Ergebnisse.",
         options: [
-          { value: "1", label: "Dazu gibt es noch keine gemeinsamen Regeln" },
-          { value: "2", label: "Es gibt mündliche Absprachen, aber keine klare Linie" },
-          { value: "3", label: "Die wichtigsten Leitplanken sind definiert" },
-          { value: "4", label: "Regeln, Verantwortliche und Kontrollen sind etabliert" },
+          { value: "1", label: "Keine — noch keine festen Regeln" },
+          { value: "2", label: "Informell — einzelne Absprachen oder Grundsätze" },
+          { value: "3", label: "Definiert — die wichtigsten Regeln sind dokumentiert" },
+          { value: "4", label: "Verankert — Verantwortung, Prüfung und Freigabe werden angewendet" },
         ],
       },
     ],
@@ -151,12 +161,13 @@ const PHASES = [
         dimension: "ki_praxis",
         type: "radio",
         required: true,
-        label: "Wie klar ist, welches konkrete Problem KI zuerst lösen soll?",
+        label: "Wie klar ist der erste konkrete KI-Anwendungsfall festgelegt?",
+        help: "Ein Anwendungsfall beginnt mit einem wiederkehrenden Problem, nicht mit einem gewünschten Tool.",
         options: [
-          { value: "1", label: "Noch unklar — wir wollen zunächst verstehen, was möglich ist" },
-          { value: "2", label: "Es gibt mehrere Ideen, aber noch keine Priorität" },
-          { value: "3", label: "Ein erster Anwendungsfall ist klar umrissen" },
-          { value: "4", label: "Nutzen, Zielgruppe und erwarteter Effekt sind definiert" },
+          { value: "1", label: "Unklar — noch kein Problem ausgewählt" },
+          { value: "2", label: "Mehrere Ideen — noch ohne Priorität" },
+          { value: "3", label: "Eingegrenzt — ein konkreter Anwendungsfall ist gewählt" },
+          { value: "4", label: "Messbar — Ablauf, gewünschter Nutzen und Kennzahl stehen fest" },
         ],
       },
       {
@@ -164,12 +175,13 @@ const PHASES = [
         dimension: "umsetzungskraft",
         type: "radio",
         required: true,
-        label: "Wer treibt KI- und Automatisierungsthemen verbindlich voran?",
+        label: "Wie verbindlich sind Verantwortung und Zeit für KI-Vorhaben geregelt?",
+        help: "Solo-Selbstständige bewerten hier die eigene fest reservierte Umsetzungszeit.",
         options: [
-          { value: "1", label: "Aktuell niemand mit klarer Verantwortung" },
-          { value: "2", label: "Das Thema läuft nebenbei bei interessierten Personen" },
-          { value: "3", label: "Eine verantwortliche Person hat Zeit und Rückendeckung" },
-          { value: "4", label: "Verantwortung, Budget und Entscheidungspfad sind fest geregelt" },
+          { value: "1", label: "Offen — weder Verantwortung noch Zeit sind festgelegt" },
+          { value: "2", label: "Nebenbei — das Thema läuft ohne reservierte Zeit" },
+          { value: "3", label: "Verbindlich — Verantwortung und feste Zeit sind benannt" },
+          { value: "4", label: "Fest verankert — Verantwortung, Zeit und Entscheidungspfad sind geregelt" },
         ],
       },
       {
@@ -177,12 +189,13 @@ const PHASES = [
         dimension: "umsetzungskraft",
         type: "radio",
         required: true,
-        label: "Wie schnell kann Ihr Unternehmen einen kleinen KI-Test starten?",
+        label: "Wann könnten Sie organisatorisch einen kleinen KI-Pilot starten?",
+        help: "Gemeint ist ein wiederkehrender Ablauf, höchstens ein bis drei Beteiligte, etwa vier Wochen Testdauer, ein klarer Zielwert und keine große Systemumstellung.",
         options: [
-          { value: "1", label: "Vermutlich später als in sechs Monaten" },
-          { value: "2", label: "In den nächsten drei bis sechs Monaten" },
-          { value: "3", label: "Innerhalb der nächsten vier bis acht Wochen" },
-          { value: "4", label: "Innerhalb von zwei Wochen mit klarer Testgruppe" },
+          { value: "1", label: "Später — in mehr als sechs Monaten" },
+          { value: "2", label: "Mittelfristig — in drei bis sechs Monaten" },
+          { value: "3", label: "Kurzfristig — in drei bis zwölf Wochen" },
+          { value: "4", label: "Startklar — innerhalb von zwei Wochen" },
         ],
       },
       {
@@ -190,20 +203,22 @@ const PHASES = [
         dimension: "umsetzungskraft",
         type: "radio",
         required: true,
-        label: "Woran würden Sie erkennen, dass sich eine KI-Lösung wirklich lohnt?",
+        label: "Wie konkret könnten Sie den Erfolg eines KI-Piloten messen?",
+        help: "Wählen Sie, was Sie heute tatsächlich festlegen könnten – nicht die ideale Antwort.",
         options: [
-          { value: "1", label: "Dafür haben wir noch keine Messgröße" },
-          { value: "2", label: "Am allgemeinen Eindruck im Arbeitsalltag" },
-          { value: "3", label: "An Zeit, Qualität oder Durchlaufzeit" },
-          { value: "4", label: "An einem vorher festgelegten Ziel mit Ausgangswert" },
+          { value: "1", label: "Noch nicht — keine Messgröße vorhanden" },
+          { value: "2", label: "Subjektiv — nach dem allgemeinen Eindruck" },
+          { value: "3", label: "Per Kennzahl — etwa Zeit, Qualität oder Fehlerquote" },
+          { value: "4", label: "Per Vergleich — Zielwert und Ausgangswert stehen vorher fest" },
         ],
       },
       {
         id: "haupthebel",
         type: "textarea",
         required: false,
-        label: "Wenn Sie in den nächsten 90 Tagen eine Sache verbessern könnten — welche wäre das?",
-        placeholder: "Zum Beispiel: Angebote schneller erstellen, Anfragen sauberer bearbeiten, Wissen auffindbar machen …",
+        label: "Welcher Arbeitsablauf soll in den nächsten 90 Tagen spürbar besser laufen?",
+        help: "Optional: Nennen Sie möglichst Ablauf und gewünschten Effekt. Bitte keine Personen- oder Kundendaten eingeben.",
+        placeholder: "Zum Beispiel: Angebote schneller erstellen oder Terminausfälle reduzieren …",
       },
     ],
   },
@@ -304,6 +319,52 @@ function scoreAssessment(answers, profile = {}) {
   };
 }
 
+function scoreAdaptiveAssessment(answers, profile = {}) {
+  const lookup = answerMap(answers);
+  const buckets = Object.fromEntries(Object.keys(DIMENSIONS).map((key) => [key, []]));
+  const answeredQuestionIds = [];
+
+  for (const [id, question] of QUESTION_BY_ID.entries()) {
+    if (!question.dimension) continue;
+    const raw = Number(lookup.get(id)?.answer);
+    if (!Number.isFinite(raw) || raw < 1 || raw > 4) continue;
+    buckets[question.dimension].push(((raw - 1) / 3) * 100);
+    answeredQuestionIds.push(id);
+  }
+
+  const coverage = Object.fromEntries(Object.entries(buckets).map(([key, values]) => [key, values.length]));
+  const complete = answeredQuestionIds.length === ADAPTIVE_CORE_COUNT
+    && Object.values(coverage).every((count) => count === ADAPTIVE_QUESTIONS_PER_DIMENSION);
+  const dimensions = {};
+  let weighted = 0;
+  let usedWeight = 0;
+  for (const [key, config] of Object.entries(DIMENSIONS)) {
+    const values = buckets[key];
+    const percent = values.length
+      ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length)
+      : 0;
+    dimensions[key] = { percent, label: config.label, short: config.short };
+    if (values.length) {
+      weighted += percent * config.weight;
+      usedWeight += config.weight;
+    }
+  }
+
+  const total = usedWeight ? Math.round(weighted / usedWeight) : 0;
+  const level = levelFor(total);
+  return {
+    assessmentVersion: ASSESSMENT_VERSION,
+    adaptiveVersion: "adaptive-v1",
+    scores: { ...dimensions, total: { percent: clamp(total, 0, 100) } },
+    level: level.label,
+    levelKey: level.key,
+    timePotential: timePotential(lookup, cleanText(profile.mitarbeiter, 20)),
+    complete,
+    answeredQuestionIds,
+    coverage,
+  };
+}
+
 function phaseInsight(stepNumber, previousAnswers, profile = {}) {
   const lookup = answerMap(previousAnswers);
   if (stepNumber === 1) {
@@ -325,71 +386,19 @@ function phaseInsight(stepNumber, previousAnswers, profile = {}) {
 function questionForProfile(question, profile = {}) {
   const result = JSON.parse(JSON.stringify(question));
   if (cleanText(profile.mitarbeiter, 20) !== "solo") return result;
-  if (result.id === "prozess_standardisierung") {
+  if (result.id === "wissen_verteilung") {
     result.options = [
-      { value: "1", label: "Meist nach Erfahrung oder aus dem Gedächtnis" },
-      { value: "2", label: "Teilweise dokumentiert, je nach Zeitdruck unterschiedlich" },
-      { value: "3", label: "Überwiegend klar und digital unterstützt" },
-      { value: "4", label: "Durchgängig standardisiert und messbar" },
-    ];
-  } else if (result.id === "daten_zugriff") {
-    result.options = [
-      { value: "1", label: "Über Ordner, Postfächer und einzelne Notizen verteilt" },
-      { value: "2", label: "Es gibt zentrale Orte, aber mit spürbaren Lücken" },
-      { value: "3", label: "Meist zentral, aktuell und gut auffindbar" },
-      { value: "4", label: "Zentral, strukturiert und direkt auswertbar" },
-    ];
-  } else if (result.id === "wissen_verteilung") {
-    result.label = "Wie gut bleibt Ihr Arbeitswissen verfügbar, wenn Sie unter Zeitdruck stehen oder eine Aufgabe später wieder aufnehmen?";
-    result.options = [
-      { value: "1", label: "Wichtiges steckt vor allem im Kopf und geht im Alltag leicht verloren" },
-      { value: "2", label: "Einige Notizen oder Vorlagen existieren, aber noch nicht verlässlich" },
-      { value: "3", label: "Wichtige Abläufe und Wissen sind gut dokumentiert und auffindbar" },
-      { value: "4", label: "Wissen ist systematisch in Vorlagen, Checklisten und Systemen gesichert" },
-    ];
-  } else if (result.id === "team_digital") {
-    result.label = "Wie konsequent verankern Sie neue digitale Arbeitsweisen in Ihrem eigenen Alltag?";
-    result.options = [
-      { value: "1", label: "Neue Wege versanden häufig unter Zeitdruck" },
-      { value: "2", label: "Ich probiere punktuell aus, falle aber oft in alte Abläufe zurück" },
-      { value: "3", label: "Mit klarer Einführung nutze ich neue Wege zuverlässig" },
-      { value: "4", label: "Ich teste, dokumentiere und verbessere neue Wege systematisch" },
-    ];
-  } else if (result.id === "ki_leitplanken") {
-    result.options = [
-      { value: "1", label: "Dafür habe ich noch keine festen Regeln" },
-      { value: "2", label: "Einige Grundsätze sind klar, aber noch nicht dokumentiert" },
-      { value: "3", label: "Die wichtigsten Leitplanken sind dokumentiert" },
-      { value: "4", label: "Regeln, Prüfschritte und Freigaben sind fest verankert" },
-    ];
-  } else if (result.id === "ki_zielbild") {
-    result.options = [
-      { value: "1", label: "Noch unklar — ich möchte zunächst verstehen, was möglich ist" },
-      { value: "2", label: "Es gibt mehrere Ideen, aber noch keine Priorität" },
-      { value: "3", label: "Ein erster Anwendungsfall ist klar umrissen" },
-      { value: "4", label: "Nutzen, Einsatzbereich und erwarteter Effekt sind definiert" },
+      { value: "1", label: "Kaum — entscheidendes Wissen steckt vor allem in meinem Gedächtnis" },
+      { value: "2", label: "Teilweise — Notizen bestehen, Suchen oder erneutes Einarbeiten bleibt häufig" },
+      { value: "3", label: "Meist — wichtiges Wissen ist dokumentiert und auffindbar" },
+      { value: "4", label: "Systematisch — Wissen ist in Vorlagen, Checklisten und Systemen gesichert" },
     ];
   } else if (result.id === "verantwortung") {
-    result.label = "Wie verbindlich planen Sie Zeit für KI- und Automatisierungsthemen ein?";
     result.options = [
-      { value: "1", label: "Aktuell ohne festen Platz in meinem Arbeitsalltag" },
-      { value: "2", label: "Nebenbei, wenn gerade Zeit übrig bleibt" },
-      { value: "3", label: "Mit festen Zeitfenstern und klarer Priorität" },
-      { value: "4", label: "Mit festem Budget, Zeitrahmen und Entscheidungskriterien" },
-    ];
-  } else if (result.id === "umsetzungstempo") {
-    result.options = [
-      { value: "1", label: "Vermutlich später als in sechs Monaten" },
-      { value: "2", label: "In den nächsten drei bis sechs Monaten" },
-      { value: "3", label: "Innerhalb der nächsten vier bis acht Wochen" },
-      { value: "4", label: "Innerhalb von zwei Wochen mit klar begrenztem Testumfang" },
-    ];
-  } else if (result.id === "erfolgsmessung") {
-    result.options = [
-      { value: "1", label: "Dafür habe ich noch keine Messgröße" },
-      { value: "2", label: "Am allgemeinen Eindruck im Arbeitsalltag" },
-      { value: "3", label: "An Zeit, Qualität oder Durchlaufzeit" },
-      { value: "4", label: "An einem vorher festgelegten Ziel mit Ausgangswert" },
+      { value: "1", label: "Offen — weder feste Zeit noch Priorität sind festgelegt" },
+      { value: "2", label: "Nebenbei — das Thema läuft nur, wenn Zeit übrig bleibt" },
+      { value: "3", label: "Verbindlich — feste Zeit und klare Priorität sind eingeplant" },
+      { value: "4", label: "Fest verankert — Zeit, Budget und Entscheidungskriterien sind geregelt" },
     ];
   }
   return result;
@@ -420,6 +429,8 @@ function publicQuestionList() {
 }
 
 module.exports = {
+  ADAPTIVE_CORE_COUNT,
+  ADAPTIVE_QUESTIONS_PER_DIMENSION,
   ASSESSMENT_VERSION,
   DIMENSIONS,
   PHASES,
@@ -428,5 +439,6 @@ module.exports = {
   getPhase,
   getQuestion,
   publicQuestionList,
+  scoreAdaptiveAssessment,
   scoreAssessment,
 };

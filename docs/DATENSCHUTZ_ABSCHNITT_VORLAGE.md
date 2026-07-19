@@ -19,8 +19,11 @@ Synclaro-Datenschutzerklärung abgeglichen und freigegeben werden.
 Mit unserem kostenlosen KI-Readiness-Test können Sie strukturiert einschätzen,
 wie gut Ihr Unternehmen auf einen sinnvollen und verantwortungsvollen Einsatz
 von künstlicher Intelligenz vorbereitet ist. Der Test fragt zunächst Angaben zu
-Unternehmensgröße, Rolle, Ziel und Branche sowie zwölf feste Bewertungsfragen
-ab. Eine zusätzliche offene Angabe zu Ihrem wichtigsten Hebel ist freiwillig.
+Unternehmensgröße, Rolle, Ziel und Branche ab. Anschließend wählt ein
+KI-Modell nacheinander acht passende Diagnosefragen aus einem geprüften,
+versionierten Fragenkatalog aus. Jede der vier Bewertungsdimensionen wird mit
+genau zwei festen Messankern erfasst. Eine zusätzliche offene Angabe zu Ihrem
+wichtigsten Hebel ist freiwillig.
 
 Im Anschluss benötigen wir Ihren Vor- und Nachnamen, den Namen Ihres
 Unternehmens beziehungsweise Ihrer selbstständigen Tätigkeit sowie Ihre
@@ -31,11 +34,25 @@ Telefonnummer wird nicht erhoben. Wir rufen Sie nicht aufgrund des Tests
 ungefragt an.
 
 Das Ergebnis umfasst einen Gesamtscore, vier Teilwerte, eine Einordnung, einen
-priorisierten Hebel, konkrete Empfehlungen und einen 90-Tage-Fahrplan. Es wird
-mit einer festen, versionierten Bewertungslogik erzeugt. Antworten und
-Kontaktdaten werden für den KI-Readiness-Test nicht an OpenAI oder ein anderes
-generatives KI-Modell übermittelt. Die Auswertung ist eine strukturierte
-Selbsteinschätzung und weder Zertifizierung noch Erfolgszusage.
+priorisierten Hebel, konkrete Empfehlungen und einen 90-Tage-Fahrplan. Score,
+Teilwerte und Reifegrad werden ausschließlich mit festen, serverseitig
+geprüften Messankern berechnet. Ein KI-Modell vertieft anschließend die
+sprachliche Einordnung und die bereits kuratierten Anwendungsfälle. Es darf
+Score, Status, Messgrößen, Voraussetzungen und menschliche Freigaben nicht
+verändern. Die Auswertung ist eine strukturierte Selbsteinschätzung und weder
+Zertifizierung noch Erfolgszusage.
+
+Für die dynamische Auswahl der nächsten Frage und die fachliche Vertiefung
+übermitteln wir an OpenRouter und den ausgewählten Modellanbieter OpenAI nur
+die Branchenangabe, Größenklasse, Rolle, das Ziel und die bis dahin gegebenen
+Testantworten. Die später abgefragten Kontaktfelder – Vorname, Nachname,
+Unternehmen und E-Mail-Adresse – sowie Tracking-, Meta- und
+Attributionsdaten werden nicht an das KI-Modell übermittelt. Die technischen
+Modellanfragen erzwingen Zero-Data-Retention-Routing, schließen
+Provider-Datensammlung aus und erlauben keinen automatischen Wechsel zu einem
+anderen Modellanbieter. Vor dem Launch müssen Auftragsverarbeitung,
+Verarbeitungsorte und Drittlandgrundlage rechtlich geprüft und im produktiven
+Gesamttext konkret benannt werden.
 
 Rechtsgrundlage für die von Ihnen angeforderte Auswertung ist Art. 6 Abs. 1
 lit. b DSGVO. Soweit wir den Test technisch absichern, Missbrauch verhindern
@@ -54,7 +71,8 @@ Je nach Nutzung verarbeiten wir:
 
 - Unternehmensprofil: Branche, Größenklasse, Ihre Rolle und Ihr vorrangiges
   Ziel;
-- zwölf feste Antworten und gegebenenfalls Ihre freiwillige offene Antwort;
+- acht adaptive Antworten aus dem festen Messkatalog und gegebenenfalls Ihre
+  freiwillige offene Antwort;
 - berechneten Readiness-Score, Teilwerte, Einordnung und Empfehlungen;
 - Vorname, Nachname, Unternehmen beziehungsweise Tätigkeit und E-Mail-Adresse;
 - technische Sicherheits- und Nachweisdaten wie zufällige Sitzungs- und
@@ -216,9 +234,9 @@ ist die Telegram-Übertragung technisch gesperrt.
 
 Die konkreten Anbieterangaben, Auftragsverarbeitungsverträge,
 Verarbeitungsorte und gegebenenfalls Garantien für Drittlandübermittlungen für
-Netlify, Supabase, den E-Mail-Dienst, Cal.com, Meta und Telegram sind in den
-jeweiligen allgemeinen Abschnitten dieser Datenschutzerklärung zu benennen und
-vor dem Launch zu prüfen.
+Netlify, Supabase, OpenRouter, OpenAI, den E-Mail-Dienst, Cal.com, Meta und
+Telegram sind in den jeweiligen allgemeinen Abschnitten dieser
+Datenschutzerklärung zu benennen und vor dem Launch zu prüfen.
 
 ### Keine automatische Kontaktaufnahme
 
@@ -247,8 +265,9 @@ Anfang dieser Datenschutzerklärung.
   Datenschutzerklärung einbauen.
 - [ ] Verantwortlicher, Datenschutzkontakt und Rechtsgrundlagen mit dem
   bestehenden Gesamttext abgleichen.
-- [ ] Supabase-Projektregion, Netlify-, Resend-, Cal-, Meta- und Telegram-
-  Verträge sowie Drittlandgrundlagen verifizieren und konkret benennen.
+- [ ] Supabase-Projektregion, Netlify-, OpenRouter-, OpenAI-, Resend-, Cal-,
+  Meta- und Telegram-Verträge sowie Drittlandgrundlagen verifizieren und
+  konkret benennen.
 - [ ] Den technisch festgelegten 90-Tage-Purge für Booking-Receipts operativ
   einrichten und testen. Verbindliche Löschfrist und Löschprozess für
   Assessment, CRM-Kontakt und Marketing-Consent beschließen; Text danach
@@ -265,8 +284,8 @@ Anfang dieser Datenschutzerklärung.
 - [ ] Verdecktes Cal-Feld `readiness_ref` und event-spezifischen, signierten
   Readiness-Webhook im eingeloggten Cal-Admin prüfen.
 - [ ] Frontendtexte und Versionen exakt abgleichen:
-  `privacy-ai-readiness-v2-2026-07-19`,
+  `privacy-ai-readiness-v3-2026-07-19`,
   `newsletter-email-v1-2026-07-19`, `cookie-v1-2026-07-18`.
-- [ ] Sicherstellen, dass keine alte OpenAI-, Telefon- oder Rückrufbeschreibung
-  mehr veröffentlicht ist.
+- [ ] Sicherstellen, dass keine alte Beschreibung mit zwölf festen Fragen,
+  ohne externe KI, Telefon oder Rückruf mehr veröffentlicht ist.
 - [ ] Rechtliche Endprüfung dokumentieren; erst danach live schalten.

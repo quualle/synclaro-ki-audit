@@ -1,6 +1,6 @@
 # KI-Readiness-Funnel – Launch Readiness
 
-Stand: 19.07.2026 · Branch: `feat/meta-ai-readiness-funnel` · **nicht live**
+Stand: 19.07.2026 · Zielbranch: `feat/funnel-preview-refinement` · **nicht live**
 
 ## Status in einem Satz
 
@@ -38,9 +38,13 @@ Anzeigengruppe `120251380526890206`, Anzeige `120251380526870206`.
   erhalten. Das dazugehörige verborgene Feld und der event-spezifische Webhook
   konnten nicht im Admin geprüft werden, weil `app.cal.com` ausgeloggt war.
 - Der Meta-Creative-Wizard ist auf ein Image Ad umgestellt. V2-Primärtext,
-  Überschrift, Beschreibung, CTA, Ziel-URL und UTM-Parameter sind gesetzt; keine
-  der fünf automatisch vorgeschlagenen KI-Textvarianten ist ausgewählt. Der
-  Upload der lokalen V2-Dateien ist noch durch
+  Überschrift, Beschreibung, CTA, Ziel-URL und die ältere namensbasierte
+  UTM-Vorlage sind gesetzt; keine der fünf automatisch vorgeschlagenen
+  KI-Textvarianten ist ausgewählt. Die objektgenaue Campaign-/Adset-/Ad-ID-
+  Vorlage ist noch nicht in Meta übernommen. Der
+  Text der lokalen V2-Dateien ist inzwischen auf „8 adaptive Fragen“
+  korrigiert; alle drei PNG-Formate wurden neu gerendert und visuell geprüft.
+  Der Upload ist weiterhin durch
   die fehlende Chrome-Erweiterungsberechtigung für lokale Dateien
   blockiert (`fileChooser.setFiles: Not allowed`); die globale
   Dateiberechtigung wurde bewusst nicht autonom erweitert und es wurde kein
@@ -54,9 +58,11 @@ prüfen.
 Am 19.07.2026 wurden ohne Production-Write und ohne externen Send folgende
 Prüfungen erfolgreich abgeschlossen:
 
-- `npm run check`: 34 von 34 Node-Tests, atomare lokale PostgreSQL-Migration
-  samt Integrationstest und `npm audit` mit 0 bekannten Schwachstellen;
-- `netlify build --context deploy-preview`: alle Readiness-Functions gebündelt;
+- `npm test`: 58 von 58 Node-Tests; atomare lokale PostgreSQL-Migration samt
+  Integrationstest erfolgreich; `npm audit` mit 0 bekannten Schwachstellen;
+- `netlify build --offline --context deploy-preview`: alle Readiness-Functions
+  gebündelt; der Manifest-Test bestätigt Functions API v2, drei Traffic Rules
+  und ein isoliertes `submit-lead`-Bundle;
 - Datenschutz-Worktree: `astro check` mit 0 Fehlern und vollständiger Build
   erfolgreich;
 - `git diff --check`: Funnel- und Datenschutz-Worktree ohne Whitespace-Fehler;
@@ -75,19 +81,21 @@ Prüfungen erfolgreich abgeschlossen:
   ausgelieferten Asset-Verzeichnis entfernt; die aktuelle Social-Karte bleibt
   branchenoffen;
 - frische mobile Browser-Session: 0 Console-Fehler und 0 Console-Warnungen.
-- finale UX-/Accessibility-Re-Prüfung: `PASS`; finaler Code-Critic nach dem
-  letzten Outbox-/SQL-Delta: `PASS`; zusätzliche unabhängige Terra-QA:
-  `GO-WITH-CHANGES` ausschließlich wegen externer Launch-Gates. Die externe
-  OpenRouter-Vollprüfung meldete zunächst einen operativen P2: Ein nach dem
-  Outbox-Claim widerrufener Consent wurde korrekt neutralisiert, erzeugte aber
-  einen falschen Scheduler-Fehler. Der zielgenaue Fix ist regressionstestet;
-  die abschließende externe Delta-QA lautet `GO` ohne offene P0/P1/P2/P3.
+- finale UX-/Accessibility-Re-Prüfung des vorherigen Vollstands: `PASS`;
+  nachträglich identifizierte Tracking-Lücken sind lokal behoben: Meta-Grants
+  werden erst nach serverseitig bestätigtem Consent aktiviert, Analytics-
+  Property-Werte sind streng typisiert und ein nicht unterstütztes adaptives
+  Phantom-Event wurde entfernt. Der abschließende isolierte Critic lautet
+  `PASS`; die quellenfreie externe Terra-QA lautet `GO-WITH-CHANGES` allein
+  wegen der offengelegten Netlify-/Hosted-Gates.
 
 Der dokumentierte `OPENROUTER_API_KEY` ist vorhanden und wurde read-only gegen
-den Provider erfolgreich authentifiziert. Die vorgeschriebene externe
-OpenRouter-QA ist ausgeführt und unter
-`docs/reviews/2026-07-19-final-production-qa.md` protokolliert. Finales Verdict:
-`GO`, keine offenen P0/P1/P2/P3.
+den Provider erfolgreich authentifiziert. Frühere Voll- und Delta-Prüfungen
+sind unter `docs/reviews/2026-07-19-final-production-qa.md` protokolliert. Für
+das letzte Tracking-Delta gilt erst der neue Abschlusscheck als maßgeblich.
+Dieser ist unter
+[`docs/reviews/2026-07-19-final-tracking-delta-qa.md`](./reviews/2026-07-19-final-tracking-delta-qa.md)
+dokumentiert.
 
 ## Aktueller Provider-Audit (read-only)
 
@@ -96,30 +104,35 @@ Send erhoben:
 
 | Bereich | Verifizierter Stand | Konsequenz vor Launch |
 |---|---|---|
-| Netlify | CLI authentifiziert, Repository mit `synclaro-ki-audit` verknüpft; aktueller Deploy Preview bereit, unveröffentlicht und `production=false` | Technische Vorbereitung und Preview-Prüfung können autonom fortgesetzt werden. |
+| Netlify | CLI authentifiziert und richtige Site-ID dokumentiert. Auch der neueste vorhandene Deploy Preview `6a5d3998654fcbf95ad4f6b1` meldet zwar `production=false`, enthält aber noch den alten Funktionspfad: `/api/readiness-session` liefert dort `404`, während `/.netlify/functions/start-session` antwortet. Der finale V2-Stand ist somit noch nicht gehostet. Zusätzlich zieht die Site-UI derzeit den veralteten Build-Befehl `npm run build` und ein unpassendes Next.js-Plugin; nur der lokale Offline-Build über die Repository-Konfiguration ist grün. | Vor Hosted-QA einen neuen Deploy Preview mit ausschließlich Preview-Secrets erzeugen und die Netlify-Site-Buildkonfiguration korrigieren beziehungsweise ausdrücklich bestätigen. Production bleibt unangetastet. |
 | Resend | Production-Zugang read-only erfolgreich authentifiziert; konfigurierte Absenderdomain verifiziert | Provider ist bereit. Echte DOI-, interne und Newsletter-Sends bleiben bis zur gebündelten Testfreigabe aus. |
 | Core-Sicherheit | `SESSION_HMAC_SECRET`, `LEAD_SIGNING_SECRET`, `LEAD_RATE_LIMIT_SECRET` und `LEAD_IP_HASH_SALT` sind vorhanden, unterschreiten aber jeweils die geforderte Mindestlänge von 32 Zeichen | Vor Production vier neue, getrennte Werte sicher erzeugen und im Functions-Scope setzen. |
 | Supabase | URL vorhanden, aber weder `SUPABASE_SECRET_KEY` noch `SUPABASE_SERVICE_ROLE_KEY` im Production-Functions-Scope. Der read-only Live-Abgleich nennt `20260719050454` als jüngste angewandte Migration; die neue Endmigration `20260719060000` ist dort noch nicht registriert und liegt eindeutig danach. Eine isolierte Cloud-Testbranch würde im aktuellen Tarif reale Kosten auslösen. | Keine kostenpflichtige Branch wurde autonom erzeugt. Kostenfreigabe oder ausdrücklich gewählte Testalternative ist ein Geschäftsführer-Gate. |
 | Telegram | Lead-Token und Zielchat sind zwar belegt, aber formal ungültig; die Bot-API lehnt den Zugang ab. `TELEGRAM_TRANSFER_APPROVED` bleibt fail-closed. Andere vorhandene Bots sind für andere Zwecke dokumentiert. | Bot-Identität und Zielchat ausdrücklich festlegen; keinen bestehenden Bot stillschweigend umwidmen. Danach PII-freien Test senden. |
 | Meta | Pixel-ID und Graph-Version vorhanden; `META_CAPI_ACCESS_TOKEN` und temporärer Test-Event-Code fehlen | CAPI-Zugang erst nach Freigabe sicher erzeugen/hinterlegen, dann dedupliziertes `Lead`-Testevent prüfen. |
 | Cal.com | Sämtliche `CAL_READINESS_*`-Variablen fehlen; die Admin-Sitzung war beim letzten UI-Audit ausgeloggt | Nach Login das öffentliche Event und den event-spezifischen Webhook erst im freigegebenen Aktivierungsfenster ändern. |
-| OpenRouter | Dokumentierter Zugang vorhanden und read-only erfolgreich authentifiziert | Externe QA benötigt keine Mitwirkung von Marco. |
+| OpenRouter | Dokumentierter Zugang vorhanden und read-only erfolgreich authentifiziert; adaptiver Laufzeitpfad ist ZDR-gebunden, fail-safe und mit Sessionpflicht sowie Netlify-Limits von 20 Fragen- und 6 Ergebnisaufrufen je 180 Sekunden pro IP/Domain geschützt | Nur im Deploy-Preview-Kontext aktivieren, echten Acht-Fragen-Lauf prüfen und vor Production zusätzlich eine harte Provider-Budgetgrenze sowie die rechtliche Transferfreigabe dokumentieren. |
 
 ## Verbindliches Zielbild
 
 - Vier kurze Unternehmensfragen: Größe, Rolle, Hauptziel und Branche.
-- Zwölf feste, gewichtete Kernfragen in drei Phasen sowie eine optionale offene
-  Hebelfrage. Der Test ist branchenoffen und formuliert Solo-Selbstständige
-  ohne Team-Unterstellung.
+- Acht adaptive Kernfragen aus einem festen Katalog sowie eine optionale offene
+  Hebelfrage. GPT-5.5 wählt die nächste Frage und ergänzt einen Branchenkontext;
+  Frage, Hilfe, Antworttexte, Reihenfolge und Werte bleiben kanonisch. Der
+  Server erzwingt genau zwei Messanker je Dimension. Der Test ist
+  branchenoffen und formuliert Solo-Selbstständige ohne Team-Unterstellung.
 - Danach vier einzelne Kontakt-Schritte: Vorname, Nachname,
   Unternehmen/selbstständige Tätigkeit und E-Mail-Adresse.
 - **Keine Telefonnummer, kein Rückruf-Consent, kein Kaltanruf und keine
   automatische Kontaktaufgabe.** Ein CRM-Eintrag ist keine Werbe- oder
   Kontaktierlaubnis.
-- Der Score, die vier Teilwerte, der größte Hebel, drei Empfehlungen und der
-  90-Tage-Fahrplan entstehen deterministisch aus der versionierten
-  Bewertungslogik. Der Readiness-Test sendet weder Antworten noch Kontaktdaten
-  an OpenAI; der frühere Analyse-Endpunkt antwortet dauerhaft mit HTTP 410.
+- Score, vier Teilwerte und Reifegrad entstehen deterministisch aus der
+  versionierten Bewertungslogik. GPT-5.5 vertieft anschließend die
+  sprachliche Einordnung und den priorisierten ersten von drei bereits kuratierten Anwendungsfällen, darf aber
+  weder Score noch Status, Messgröße, Voraussetzung oder menschliche Freigabe
+  verändern. An OpenRouter/OpenAI gehen nur bereinigtes Unternehmensprofil und
+  kanonische Testantworten; niemals Kontakt-, Tracking-, Meta- oder
+  Attributionsdaten. Der frühere separate Analyse-Endpunkt bleibt HTTP 410.
 - Primäre gewünschte Folgewirkung: Nach dem vollständigen Ergebnis bucht die
   Person selbst und bewusst eine kostenlose KI-Potenzialanalyse mit Marco.
 - Sekundäre Folgewirkung: freiwillige E-Mail-Nurture-Strecke nach separater
@@ -135,7 +148,7 @@ Send erhoben:
 
 | Auslöser | Speicherung / Zustellung | Harte Bedingung |
 |---|---|---|
-| Auswertung angefordert | Kontakt, Assessment, Antworten, deterministisches Ergebnis und CRM-Ereignis werden atomar über `submit_ai_readiness_lead_v2` geschrieben. Eine interne E-Mail ohne kopierte Kontaktdaten wird in die Outbox gestellt. | Gültige Sitzung, vollständige Kernfragen, Datenschutzhinweis bestätigt und aktueller Tracking-Entscheid. |
+| Auswertung angefordert | Kontakt, Assessment, Antworten, fester Score und – bei erfolgreichem Modellaufruf – KI-vertiefte Advisory-Texte werden atomar über `submit_ai_readiness_lead_v2` geschrieben. Bei Providerfehler wird das vollständige deterministische Ergebnis gespeichert. Eine interne E-Mail ohne kopierte Kontaktdaten wird in die Outbox gestellt. | Gültige Sitzung, acht vollständige Kernfragen mit zwei Messankern je Dimension, aktueller KI-/Datenschutzhinweis und aktueller Tracking-Entscheid. |
 | Newsletter freiwillig ausgewählt | Eine append-only CRM-Marketing-Consent-Zeile wird zunächst als DOI-pending angelegt. Die Bestätigungs-E-Mail läuft über Resend und bleibt wie die spätere Mehrwert-Mail an den im Consent-Nachweis gespeicherten E-Mail-Snapshot gebunden; spätere CRM-Adressänderungen führen nicht zu einem Empfängerwechsel. Pending-Einträge erscheinen nicht in `v_email_marketing_list`. Bereits aktive historische Consents bleiben aktiv. | Exakter versionierter Einwilligungstext; Link und Bestätigungsseite sind signiert und 24 Stunden gültig. Das Ergebnis weist sichtbar auf Postfach und Spam-Ordner hin. |
 | DOI-Seite per GET geöffnet | Der Token wird nur geprüft und eine noindex-Bestätigungsseite angezeigt. | Kein CRM-/Consent-Write; automatische Mail-Scanner-Aufrufe dürfen nichts aktivieren. |
 | DOI-Button bewusst per POST bestätigt | Die bestehende Consent-Zeile und das Assessment werden idempotent auf bestätigt gesetzt; erst dann ist der neue Kontakt in der aktiven E-Mail-Liste. Genau eine consent-gebundene Mehrwert-Mail wird über die Outbox vorgemerkt. | Gültige Signatur, passende Assessment-/Submission-ID, Consent nicht widerrufen. Deploy Previews leiten ohne Datenbankzugriff auf eine eindeutige Preview-Seite um. |
@@ -189,14 +202,21 @@ Erledigte oder tote Outbox-Zeilen werden nach 30 Tagen bereinigt.
 Keiner dieser Punkte darf stillschweigend als erledigt behandelt werden.
 
 - [x] `npm run check` ist auf dem vorbereiteten finalen Stand erfolgreich.
-- [x] `netlify build --context deploy-preview` ist erfolgreich.
-- [x] Netlify-CLI und Site-Verknüpfung sind geprüft; der aktuelle Preview ist
-  bereit, unveröffentlicht und meldet `production=false`.
-- [x] Der komplette Preview-Durchlauf wurde auf Desktop und Mobil mit
+- [x] `netlify build --offline --context deploy-preview` und der anschließende
+  Manifest-Test sind erfolgreich.
+- [ ] Ein neuer Deploy Preview enthält nachweislich den finalen Functions-v2-
+  Stand. Der vorhandene Preview ist unveröffentlicht und `production=false`,
+  aber nachweislich veraltet (`/api/readiness-session` liefert `404`).
+- [ ] Die Netlify-Site-Buildkonfiguration enthält keinen veralteten
+  `npm run build`-Befehl und kein unpassendes Next.js-Plugin mehr; ein
+  verbundener Deploy-Preview-Build ist danach grün.
+- [ ] Der finale Preview-Durchlauf wurde auf Desktop und Mobil mit
   „nur notwendig“ sowie mit Analyse-/Marketing-Consent geprüft; keine
-  Console-, Netzwerk-, Fokus- oder Layoutfehler.
-- [x] Die externe OpenRouter-QA wurde mit dem verifizierten Zugang ausgeführt,
-  ihr Verdict dokumentiert und etwaige Befunde wurden erneut geprüft.
+  Console-, Netzwerk-, Fokus- oder Layoutfehler. Insbesondere lädt Meta bei
+  gemischter Einwilligung erst nach bestätigtem Server-Consent.
+- [x] Die quellenfreie externe OpenRouter-QA wurde mit dem verifizierten Zugang
+  ausgeführt und mit `GO-WITH-CHANGES` dokumentiert. Ihre verbleibenden Punkte
+  sind die separat offenen Netlify-/Hosted-Gates, keine verdeckten Codefehler.
 - [ ] Die Datenschutzergänzung ist technisch und rechtlich geprüft und auf
   `https://synclaro.de/datenschutz#ki-readiness-test` veröffentlicht.
 - [ ] Auf einer Supabase-Testbranch wurde die atomare Endmigration
@@ -292,12 +312,14 @@ Meta- oder Supabase-Writes.
 | `CAL_READINESS_EVENT_TYPE_ID` | Für Booking-Tracking | Numerische ID ausschließlich des Readiness-Events. |
 | `CAL_READINESS_EVENT_TYPE_SLUG` | Für Booking-Tracking | Explizit `ki-erstgespraech` setzen, auch wenn dies der Code-Default ist. |
 | `CAL_READINESS_ORGANIZER_EMAIL` | Für Booking-Tracking | Exakte, normalisierte Organizer-E-Mail des freigegebenen Events. |
+| `OPENROUTER_API_KEY` | Für adaptive Fragen/Auswertung | Nur serverseitig und zunächst ausschließlich im Deploy-Preview-Kontext. Vor Production rotieren beziehungsweise mit Budgetgrenze absichern. |
+| `AI_ADAPTIVE_ENABLED` | Für adaptive Fragen/Auswertung | Muss im freigegebenen Kontext exakt `true` sein; andernfalls nutzt der Test die sichere Basisauswertung. |
+| `OPENROUTER_ADAPTIVE_MODEL` | Empfohlen | Explizit `openai/gpt-5.5`; im anonymen Preview-Test war es deutlich latenzstabiler als Sol. Terra wird derzeit von OpenRouter unter der verpflichtenden ZDR-Richtlinie nicht geroutet. |
 
 `CONTEXT` wird von Netlify gesetzt. `OPENAI_API_KEY` und `SUPABASE_ANON_KEY`
 werden von anderen, älteren Premium-/Kampagnenfunktionen im Repository genutzt,
-aber nicht vom neuen KI-Readiness-Leadpfad. Ihre Existenz darf nicht als
-Readiness-Abhängigkeit oder als Freigabe für externe KI-Verarbeitung verstanden
-werden.
+aber nicht vom adaptiven KI-Readiness-Leadpfad. Ihre Existenz darf nicht als
+Freigabe für diesen externen KI-Verarbeitungspfad verstanden werden.
 
 ## Exakte Cal.com-Konfiguration
 
@@ -375,14 +397,18 @@ und [Webhook-Signatur/Payload-Version](https://cal.com/docs/developing/guides/au
 
 - [x] `npm run check` ist grün. Der Befehl umfasst Node-Tests, lokale
   PostgreSQL-Migration-/Integrationstests und `npm audit --audit-level=high`.
-- [x] Testabdeckung bestätigt mindestens: deterministischer Score, Solo-Copy,
+- [x] Testabdeckung bestätigt mindestens: deterministischer Score,
+  adaptive Dimensionsabdeckung, unveränderliche Scoringanker,
+  Abbruch veralteter Frage-Requests, OpenRouter-ZDR/Structured-Output,
+  Modell-Fallback ohne Leadverlust, Ausschluss von Kontaktdaten aus dem Modellprompt, Solo-Copy,
   Pflichtfelder ohne Telefon, versionierte Consent-Texte, deaktivierter
   Analyse-Endpunkt, Attribution-Minimierung, Session-/Origin-Sicherheit,
   PII-freies Telegram, fail-closed Transfergate, Meta-Deduplizierung,
   DOI-Idempotenz, scanner-sichere und idempotente Newsletter-Abmeldung,
   consent-gebundene Mehrwert-Mail, Booking-Replay-Schutz und getrennte
   Zustellung mehrerer legitimer Buchungen desselben Assessments.
-- [x] `netlify build --context deploy-preview` ist grün.
+- [x] `netlify build --offline --context deploy-preview` und
+  `npm run test:netlify-manifest` sind grün.
 
 ### Manuell / extern
 
@@ -391,7 +417,10 @@ und [Webhook-Signatur/Payload-Version](https://cal.com/docs/developing/guides/au
 - [ ] Die vier Kontaktfelder erscheinen erst nach den Bewertungsfragen; die
   Newsletter-Auswahl bleibt freiwillig.
 - [ ] Die sichtbare Auswertung stimmt mit dem serverseitig gespeicherten
-  deterministischen Ergebnis überein.
+  Ergebnis überein; Score und Sicherheitsanker bleiben auch bei KI-Vertiefung
+  exakt unverändert.
+- [ ] Der Deploy-Log bestätigt die erkannten Rate-Limits für `generate-questions`
+  und `submit-lead`; ein kontrollierter Grenztest liefert anschließend `429`.
 - [ ] Ergebnis-CTA öffnet den korrekten Marco-Cal-Link mit UTM und
   pseudonymer, signierter Referenz.
 - [ ] Notwendige-only erzeugt weder Meta-Pixel/CAPI noch Analytics-Events.
@@ -404,7 +433,8 @@ und [Webhook-Signatur/Payload-Version](https://cal.com/docs/developing/guides/au
 - [ ] Ein automatischer GET-Aufruf des Abmeldelinks verändert keine
   Einwilligung; POST und standardisiertes One-Click widerrufen idempotent.
 - [ ] Es gibt in UI, Payload, CRM-Write und Migration keinen Telefon- oder
-  Rückrufpfad und keinen OpenAI-Aufruf für den Readiness-Test.
+  Rückrufpfad; OpenRouter/OpenAI erhalten nachweislich keine Kontakt-,
+  Tracking-, Meta- oder Attributionsdaten.
 
 ## Rollback und Incident-Reaktion
 

@@ -1,19 +1,22 @@
 "use strict";
 
 const crypto = require("crypto");
-const { ASSESSMENT_VERSION, cleanText, getQuestion, scoreAssessment } = require("./_shared/assessment");
-const { ANALYTICS_CONSENT_TEXT, COOKIE_CONSENT_VERSION, MARKETING_CONSENT_TEXT, NEWSLETTER_CONSENT_TEXT, NEWSLETTER_CONSENT_VERSION, PRIVACY_VERSION } = require("./_shared/consents");
-const { normalizeClientIp, normalizeEmail } = require("./_shared/meta");
-const { buildDeterministicResult } = require("./_shared/result");
-const { getSupabaseAdmin } = require("./_shared/supabase");
-const { clientIp, evidenceIpHash, hasAllowedOrigin, isProduction, jsonResponse, privacyHmac, signBookingReference, signNewsletterToken } = require("./_shared/security");
-const { readSession } = require("./_shared/session");
+const { ASSESSMENT_VERSION, cleanText, getQuestion, scoreAdaptiveAssessment } = require("./assessment");
+const { sanitizeMetaObjectId, sanitizePlacement } = require("./attribution");
+const { AI_PROCESSING_VERSION, ANALYTICS_CONSENT_TEXT, COOKIE_CONSENT_VERSION, MARKETING_CONSENT_TEXT, NEWSLETTER_CONSENT_TEXT, NEWSLETTER_CONSENT_VERSION, PRIVACY_VERSION } = require("./consents");
+const { normalizeClientIp, normalizeEmail } = require("./meta");
+const { buildDeterministicResult } = require("./result");
+const { enhanceResultWithAI } = require("./ai-result");
+const { getSupabaseAdmin } = require("./supabase");
+const { clientIp, evidenceIpHash, hasAllowedOrigin, isProduction, jsonResponse, privacyHmac, signBookingReference, signNewsletterToken } = require("./security");
+const { readSession } = require("./session");
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const EMPLOYEE_BANDS = new Set(["solo", "1-5", "6-10", "11-20", "21-50", "51+"]);
 const ROLES = new Set(["inhaber", "geschaeftsfuehrung", "leitung", "mitarbeit", "beratung"]);
 const GOALS = new Set(["zeit", "wachstum", "qualitaet", "wissen", "klarheit"]);
+const ADAPTIVE_VERSION = "adaptive-v1";
 
 function sanitizeContact(contact) {
   const firstName = cleanText(contact?.firstName, 80);
@@ -87,10 +90,6 @@ function sanitizeAttribution(attribution, event, submissionId, marketingGranted)
       user_agent: "",
     };
   }
-  const safeLabel = (key, max = 180) => {
-    const value = take(key, max);
-    return value && /^[\p{L}\p{N} ._|{}-]+$/u.test(value) ? value : "";
-  };
   const source = take("utm_source", 80).toLowerCase();
   const medium = take("utm_medium", 80).toLowerCase();
   const campaign = take("utm_campaign", 120).toLowerCase();
@@ -113,10 +112,10 @@ function sanitizeAttribution(attribution, event, submissionId, marketingGranted)
     utm_campaign: ["ai_readiness_de_prospecting_v1", "meta_ai_readiness_de_prospecting_v1"].includes(campaign)
       ? "ai_readiness_de_prospecting_v1"
       : (campaign ? "other" : ""),
-    utm_id: safeLabel("utm_id", 120),
-    utm_content: safeLabel("utm_content", 180),
-    utm_term: safeLabel("utm_term", 120),
-    placement: /^(facebook|instagram|messenger|threads|audience_network)([._-][a-z0-9_-]+)*$/.test(placement) ? placement : (placement ? "other" : ""),
+    utm_id: sanitizeMetaObjectId(take("utm_id", 32)),
+    utm_content: sanitizeMetaObjectId(take("utm_content", 32)),
+    utm_term: sanitizeMetaObjectId(take("utm_term", 32)),
+    placement: sanitizePlacement(placement),
     fbclid: opaque("fbclid", 500),
     fbp: opaque("fbp", 255),
     fbc: opaque("fbc", 255),
@@ -151,12 +150,14 @@ function errorMessage(code) {
     privacy_notice_mismatch: "Die Datenschutzhinweise haben sich geändert. Bitte laden Sie die Seite neu.",
     newsletter_consent_version: "Die Newsletter-Auswahl ist veraltet. Bitte laden Sie die Seite neu.",
     tracking_consent_version: "Die Tracking-Auswahl ist veraltet. Bitte laden Sie die Seite neu und wählen Sie erneut.",
+    adaptive_version_mismatch: "Der adaptive Fragebogen wurde aktualisiert. Bitte starten Sie den Test neu.",
+    ai_processing_mismatch: "Der Hinweis zur KI-Verarbeitung wurde aktualisiert. Bitte starten Sie den Test neu.",
   };
   return map[code] || "Der Lead konnte nicht sicher gespeichert werden. Bitte prüfen Sie Ihre Angaben und versuchen Sie es erneut.";
 }
 
 exports.handler = async (event) => {
-  if (event.httpMethod === "OPTIONS") return { statusCode: 204, headers: { "Cache-Control": "no-store" }, body: "" };
+  if (event.httpMethod === "OPTIONS") return { statusCode: 204, headers: { "Cache-Control": "no-store" } };
   if (event.httpMethod !== "POST") return jsonResponse(405, { error: "Methode nicht erlaubt." });
   if (!hasAllowedOrigin(event)) return jsonResponse(403, { error: "Ursprung nicht erlaubt." });
   if (Buffer.byteLength(event.body || "", "utf8") > 65536) return jsonResponse(413, { error: "Anfrage zu groß." });
@@ -174,15 +175,19 @@ exports.handler = async (event) => {
     if (trackingPreviousDecisionId && !UUID_RE.test(trackingPreviousDecisionId)) return jsonResponse(400, { error: "Ungültige Consent-Entscheidung." });
 
     const profile = sanitizeProfile(payload.companyProfile);
+    if (payload.adaptiveVersion !== ADAPTIVE_VERSION) throw new Error("adaptive_version_mismatch");
+    if (payload.aiProcessing?.acknowledged !== true || payload.aiProcessing.version !== AI_PROCESSING_VERSION) throw new Error("ai_processing_mismatch");
     const answers = sanitizeAnswers(payload.answers, profile);
-    const baseline = scoreAssessment(answers, profile);
-    if (!baseline.complete) return jsonResponse(400, { error: "Bitte beantworten Sie alle Kernfragen." });
+    const baseline = scoreAdaptiveAssessment(answers, profile);
+    if (!baseline.complete) return jsonResponse(400, { error: "Bitte beantworten Sie alle acht Diagnosefragen." });
     const contact = sanitizeContact(payload.contact);
     const consents = sanitizeConsents(payload.consents);
     const attribution = sanitizeAttribution(payload.attribution, event, submissionId, consents.marketing.granted);
-    const detailedResult = buildDeterministicResult(baseline, profile);
+    const baseResult = buildDeterministicResult(baseline, profile, answers);
+    let detailedResult = baseResult;
 
     if (!isProduction()) {
+      detailedResult = await enhanceResultWithAI(baseResult, profile, answers);
       return jsonResponse(201, {
         accepted: true,
         preview: true,
@@ -242,6 +247,8 @@ exports.handler = async (event) => {
     let result = restored?.found === true ? restored : null;
     let trackingConsentResult = null;
     if (!result) {
+      detailedResult = await enhanceResultWithAI(baseResult, profile, answers);
+      rpcPayload.result = detailedResult;
       const { data: trackingConsentData, error: trackingConsentError } = await supabase.rpc("record_ai_readiness_tracking_consent_v1", {
         p_decision_id: submissionId,
         p_previous_decision_id: trackingPreviousDecisionId || null,

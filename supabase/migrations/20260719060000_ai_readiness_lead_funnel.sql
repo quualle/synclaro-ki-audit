@@ -1919,7 +1919,7 @@ security invoker
 set search_path = ''
 as $$
 declare
-  c_privacy_version constant text := 'privacy-ai-readiness-v2-2026-07-19';
+  c_privacy_version constant text := 'privacy-ai-readiness-v3-2026-07-19';
   c_newsletter_version constant text := 'newsletter-email-v1-2026-07-19';
   c_newsletter_text constant text := 'Ja, ich möchte regelmäßig praxistaugliche KI-Impulse, Einladungen und Angebote von Synclaro per E-Mail erhalten. Die Anmeldung wird per Double-Opt-in bestätigt; eine Abmeldung ist jederzeit möglich.';
   c_cookie_version constant text := 'cookie-v1-2026-07-18';
