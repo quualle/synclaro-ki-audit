@@ -9,7 +9,7 @@ if (typeof traceSupabaseClient !== "function") {
 export default withLambda(legacy.handler);
 
 export const config = {
-  path: "/.netlify/functions/submit-lead",
+  path: "/api/readiness-result",
   rateLimit: {
     windowLimit: 6,
     windowSize: 180,

@@ -4,6 +4,11 @@
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
   const API = "/.netlify/functions";
+  const READINESS_API = {
+    session: "/api/readiness-session",
+    question: "/api/readiness-question",
+    result: "/api/readiness-result",
+  };
   const CONSENT_STATE = window.SynclaroConsentState;
   const STATE_KEY = "synclaro_ai_readiness_state_v8";
   const CONSENT_KEY = "synclaro_ai_readiness_consent_v1";
@@ -821,7 +826,7 @@
       sessionReady = false;
       await configPromise;
       try {
-        const response = await fetch(`${API}/start-session`, {
+        const response = await fetch(READINESS_API.session, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ fresh: requestFresh }),
@@ -1031,7 +1036,7 @@
   }
 
   async function fetchAdaptiveQuestion(index, signal) {
-    const response = await fetch(`${API}/generate-questions`, {
+    const response = await fetch(READINESS_API.question, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       signal,
@@ -1447,7 +1452,7 @@
       },
     };
     try {
-      const response = await fetch(`${API}/submit-lead`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const response = await fetch(READINESS_API.result, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const result = await response.json().catch(() => ({}));
       if (!response.ok || !result.accepted) throw new Error(result.error || "Der Lead konnte nicht sicher gespeichert werden.");
       if (!result.assessmentId) {

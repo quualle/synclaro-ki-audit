@@ -4,7 +4,7 @@ import legacy from "./_shared/start-session-handler.js";
 export default withLambda(legacy.handler);
 
 export const config = {
-  path: "/.netlify/functions/start-session",
+  path: "/api/readiness-session",
   rateLimit: {
     windowLimit: 12,
     windowSize: 180,

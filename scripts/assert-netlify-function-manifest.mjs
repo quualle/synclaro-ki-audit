@@ -6,21 +6,21 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const EXPECTED = {
-  "start-session": 12,
-  "generate-questions": 20,
-  "submit-lead": 6,
+  "start-session": { path: "/api/readiness-session", windowLimit: 12 },
+  "generate-questions": { path: "/api/readiness-question", windowLimit: 20 },
+  "submit-lead": { path: "/api/readiness-result", windowLimit: 6 },
 };
 
 const manifest = JSON.parse(await readFile(new URL("../.netlify/functions/manifest.json", import.meta.url), "utf8"));
 const functions = new Map(manifest.functions.map((entry) => [entry.name, entry]));
 
-for (const [name, windowLimit] of Object.entries(EXPECTED)) {
+for (const [name, expected] of Object.entries(EXPECTED)) {
   const entry = functions.get(name);
   assert.ok(entry, `${name}: fehlt im Netlify-Manifest`);
   assert.equal(entry.buildData?.runtimeAPIVersion, 2, `${name}: läuft nicht auf Functions API v2`);
   assert.deepEqual(entry.routes, [{
-    pattern: `/.netlify/functions/${name}`,
-    literal: `/.netlify/functions/${name}`,
+    pattern: expected.path,
+    literal: expected.path,
     methods: [],
   }], `${name}: Route fehlt oder wurde verändert`);
   assert.deepEqual(entry.trafficRules, {
@@ -28,7 +28,7 @@ for (const [name, windowLimit] of Object.entries(EXPECTED)) {
       type: "rate_limit",
       config: {
         rateLimitConfig: {
-          windowLimit,
+          windowLimit: expected.windowLimit,
           windowSize: 180,
           algorithm: "sliding_window",
         },
@@ -50,7 +50,7 @@ try {
 
   const packagedEntry = path.join(isolatedDirectory, "netlify/functions/submit-lead.mjs");
   const submitLead = await import(pathToFileURL(packagedEntry).href);
-  const response = await submitLead.default(new Request("https://ki-check.synclaro.de/.netlify/functions/submit-lead", {
+  const response = await submitLead.default(new Request("https://ki-check.synclaro.de/api/readiness-result", {
     method: "POST",
     headers: {
       "content-type": "application/json",

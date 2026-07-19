@@ -195,6 +195,10 @@ test("Conversion-Gate, Formfelder und Ergebnis-CTAs bleiben transparent und barr
   assert.match(app, /GPT‑5\.5/);
   assert.match(app, /Kontaktdaten an OpenRouter/);
   assert.match(app, /new AbortController\(\)/);
+  assert.match(app, /session: "\/api\/readiness-session"/);
+  assert.match(app, /question: "\/api\/readiness-question"/);
+  assert.match(app, /result: "\/api\/readiness-result"/);
+  assert.doesNotMatch(app, /`\$\{API\}\/(?:start-session|generate-questions|submit-lead)`/);
   assert.match(app, /adaptiveRequestController\?\.abort\(\)/);
   assert.match(app, /generation !== adaptiveRequestGeneration/);
   assert.match(app, /function cancelAnswerAdvance\(\)/);

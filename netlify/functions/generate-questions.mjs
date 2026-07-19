@@ -4,7 +4,7 @@ import legacy from "./_shared/generate-questions-handler.js";
 export default withLambda(legacy.handler);
 
 export const config = {
-  path: "/.netlify/functions/generate-questions",
+  path: "/api/readiness-question",
   rateLimit: {
     windowLimit: 20,
     windowSize: 180,

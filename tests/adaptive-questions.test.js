@@ -225,7 +225,7 @@ test("aktivierter KI-Preview stellt eine Sitzung aus und schützt die bezahlten 
       importFunctionEntry("start-session"),
       importFunctionEntry("generate-questions"),
     ]);
-    const issued = await startEntry.default(new Request("https://preview.example/.netlify/functions/start-session", {
+    const issued = await startEntry.default(new Request("https://preview.example/api/readiness-session", {
       method: "POST",
       body: "{}",
     }), {});
@@ -233,7 +233,7 @@ test("aktivierter KI-Preview stellt eine Sitzung aus und schützt die bezahlten 
     assert.match(issued.headers.get("set-cookie"), /^synclaro_ai_session=/);
     assert.equal((await issued.json()).preview, true);
 
-    const unauthenticated = await questionsEntry.default(new Request("https://preview.example/.netlify/functions/generate-questions", {
+    const unauthenticated = await questionsEntry.default(new Request("https://preview.example/api/readiness-question", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ protocolVersion: "adaptive-v1", aiProcessing: { acknowledged: true, version: "ai-processing-v1-2026-07-19" }, companyProfile: PROFILE, previousAnswers: [], questionNumber: 1 }),
