@@ -356,6 +356,7 @@ test("Cal-Webhooks prüfen Signatur und extrahieren nur kurze Readiness-Referenz
   assert.equal(cal.validSignature(body, signature, "zu-kurz"), false);
   assert.equal(cal.bookingReferenceFromPayload({ responses: { readiness_ref: { value: "signed-ref" } } }), "signed-ref");
   assert.equal(cal.bookingReferenceFromPayload({ customInputs: { readiness_ref: "custom-ref" } }), "custom-ref");
+  assert.equal(cal.bookingReferenceFromPayload({ metadata: { readiness_ref: "metadata-ref" } }), "metadata-ref");
   assert.equal(cal.bookingReferenceFromPayload({ responses: { readiness_ref: { value: "x".repeat(801) } } }), "");
 });
 

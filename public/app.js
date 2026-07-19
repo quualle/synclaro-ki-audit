@@ -5,6 +5,7 @@
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
   const API = "/.netlify/functions";
   const CONSENT_STATE = window.SynclaroConsentState;
+  const HANDOFF = window.SynclaroReadinessHandoff;
   const STATE_KEY = "synclaro_ai_readiness_state_v8";
   const CONSENT_KEY = "synclaro_ai_readiness_consent_v1";
   const CONSENT_SUBJECT_KEY = "synclaro_ai_readiness_consent_subject_v1";
@@ -19,7 +20,7 @@
     analyticsConsent: { version: "cookie-v1-2026-07-18", text: "Analyse: Synclaro speichert pseudonyme Funnel-Ereignisse, um Nutzung und Abbrüche des AI Readiness Tests auszuwerten. Testantworten und Kontaktdaten werden dabei nicht als Ereigniseigenschaften gespeichert." },
     marketingConsent: { version: "cookie-v1-2026-07-18", text: "Marketing einschließlich Meta: Synclaro darf Meta Pixel und Conversions API einsetzen, um die Kampagne zu messen und Werbung zu personalisieren. Dabei können Online-Kennungen, Browser- und Gerätedaten sowie gehashte Kontaktdaten an Meta Platforms Ireland Limited übermittelt werden." },
     metaPixelId: "1497847851628194",
-    calendarUrl: "https://cal.com/marcoheer/ki-erstgespraech",
+    contactUrl: "https://synclaro.de/kontakt/",
     production: location.hostname === "ki-check.synclaro.de",
   };
   const DIMENSIONS = {
@@ -127,10 +128,29 @@
   const scrollMilestones = new Set();
   const sessionStartedAt = Date.now();
 
+  function currentContactHandoff() {
+    return HANDOFF?.buildContactHandoff({
+      contactUrl: config.contactUrl,
+      bookingReference: state.bookingReference,
+      marketingConsent: consent.marketing,
+      attribution,
+    }) || "https://synclaro.de/kontakt/?flow=ai-readiness";
+  }
+
+  function refreshContactHandoffLinks() {
+    const href = currentContactHandoff();
+    $$('[data-calendar-cta]').forEach((cta) => { cta.href = href; });
+  }
+
+  function handleContactHandoffClick(event) {
+    event.currentTarget.href = currentContactHandoff();
+    track("contact_handoff_clicked", { score: state.result?.scores?.total?.percent || 0 }, 19);
+  }
+
   function renderRuntimeConfig() {
     $("#analyticsConsentText").textContent = config.analyticsConsent.text;
     $("#marketingConsentText").textContent = config.marketingConsent.text;
-    $("#calendarCta").href = config.calendarUrl;
+    refreshContactHandoffLinks();
   }
 
   renderRuntimeConfig();
@@ -719,6 +739,7 @@
         capturedAt: new Date().toISOString(),
       };
     }
+    refreshContactHandoffLinks();
   }
 
   function openConsentSettings() {
@@ -1593,7 +1614,7 @@
       <div class="use-case-flow">${flow.map(([label, text]) => `<div><small>${esc(label)}</small><p>${esc(text)}</p></div>`).join("")}</div>
       <div class="use-case-meta"><p><small>Im Pilot messen</small><strong>${esc(item.metric)}</strong></p><p><small>Voraussetzung</small><strong>${esc(item.prerequisite)}</strong></p></div>
       ${status.explanation ? `<p class="use-case-readiness">${esc(status.explanation)}</p>` : ""}
-      ${index === 0 ? `<a class="button button-accent use-case-inline-cta" href="${esc(config.calendarUrl)}" data-calendar-cta>Diesen Anwendungsfall kostenlos mit Marco prüfen</a>` : ""}
+      ${index === 0 ? `<a class="button button-accent use-case-inline-cta" href="${esc(config.contactUrl)}" data-calendar-cta>Diesen Anwendungsfall kostenlos mit Marco prüfen</a>` : ""}
     </article>`;
   }
 
@@ -1665,13 +1686,8 @@
       newsletterNote.hidden = true;
       newsletterNote.replaceChildren();
     }
-    const calendar = new URL(config.calendarUrl);
-    calendar.searchParams.set("utm_source", "ki-readiness");
-    calendar.searchParams.set("utm_medium", "result");
-    calendar.searchParams.set("utm_campaign", "ai_readiness_result");
-    if (state.bookingReference) calendar.searchParams.set("readiness_ref", state.bookingReference);
-    $$('[data-calendar-cta]').forEach((cta) => { cta.href = calendar.toString(); });
-    $("#useCases").querySelectorAll("[data-calendar-cta]").forEach((cta) => cta.addEventListener("click", () => track("calendar_cta_clicked", { score: state.result?.scores?.total?.percent || 0 }, 19)));
+    refreshContactHandoffLinks();
+    $("#useCases").querySelectorAll("[data-calendar-cta]").forEach((cta) => cta.addEventListener("click", handleContactHandoffClick));
     window.scrollTo(0, 0);
     requestAnimationFrame(() => $("#resultTitle").focus({ preventScroll: true }));
     track("report_viewed", { score: totalScore, level: result.level }, 18);
@@ -1699,7 +1715,7 @@
     $("#closeResult").addEventListener("click", closeTest);
     $("#resultHomeLink").addEventListener("click", (event) => { event.preventDefault(); closeTest(); });
     $("#restartResult").addEventListener("click", restart);
-    $$('[data-calendar-cta]').forEach((cta) => cta.addEventListener("click", () => track("calendar_cta_clicked", { score: state.result?.scores?.total?.percent || 0 }, 19)));
+    $$('[data-calendar-cta]').forEach((cta) => cta.addEventListener("click", handleContactHandoffClick));
     $("#acceptAll").addEventListener("click", () => { void saveConsent(true, true); });
     $("#necessaryOnly").addEventListener("click", () => { void saveConsent(false, false); });
     $("#customizeConsent").addEventListener("click", openConsentSettings);

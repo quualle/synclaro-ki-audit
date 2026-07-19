@@ -19,6 +19,7 @@ const analyze = require("../netlify/functions/analyze")._test;
 const resultBuilder = require("../netlify/functions/_shared/result");
 const tracking = require("../netlify/functions/track-event")._test;
 const consentState = require("../public/consent-state");
+const handoff = require("../public/handoff");
 
 function answersWith(value) {
   return assessment.PHASES.flatMap((phase) => phase.questions)
@@ -200,6 +201,9 @@ test("Conversion-Gate, Formfelder und Ergebnis-CTAs bleiben transparent und barr
   assert.match(app, /function cancelAnswerAdvance\(\)/);
   assert.match(app, /other\.disabled = true/);
   assert.match(app, /generation !== answerAdvanceGeneration/);
+  assert.match(app, /function handleContactHandoffClick\(event\)/);
+  assert.match(app, /event\.currentTarget\.href = currentContactHandoff\(\)/);
+  assert.ok((app.match(/refreshContactHandoffLinks\(\);/g) || []).length >= 3);
   assert.match(app, /\["assessmentApp", "fullResult"\]\.includes\(layer\.id\)/);
   assert.match(app, /\$\("#closeResult"\)\.addEventListener\("click", closeTest\)/);
   assert.match(app, /\$\("#resultHomeLink"\)\.addEventListener/);
@@ -366,6 +370,55 @@ test("ausgeglichene Teilwerte erfinden weder Stärke noch Fokus", () => {
 test("Tracking-Properties verwerfen Antworten, Kontaktdaten und freie Kampagnenwerte", () => {
   const result = tracking.sanitizeProperties({ score: 47, phase: "2", email: "ada@example.com", phone: "+49170", answers: [{ answer: "x" }], utm_campaign: "ada@example.com", placement: "instagram_stories", preview: false });
   assert.deepEqual(result, { score: 47, phase: "2", utm_campaign: "other", placement: "instagram_stories", preview: false });
+});
+
+test("Readiness-Handoff trägt nur signierte Zuordnung und freigegebene Meta-Kampagnenwerte", () => {
+  const reference = `${"a".repeat(40)}.${"b".repeat(40)}`;
+  const withoutMarketing = new URL(handoff.buildContactHandoff({
+    contactUrl: "https://synclaro.de/kontakt/",
+    bookingReference: reference,
+    marketingConsent: false,
+    attribution: {
+      utm_source: "meta", utm_medium: "paid_social", utm_campaign: "ai_readiness_de_prospecting_v1",
+      utm_content: "STATIC V2 | Anzeige 01", placement: "instagram_stories", fbclid: "secret-click-id",
+    },
+  }));
+  assert.equal(withoutMarketing.searchParams.get("flow"), "ai-readiness");
+  assert.equal(withoutMarketing.searchParams.get("readiness_ref"), reference);
+  assert.equal(withoutMarketing.searchParams.has("utm_source"), false);
+  assert.equal(withoutMarketing.searchParams.has("fbclid"), false);
+
+  const withMarketing = new URL(handoff.buildContactHandoff({
+    contactUrl: "https://evil.example/phish",
+    bookingReference: reference,
+    marketingConsent: true,
+    attribution: {
+      utm_source: "meta", utm_medium: "paid_social", utm_campaign: "meta_ai_readiness_de_prospecting_v1",
+      utm_content: "STATIC V2 | Anzeige 01", placement: "instagram_stories", fbclid: "secret-click-id",
+    },
+  }));
+  assert.equal(withMarketing.origin, "https://synclaro.de");
+  assert.equal(withMarketing.pathname, "/kontakt/");
+  assert.equal(withMarketing.searchParams.get("utm_source"), "meta");
+  assert.equal(withMarketing.searchParams.get("utm_medium"), "paid_social");
+  assert.equal(withMarketing.searchParams.get("utm_campaign"), "ai_readiness_de_prospecting_v1");
+  assert.equal(withMarketing.searchParams.get("utm_content"), "STATIC V2 | Anzeige 01");
+  assert.equal(withMarketing.searchParams.get("placement"), "instagram_stories");
+  assert.equal(withMarketing.searchParams.has("fbclid"), false);
+});
+
+test("Readiness-Handoff verwirft PII, unbekannte Kampagnen und ungültige Referenzen", () => {
+  const url = new URL(handoff.buildContactHandoff({
+    bookingReference: "not-signed",
+    marketingConsent: true,
+    attribution: {
+      utm_source: "meta", utm_medium: "paid_social", utm_campaign: "ada@example.com",
+      utm_content: "ada@example.com", placement: "email_feed",
+    },
+  }));
+  assert.equal(url.searchParams.has("readiness_ref"), false);
+  assert.equal(url.searchParams.has("utm_source"), false);
+  assert.equal(url.toString().includes("ada"), false);
 });
 
 test("Analytics-Events benötigen eine aktuelle, versionierte Einwilligung", () => {

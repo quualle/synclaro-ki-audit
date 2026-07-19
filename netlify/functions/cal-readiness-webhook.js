@@ -22,7 +22,8 @@ function bookingReferenceFromPayload(payload = {}) {
   const candidate = payload.responses?.readiness_ref?.value
     ?? payload.customInputs?.readiness_ref
     ?? payload.userFieldsResponses?.readiness_ref?.value
-    ?? payload.userFieldsResponses?.readiness_ref;
+    ?? payload.userFieldsResponses?.readiness_ref
+    ?? payload.metadata?.readiness_ref;
   return typeof candidate === "string" && candidate.length <= 800 ? candidate : "";
 }
 

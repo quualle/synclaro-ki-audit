@@ -14,7 +14,7 @@ exports.handler = async (event) => {
     analyticsConsent: { version: COOKIE_CONSENT_VERSION, text: ANALYTICS_CONSENT_TEXT },
     marketingConsent: { version: COOKIE_CONSENT_VERSION, text: MARKETING_CONSENT_TEXT },
     metaPixelId: process.env.META_PIXEL_ID || "1497847851628194",
-    calendarUrl: "https://cal.com/marcoheer/ki-erstgespraech",
+    contactUrl: "https://synclaro.de/kontakt/",
     production: isProduction(),
   });
 };

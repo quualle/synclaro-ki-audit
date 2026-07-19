@@ -17,7 +17,7 @@ const EVENTS = new Set([
   "lead_form_validation_error",
   "lead_submitted",
   "report_viewed",
-  "calendar_cta_clicked",
+  "contact_handoff_clicked",
   "consent_updated",
   "scroll_depth",
   "session_duration",
