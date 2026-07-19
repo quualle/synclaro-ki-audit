@@ -147,7 +147,7 @@ Vorhandene, lokal geprüfte statische Varianten:
   `/Users/marcoheer/Desktop/Synclaro/werbemittel/ai-readiness/synclaro-ai-readiness-meta-9x16-v2.svg`
 
 Creative-Versprechen: „Wie bereit ist Ihr Unternehmen für echten KI-Nutzen?“,
-„12 präzise Fragen“, „ca. 4 Min.“, „konkrete nächste Schritte“, kostenlos,
+„8 adaptive Fragen“, „ca. 4 Min.“, „konkrete nächste Schritte“, kostenlos,
 für Selbstständige, Inhaber und kleine Unternehmen mit 0–20 Mitarbeitenden,
 branchenoffen. Das entspricht dem Funnelvertrag.
 
@@ -202,7 +202,7 @@ Nicht nur CPM oder Reichweite bewerten. Die entscheidende Kette lautet:
 
 1. Ausgehende Klickrate und Landingpage-Aufrufe;
 2. Startquote des Tests;
-3. Abschlussquote der zwölf Kernfragen;
+3. Abschlussquote der acht adaptiven Kernfragen;
 4. Quote von Kontaktphase zu gespeichertem, ICP-passendem `Lead`;
 5. Kosten pro `Lead`, getrennt nach Solo / 1–5 / 6–10 / 11–20;
 6. freiwillige Newsletter-Auswahl und tatsächliche DOI-Bestätigung;

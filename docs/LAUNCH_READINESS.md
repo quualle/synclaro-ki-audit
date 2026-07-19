@@ -103,23 +103,28 @@ Send erhoben:
 | Telegram | Lead-Token und Zielchat sind zwar belegt, aber formal ungültig; die Bot-API lehnt den Zugang ab. `TELEGRAM_TRANSFER_APPROVED` bleibt fail-closed. Andere vorhandene Bots sind für andere Zwecke dokumentiert. | Bot-Identität und Zielchat ausdrücklich festlegen; keinen bestehenden Bot stillschweigend umwidmen. Danach PII-freien Test senden. |
 | Meta | Pixel-ID und Graph-Version vorhanden; `META_CAPI_ACCESS_TOKEN` und temporärer Test-Event-Code fehlen | CAPI-Zugang erst nach Freigabe sicher erzeugen/hinterlegen, dann dedupliziertes `Lead`-Testevent prüfen. |
 | Cal.com | Sämtliche `CAL_READINESS_*`-Variablen fehlen; die Admin-Sitzung war beim letzten UI-Audit ausgeloggt | Nach Login das öffentliche Event und den event-spezifischen Webhook erst im freigegebenen Aktivierungsfenster ändern. |
-| OpenRouter | Dokumentierter Zugang vorhanden und read-only erfolgreich authentifiziert | Externe QA benötigt keine Mitwirkung von Marco. |
+| OpenRouter | Dokumentierter Zugang vorhanden und read-only erfolgreich authentifiziert; adaptiver Laufzeitpfad ist ZDR-gebunden, fail-safe und mit Sessionpflicht sowie Netlify-Limits von 20 Fragen- und 6 Ergebnisaufrufen je 180 Sekunden pro IP/Domain geschützt | Nur im Deploy-Preview-Kontext aktivieren, echten Acht-Fragen-Lauf prüfen und vor Production zusätzlich eine harte Provider-Budgetgrenze sowie die rechtliche Transferfreigabe dokumentieren. |
 
 ## Verbindliches Zielbild
 
 - Vier kurze Unternehmensfragen: Größe, Rolle, Hauptziel und Branche.
-- Zwölf feste, gewichtete Kernfragen in drei Phasen sowie eine optionale offene
-  Hebelfrage. Der Test ist branchenoffen und formuliert Solo-Selbstständige
-  ohne Team-Unterstellung.
+- Acht adaptive Kernfragen aus einem festen Katalog sowie eine optionale offene
+  Hebelfrage. GPT-5.5 wählt die nächste Frage und ergänzt einen Branchenkontext;
+  Frage, Hilfe, Antworttexte, Reihenfolge und Werte bleiben kanonisch. Der
+  Server erzwingt genau zwei Messanker je Dimension. Der Test ist
+  branchenoffen und formuliert Solo-Selbstständige ohne Team-Unterstellung.
 - Danach vier einzelne Kontakt-Schritte: Vorname, Nachname,
   Unternehmen/selbstständige Tätigkeit und E-Mail-Adresse.
 - **Keine Telefonnummer, kein Rückruf-Consent, kein Kaltanruf und keine
   automatische Kontaktaufgabe.** Ein CRM-Eintrag ist keine Werbe- oder
   Kontaktierlaubnis.
-- Der Score, die vier Teilwerte, der größte Hebel, drei Empfehlungen und der
-  90-Tage-Fahrplan entstehen deterministisch aus der versionierten
-  Bewertungslogik. Der Readiness-Test sendet weder Antworten noch Kontaktdaten
-  an OpenAI; der frühere Analyse-Endpunkt antwortet dauerhaft mit HTTP 410.
+- Score, vier Teilwerte und Reifegrad entstehen deterministisch aus der
+  versionierten Bewertungslogik. GPT-5.5 vertieft anschließend die
+  sprachliche Einordnung und den priorisierten ersten von drei bereits kuratierten Anwendungsfällen, darf aber
+  weder Score noch Status, Messgröße, Voraussetzung oder menschliche Freigabe
+  verändern. An OpenRouter/OpenAI gehen nur bereinigtes Unternehmensprofil und
+  kanonische Testantworten; niemals Kontakt-, Tracking-, Meta- oder
+  Attributionsdaten. Der frühere separate Analyse-Endpunkt bleibt HTTP 410.
 - Primäre gewünschte Folgewirkung: Nach dem vollständigen Ergebnis bucht die
   Person selbst und bewusst eine kostenlose KI-Potenzialanalyse mit Marco.
 - Sekundäre Folgewirkung: freiwillige E-Mail-Nurture-Strecke nach separater
@@ -135,7 +140,7 @@ Send erhoben:
 
 | Auslöser | Speicherung / Zustellung | Harte Bedingung |
 |---|---|---|
-| Auswertung angefordert | Kontakt, Assessment, Antworten, deterministisches Ergebnis und CRM-Ereignis werden atomar über `submit_ai_readiness_lead_v2` geschrieben. Eine interne E-Mail ohne kopierte Kontaktdaten wird in die Outbox gestellt. | Gültige Sitzung, vollständige Kernfragen, Datenschutzhinweis bestätigt und aktueller Tracking-Entscheid. |
+| Auswertung angefordert | Kontakt, Assessment, Antworten, fester Score und – bei erfolgreichem Modellaufruf – KI-vertiefte Advisory-Texte werden atomar über `submit_ai_readiness_lead_v2` geschrieben. Bei Providerfehler wird das vollständige deterministische Ergebnis gespeichert. Eine interne E-Mail ohne kopierte Kontaktdaten wird in die Outbox gestellt. | Gültige Sitzung, acht vollständige Kernfragen mit zwei Messankern je Dimension, aktueller KI-/Datenschutzhinweis und aktueller Tracking-Entscheid. |
 | Newsletter freiwillig ausgewählt | Eine append-only CRM-Marketing-Consent-Zeile wird zunächst als DOI-pending angelegt. Die Bestätigungs-E-Mail läuft über Resend und bleibt wie die spätere Mehrwert-Mail an den im Consent-Nachweis gespeicherten E-Mail-Snapshot gebunden; spätere CRM-Adressänderungen führen nicht zu einem Empfängerwechsel. Pending-Einträge erscheinen nicht in `v_email_marketing_list`. Bereits aktive historische Consents bleiben aktiv. | Exakter versionierter Einwilligungstext; Link und Bestätigungsseite sind signiert und 24 Stunden gültig. Das Ergebnis weist sichtbar auf Postfach und Spam-Ordner hin. |
 | DOI-Seite per GET geöffnet | Der Token wird nur geprüft und eine noindex-Bestätigungsseite angezeigt. | Kein CRM-/Consent-Write; automatische Mail-Scanner-Aufrufe dürfen nichts aktivieren. |
 | DOI-Button bewusst per POST bestätigt | Die bestehende Consent-Zeile und das Assessment werden idempotent auf bestätigt gesetzt; erst dann ist der neue Kontakt in der aktiven E-Mail-Liste. Genau eine consent-gebundene Mehrwert-Mail wird über die Outbox vorgemerkt. | Gültige Signatur, passende Assessment-/Submission-ID, Consent nicht widerrufen. Deploy Previews leiten ohne Datenbankzugriff auf eine eindeutige Preview-Seite um. |
@@ -292,12 +297,14 @@ Meta- oder Supabase-Writes.
 | `CAL_READINESS_EVENT_TYPE_ID` | Für Booking-Tracking | Numerische ID ausschließlich des Readiness-Events. |
 | `CAL_READINESS_EVENT_TYPE_SLUG` | Für Booking-Tracking | Explizit `ki-erstgespraech` setzen, auch wenn dies der Code-Default ist. |
 | `CAL_READINESS_ORGANIZER_EMAIL` | Für Booking-Tracking | Exakte, normalisierte Organizer-E-Mail des freigegebenen Events. |
+| `OPENROUTER_API_KEY` | Für adaptive Fragen/Auswertung | Nur serverseitig und zunächst ausschließlich im Deploy-Preview-Kontext. Vor Production rotieren beziehungsweise mit Budgetgrenze absichern. |
+| `AI_ADAPTIVE_ENABLED` | Für adaptive Fragen/Auswertung | Muss im freigegebenen Kontext exakt `true` sein; andernfalls nutzt der Test die sichere Basisauswertung. |
+| `OPENROUTER_ADAPTIVE_MODEL` | Empfohlen | Explizit `openai/gpt-5.5`; im anonymen Preview-Test war es deutlich latenzstabiler als Sol. Terra wird derzeit von OpenRouter unter der verpflichtenden ZDR-Richtlinie nicht geroutet. |
 
 `CONTEXT` wird von Netlify gesetzt. `OPENAI_API_KEY` und `SUPABASE_ANON_KEY`
 werden von anderen, älteren Premium-/Kampagnenfunktionen im Repository genutzt,
-aber nicht vom neuen KI-Readiness-Leadpfad. Ihre Existenz darf nicht als
-Readiness-Abhängigkeit oder als Freigabe für externe KI-Verarbeitung verstanden
-werden.
+aber nicht vom adaptiven KI-Readiness-Leadpfad. Ihre Existenz darf nicht als
+Freigabe für diesen externen KI-Verarbeitungspfad verstanden werden.
 
 ## Exakte Cal.com-Konfiguration
 
@@ -375,7 +382,10 @@ und [Webhook-Signatur/Payload-Version](https://cal.com/docs/developing/guides/au
 
 - [x] `npm run check` ist grün. Der Befehl umfasst Node-Tests, lokale
   PostgreSQL-Migration-/Integrationstests und `npm audit --audit-level=high`.
-- [x] Testabdeckung bestätigt mindestens: deterministischer Score, Solo-Copy,
+- [x] Testabdeckung bestätigt mindestens: deterministischer Score,
+  adaptive Dimensionsabdeckung, unveränderliche Scoringanker,
+  Abbruch veralteter Frage-Requests, OpenRouter-ZDR/Structured-Output,
+  Modell-Fallback ohne Leadverlust, Ausschluss von Kontaktdaten aus dem Modellprompt, Solo-Copy,
   Pflichtfelder ohne Telefon, versionierte Consent-Texte, deaktivierter
   Analyse-Endpunkt, Attribution-Minimierung, Session-/Origin-Sicherheit,
   PII-freies Telegram, fail-closed Transfergate, Meta-Deduplizierung,
@@ -391,7 +401,10 @@ und [Webhook-Signatur/Payload-Version](https://cal.com/docs/developing/guides/au
 - [ ] Die vier Kontaktfelder erscheinen erst nach den Bewertungsfragen; die
   Newsletter-Auswahl bleibt freiwillig.
 - [ ] Die sichtbare Auswertung stimmt mit dem serverseitig gespeicherten
-  deterministischen Ergebnis überein.
+  Ergebnis überein; Score und Sicherheitsanker bleiben auch bei KI-Vertiefung
+  exakt unverändert.
+- [ ] Der Deploy-Log bestätigt die erkannten Rate-Limits für `generate-questions`
+  und `submit-lead`; ein kontrollierter Grenztest liefert anschließend `429`.
 - [ ] Ergebnis-CTA öffnet den korrekten Marco-Cal-Link mit UTM und
   pseudonymer, signierter Referenz.
 - [ ] Notwendige-only erzeugt weder Meta-Pixel/CAPI noch Analytics-Events.
@@ -404,7 +417,8 @@ und [Webhook-Signatur/Payload-Version](https://cal.com/docs/developing/guides/au
 - [ ] Ein automatischer GET-Aufruf des Abmeldelinks verändert keine
   Einwilligung; POST und standardisiertes One-Click widerrufen idempotent.
 - [ ] Es gibt in UI, Payload, CRM-Write und Migration keinen Telefon- oder
-  Rückrufpfad und keinen OpenAI-Aufruf für den Readiness-Test.
+  Rückrufpfad; OpenRouter/OpenAI erhalten nachweislich keine Kontakt-,
+  Tracking-, Meta- oder Attributionsdaten.
 
 ## Rollback und Incident-Reaktion
 

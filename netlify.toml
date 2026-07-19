@@ -9,10 +9,10 @@
   timeout = 60
 
 [functions."generate-questions"]
-  timeout = 10
+  timeout = 15
 
 [functions."submit-lead"]
-  timeout = 30
+  timeout = 45
 
 [functions."process-lead-outbox"]
   schedule = "*/2 * * * *"

@@ -130,9 +130,16 @@ test("ein idempotenter Lead-Retry bindet den Kalender-Verweis an das bereits ges
   const submit = require(submitPath);
 
   try {
-    const answers = assessment.PHASES.flatMap((phase) => phase.questions)
-      .filter((question) => question.dimension)
-      .map((question) => ({ questionId: question.id, answer: "2" }));
+    const answers = [
+      "prozess_standardisierung",
+      "wissen_verteilung",
+      "ki_nutzung",
+      "verantwortung",
+      "daten_zugriff",
+      "team_digital",
+      "ki_leitplanken",
+      "erfolgsmessung",
+    ].map((questionId) => ({ questionId, answer: "2" }));
     const response = await submit.handler({
       httpMethod: "POST",
       headers: {
@@ -148,6 +155,8 @@ test("ein idempotenter Lead-Retry bindet den Kalender-Verweis an das bereits ges
         trackingPreviousDecisionId: "",
         companyProfile: { branche: "Beratung", mitarbeiter: "solo", rolle: "inhaber", hauptziel: "zeit" },
         answers,
+        adaptiveVersion: "adaptive-v1",
+        aiProcessing: { acknowledged: true, version: "ai-processing-v1-2026-07-19" },
         contact: { firstName: "Ada", lastName: "Lovelace", company: "Analytical", email: "ada@example.com" },
         consents: {
           privacyNotice: { acknowledged: true, version: consents.PRIVACY_VERSION },

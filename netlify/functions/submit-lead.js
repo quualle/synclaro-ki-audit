@@ -1,10 +1,11 @@
 "use strict";
 
 const crypto = require("crypto");
-const { ASSESSMENT_VERSION, cleanText, getQuestion, scoreAssessment } = require("./_shared/assessment");
-const { ANALYTICS_CONSENT_TEXT, COOKIE_CONSENT_VERSION, MARKETING_CONSENT_TEXT, NEWSLETTER_CONSENT_TEXT, NEWSLETTER_CONSENT_VERSION, PRIVACY_VERSION } = require("./_shared/consents");
+const { ASSESSMENT_VERSION, cleanText, getQuestion, scoreAdaptiveAssessment } = require("./_shared/assessment");
+const { AI_PROCESSING_VERSION, ANALYTICS_CONSENT_TEXT, COOKIE_CONSENT_VERSION, MARKETING_CONSENT_TEXT, NEWSLETTER_CONSENT_TEXT, NEWSLETTER_CONSENT_VERSION, PRIVACY_VERSION } = require("./_shared/consents");
 const { normalizeClientIp, normalizeEmail } = require("./_shared/meta");
 const { buildDeterministicResult } = require("./_shared/result");
+const { enhanceResultWithAI } = require("./_shared/ai-result");
 const { getSupabaseAdmin } = require("./_shared/supabase");
 const { clientIp, evidenceIpHash, hasAllowedOrigin, isProduction, jsonResponse, privacyHmac, signBookingReference, signNewsletterToken } = require("./_shared/security");
 const { readSession } = require("./_shared/session");
@@ -14,6 +15,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const EMPLOYEE_BANDS = new Set(["solo", "1-5", "6-10", "11-20", "21-50", "51+"]);
 const ROLES = new Set(["inhaber", "geschaeftsfuehrung", "leitung", "mitarbeit", "beratung"]);
 const GOALS = new Set(["zeit", "wachstum", "qualitaet", "wissen", "klarheit"]);
+const ADAPTIVE_VERSION = "adaptive-v1";
 
 function sanitizeContact(contact) {
   const firstName = cleanText(contact?.firstName, 80);
@@ -151,6 +153,8 @@ function errorMessage(code) {
     privacy_notice_mismatch: "Die Datenschutzhinweise haben sich geändert. Bitte laden Sie die Seite neu.",
     newsletter_consent_version: "Die Newsletter-Auswahl ist veraltet. Bitte laden Sie die Seite neu.",
     tracking_consent_version: "Die Tracking-Auswahl ist veraltet. Bitte laden Sie die Seite neu und wählen Sie erneut.",
+    adaptive_version_mismatch: "Der adaptive Fragebogen wurde aktualisiert. Bitte starten Sie den Test neu.",
+    ai_processing_mismatch: "Der Hinweis zur KI-Verarbeitung wurde aktualisiert. Bitte starten Sie den Test neu.",
   };
   return map[code] || "Der Lead konnte nicht sicher gespeichert werden. Bitte prüfen Sie Ihre Angaben und versuchen Sie es erneut.";
 }
@@ -174,15 +178,19 @@ exports.handler = async (event) => {
     if (trackingPreviousDecisionId && !UUID_RE.test(trackingPreviousDecisionId)) return jsonResponse(400, { error: "Ungültige Consent-Entscheidung." });
 
     const profile = sanitizeProfile(payload.companyProfile);
+    if (payload.adaptiveVersion !== ADAPTIVE_VERSION) throw new Error("adaptive_version_mismatch");
+    if (payload.aiProcessing?.acknowledged !== true || payload.aiProcessing.version !== AI_PROCESSING_VERSION) throw new Error("ai_processing_mismatch");
     const answers = sanitizeAnswers(payload.answers, profile);
-    const baseline = scoreAssessment(answers, profile);
-    if (!baseline.complete) return jsonResponse(400, { error: "Bitte beantworten Sie alle Kernfragen." });
+    const baseline = scoreAdaptiveAssessment(answers, profile);
+    if (!baseline.complete) return jsonResponse(400, { error: "Bitte beantworten Sie alle acht Diagnosefragen." });
     const contact = sanitizeContact(payload.contact);
     const consents = sanitizeConsents(payload.consents);
     const attribution = sanitizeAttribution(payload.attribution, event, submissionId, consents.marketing.granted);
-    const detailedResult = buildDeterministicResult(baseline, profile, answers);
+    const baseResult = buildDeterministicResult(baseline, profile, answers);
+    let detailedResult = baseResult;
 
     if (!isProduction()) {
+      detailedResult = await enhanceResultWithAI(baseResult, profile, answers);
       return jsonResponse(201, {
         accepted: true,
         preview: true,
@@ -242,6 +250,8 @@ exports.handler = async (event) => {
     let result = restored?.found === true ? restored : null;
     let trackingConsentResult = null;
     if (!result) {
+      detailedResult = await enhanceResultWithAI(baseResult, profile, answers);
+      rpcPayload.result = detailedResult;
       const { data: trackingConsentData, error: trackingConsentError } = await supabase.rpc("record_ai_readiness_tracking_consent_v1", {
         p_decision_id: submissionId,
         p_previous_decision_id: trackingPreviousDecisionId || null,
@@ -305,6 +315,15 @@ exports.handler = async (event) => {
     console.error("[submit-lead] rejected", /^[a-z_]+$/.test(code) ? code : error?.name || "unknown");
     return jsonResponse(400, { error: errorMessage(code) });
   }
+};
+
+exports.config = {
+  path: "/.netlify/functions/submit-lead",
+  rateLimit: {
+    windowLimit: 6,
+    windowSize: 180,
+    aggregateBy: ["ip", "domain"],
+  },
 };
 
 module.exports._test = {

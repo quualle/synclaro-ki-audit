@@ -66,7 +66,7 @@ as $$
     ),
     'consents', pg_catalog.jsonb_build_object(
       'privacyNotice', pg_catalog.jsonb_build_object(
-        'acknowledged', true, 'version', 'privacy-ai-readiness-v2-2026-07-19'
+        'acknowledged', true, 'version', 'privacy-ai-readiness-v3-2026-07-19'
       ),
       'newsletter', pg_catalog.jsonb_build_object(
         'granted', p_newsletter,
@@ -77,8 +77,8 @@ as $$
       'marketing', pg_catalog.jsonb_build_object('granted', p_marketing, 'version', 'cookie-v1-2026-07-18'),
       'evidence', pg_catalog.jsonb_build_object('ipHash', pg_catalog.repeat('e', 64), 'userAgent', 'Integration Test')
     ),
-    'assessment_version', '2026-07-19.v3',
-    'privacy_version', 'privacy-ai-readiness-v2-2026-07-19',
+    'assessment_version', '2026-07-19.v5',
+    'privacy_version', 'privacy-ai-readiness-v3-2026-07-19',
     'newsletter_confirmation_token', case when p_newsletter then '2000000000.testsignature' else null end,
     'delivery_context', case when p_marketing then pg_catalog.jsonb_build_object('clientIpAddress', '203.0.113.10') else '{}'::jsonb end
   );

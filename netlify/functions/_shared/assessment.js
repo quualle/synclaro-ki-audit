@@ -1,6 +1,8 @@
 "use strict";
 
-const ASSESSMENT_VERSION = "2026-07-19.v4";
+const ASSESSMENT_VERSION = "2026-07-19.v5";
+const ADAPTIVE_CORE_COUNT = 8;
+const ADAPTIVE_QUESTIONS_PER_DIMENSION = 2;
 
 const DIMENSIONS = {
   prozesse_daten: {
@@ -317,6 +319,52 @@ function scoreAssessment(answers, profile = {}) {
   };
 }
 
+function scoreAdaptiveAssessment(answers, profile = {}) {
+  const lookup = answerMap(answers);
+  const buckets = Object.fromEntries(Object.keys(DIMENSIONS).map((key) => [key, []]));
+  const answeredQuestionIds = [];
+
+  for (const [id, question] of QUESTION_BY_ID.entries()) {
+    if (!question.dimension) continue;
+    const raw = Number(lookup.get(id)?.answer);
+    if (!Number.isFinite(raw) || raw < 1 || raw > 4) continue;
+    buckets[question.dimension].push(((raw - 1) / 3) * 100);
+    answeredQuestionIds.push(id);
+  }
+
+  const coverage = Object.fromEntries(Object.entries(buckets).map(([key, values]) => [key, values.length]));
+  const complete = answeredQuestionIds.length === ADAPTIVE_CORE_COUNT
+    && Object.values(coverage).every((count) => count === ADAPTIVE_QUESTIONS_PER_DIMENSION);
+  const dimensions = {};
+  let weighted = 0;
+  let usedWeight = 0;
+  for (const [key, config] of Object.entries(DIMENSIONS)) {
+    const values = buckets[key];
+    const percent = values.length
+      ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length)
+      : 0;
+    dimensions[key] = { percent, label: config.label, short: config.short };
+    if (values.length) {
+      weighted += percent * config.weight;
+      usedWeight += config.weight;
+    }
+  }
+
+  const total = usedWeight ? Math.round(weighted / usedWeight) : 0;
+  const level = levelFor(total);
+  return {
+    assessmentVersion: ASSESSMENT_VERSION,
+    adaptiveVersion: "adaptive-v1",
+    scores: { ...dimensions, total: { percent: clamp(total, 0, 100) } },
+    level: level.label,
+    levelKey: level.key,
+    timePotential: timePotential(lookup, cleanText(profile.mitarbeiter, 20)),
+    complete,
+    answeredQuestionIds,
+    coverage,
+  };
+}
+
 function phaseInsight(stepNumber, previousAnswers, profile = {}) {
   const lookup = answerMap(previousAnswers);
   if (stepNumber === 1) {
@@ -381,6 +429,8 @@ function publicQuestionList() {
 }
 
 module.exports = {
+  ADAPTIVE_CORE_COUNT,
+  ADAPTIVE_QUESTIONS_PER_DIMENSION,
   ASSESSMENT_VERSION,
   DIMENSIONS,
   PHASES,
@@ -389,5 +439,6 @@ module.exports = {
   getPhase,
   getQuestion,
   publicQuestionList,
+  scoreAdaptiveAssessment,
   scoreAssessment,
 };

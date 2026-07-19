@@ -1,7 +1,7 @@
 {
   "name": "synclaro-ki-audit",
   "version": "1.0.0",
-  "description": "Branchenoffener Synclaro AI-Readiness-Test mit deterministischem Score und sicherer Lead-Strecke",
+  "description": "Branchenoffener Synclaro AI-Readiness-Test mit adaptiven Fragen, festem Score und sicherer Lead-Strecke",
   "private": true,
   "scripts": {
     "test": "node --test tests/*.test.js",

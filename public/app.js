@@ -5,15 +5,15 @@
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
   const API = "/.netlify/functions";
   const CONSENT_STATE = window.SynclaroConsentState;
-  const STATE_KEY = "synclaro_ai_readiness_state_v7";
+  const STATE_KEY = "synclaro_ai_readiness_state_v8";
   const CONSENT_KEY = "synclaro_ai_readiness_consent_v1";
   const CONSENT_SUBJECT_KEY = "synclaro_ai_readiness_consent_subject_v1";
   const ATTRIBUTION_KEY = "synclaro_ai_readiness_attribution_v1";
   const CONSENT_MAX_AGE_MS = 180 * 24 * 60 * 60 * 1000;
   const SESSION_MAX_AGE_MS = 2 * 60 * 60 * 1000;
   const DEFAULT_CONFIG = {
-    assessmentVersion: "2026-07-19.v4",
-    privacyVersion: "privacy-ai-readiness-v2-2026-07-19",
+    assessmentVersion: "2026-07-19.v5",
+    privacyVersion: "privacy-ai-readiness-v3-2026-07-19",
     cookieConsentVersion: "cookie-v1-2026-07-18",
     newsletterConsent: { version: "newsletter-email-v1-2026-07-19", text: "Ja, ich möchte regelmäßig praxistaugliche KI-Impulse, Einladungen und Angebote von Synclaro per E-Mail erhalten. Die Anmeldung wird per Double-Opt-in bestätigt; eine Abmeldung ist jederzeit möglich." },
     analyticsConsent: { version: "cookie-v1-2026-07-18", text: "Analyse: Synclaro speichert pseudonyme Funnel-Ereignisse, um Nutzung und Abbrüche des AI Readiness Tests auszuwerten. Testantworten und Kontaktdaten werden dabei nicht als Ereigniseigenschaften gespeichert." },
@@ -85,9 +85,19 @@
     { id: "company", label: "Für welches Unternehmen machen Sie den Test?", autocomplete: "organization", maxlength: 160, error: "Bitte nennen Sie Ihr Unternehmen oder Ihre selbstständige Tätigkeit." },
     { id: "email", label: "Welche E-Mail-Adresse gehört zu Ihrer Auswertung?", autocomplete: "email", maxlength: 254, type: "email", inputmode: "email", error: "Bitte geben Sie eine gültige E-Mail-Adresse ein." },
   ];
-  const CORE_QUESTION_COUNT = 12;
+  const ADAPTIVE_VERSION = "adaptive-v1";
+  const AI_PROCESSING_VERSION = "ai-processing-v1-2026-07-19";
+  const CORE_QUESTION_COUNT = 8;
   const OPTIONAL_CONTEXT_COUNT = 1;
   const TOTAL_JOURNEY_STEPS = PROFILE_STEPS.length + CORE_QUESTION_COUNT + OPTIONAL_CONTEXT_COUNT + CONTACT_STEPS.length;
+  const OPTIONAL_CONTEXT_QUESTION = {
+    id: "haupthebel",
+    type: "textarea",
+    required: false,
+    label: "Welcher Arbeitsablauf soll in den nächsten 90 Tagen spürbar besser laufen?",
+    help: "Optional: Nennen Sie möglichst Ablauf und gewünschten Effekt. Bitte keine Personen-, Kunden- oder vertraulichen Daten eingeben.",
+    placeholder: "Zum Beispiel: Angebote schneller erstellen oder Terminausfälle reduzieren …",
+  };
 
   let config = { ...DEFAULT_CONFIG };
   let consent = { necessary: true, analytics: false, marketing: false, version: DEFAULT_CONFIG.cookieConsentVersion, grantedAt: null, globalDecisionId: null };
@@ -103,6 +113,10 @@
   let trackingConsentPromise = null;
   let freshSessionRequired = false;
   let toastTimer = null;
+  let adaptiveRequestController = null;
+  let adaptiveRequestGeneration = 0;
+  let answerAdvanceTimer = null;
+  let answerAdvanceGeneration = 0;
   let landingTracked = false;
   let landingTrackPromise = null;
   let consentSaving = false;
@@ -143,8 +157,7 @@
       stage: "landing",
       profile: {},
       profileIndex: 0,
-      phases: [],
-      phaseIndex: -1,
+      questions: [],
       questionIndex: 0,
       answers: [],
       contact: {},
@@ -349,7 +362,7 @@
       const saved = JSON.parse(sessionStorage.getItem(STATE_KEY) || "null");
       const freshEnough = saved && Number(saved.savedAt) > Date.now() - (2 * 60 * 60 * 1000);
       const validStage = ["profile", "assessment", "contact", "result"].includes(saved?.stage);
-      if (!freshEnough || !validStage || !saved.profile || !Array.isArray(saved.answers) || !Array.isArray(saved.phases)) return false;
+      if (!freshEnough || !validStage || !saved.profile || !Array.isArray(saved.answers) || !Array.isArray(saved.questions)) return false;
       state = { ...freshState(), ...saved };
       $$('[data-start-test]').forEach((button) => { button.firstChild.textContent = "Test fortsetzen "; });
       return true;
@@ -880,7 +893,7 @@
       renderProfile();
       return;
     }
-    if (state.stage === "assessment" && currentPhase() && currentQuestion()) {
+    if (state.stage === "assessment" && currentQuestion()) {
       hideAllScreens();
       $("#assessmentApp").hidden = false;
       document.body.classList.add("modal-open");
@@ -934,7 +947,10 @@
     const current = state.profile[item.id] || "";
     let body = `<article class="question-card"><p class="question-index">${esc(item.kicker)}</p><h1 id="questionTitle" tabindex="-1">${esc(item.label)}</h1>${item.help ? `<p class="question-help">${esc(item.help)}</p>` : ""}`;
     if (item.type === "text") {
-      body += `<div class="question-field"><input id="profileText" aria-labelledby="questionTitle" maxlength="80" autocomplete="off" placeholder="${esc(item.placeholder)}"></div><div class="question-actions"><button class="button button-accent" id="profileNext" type="button">Weiter</button></div>`;
+      const aiNotice = item.id === "branche"
+        ? `<aside class="ai-processing-note"><strong>Ab hier arbeitet die Diagnose adaptiv.</strong><span>Für die Auswahl der nächsten Frage übermitteln wir Branche, Größe, Rolle, Ziel und Testantworten ohne Kontaktdaten an OpenRouter und das Modell GPT‑5.5. Bitte geben Sie keine Personen-, Kunden- oder vertraulichen Daten ein.</span></aside>`
+        : "";
+      body += `<div class="question-field"><input id="profileText" aria-labelledby="questionTitle" maxlength="80" autocomplete="off" placeholder="${esc(item.placeholder)}"></div>${aiNotice}<div class="question-actions"><button class="button button-accent" id="profileNext" type="button">${item.id === "branche" ? "Adaptive Diagnose starten" : "Weiter"}</button></div>`;
     } else {
       body += `<div class="option-list" role="group" aria-labelledby="questionTitle">${item.options.map((option) => optionHtml(option, current === option.value)).join("")}</div>`;
     }
@@ -955,14 +971,25 @@
     } else {
       focusQuestionTitle();
       $$(".option", $("#questionHost")).forEach((button) => button.addEventListener("click", () => {
+        if (button.dataset.locked) return;
+        cancelAnswerAdvance();
+        const generation = answerAdvanceGeneration;
+        const profileIndex = state.profileIndex;
+        const itemId = item.id;
         state.profile[item.id] = button.dataset.value;
         $$(".option", $("#questionHost")).forEach((other) => {
           const selected = other === button;
           other.classList.toggle("selected", selected);
           other.setAttribute("aria-pressed", selected ? "true" : "false");
+          other.dataset.locked = "true";
+          other.disabled = true;
         });
         saveState();
-        setTimeout(advanceProfile, 190);
+        answerAdvanceTimer = setTimeout(() => {
+          answerAdvanceTimer = null;
+          if (generation !== answerAdvanceGeneration || state.stage !== "profile" || state.profileIndex !== profileIndex || PROFILE_STEPS[state.profileIndex]?.id !== itemId) return;
+          advanceProfile();
+        }, 190);
       }));
     }
     saveState();
@@ -973,85 +1000,135 @@
       state.profileIndex += 1;
       transitionQuestion(renderProfile);
     } else {
+      cancelAdaptiveQuestionRequest();
+      state.questions = [];
+      state.answers = [];
+      state.questionIndex = 0;
       saveState();
       track("profile_completed", { employee_band: state.profile.mitarbeiter, respondent_role: state.profile.rolle }, 4);
-      startAssessment();
+      void startAssessment();
     }
   }
 
-  async function fetchPhase(step) {
-    const payload = { companyProfile: state.profile, previousAnswers: state.answers, stepNumber: step };
-    let lastError = null;
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      try {
-        const response = await fetch(`${API}/generate-questions`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const phase = await response.json();
-        if (!Array.isArray(phase.questions) || !phase.questions.length) throw new Error("schema");
-        return phase;
-      } catch (error) { lastError = error; }
+  function validAdaptiveQuestion(question, index) {
+    if (!question || typeof question !== "object") return false;
+    if (!question.id || !question.dimension || question.type !== "radio" || question.required !== true) return false;
+    if (!Array.isArray(question.options) || question.options.length !== 4) return false;
+    if (!question.options.every((option, optionIndex) => option.value === String(optionIndex + 1) && String(option.label || "").trim())) return false;
+    return !state.questions.slice(0, index).some((item) => item.id === question.id);
+  }
+
+  function cancelAdaptiveQuestionRequest() {
+    adaptiveRequestGeneration += 1;
+    adaptiveRequestController?.abort();
+    adaptiveRequestController = null;
+  }
+
+  function cancelAnswerAdvance() {
+    answerAdvanceGeneration += 1;
+    if (answerAdvanceTimer) clearTimeout(answerAdvanceTimer);
+    answerAdvanceTimer = null;
+  }
+
+  async function fetchAdaptiveQuestion(index, signal) {
+    const response = await fetch(`${API}/generate-questions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal,
+      body: JSON.stringify({
+        protocolVersion: ADAPTIVE_VERSION,
+        companyProfile: state.profile,
+        previousAnswers: state.answers
+          .filter((answer) => answer.questionType !== "textarea")
+          .map((answer) => ({ questionId: answer.questionId, value: answer.answer })),
+        questionNumber: index + 1,
+        aiProcessing: { acknowledged: true, version: AI_PROCESSING_VERSION },
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || `HTTP ${response.status}`);
+    if (payload.totalQuestions !== CORE_QUESTION_COUNT || !validAdaptiveQuestion(payload.question, index)) throw new Error("schema");
+    return { ...payload.question, selectionMode: payload.selectionMode || "fallback", modelLabel: payload.modelLabel || null };
+  }
+
+  function renderAdaptiveLoading(index) {
+    state.stage = "assessment";
+    showOnlyScreen("assessmentApp");
+    document.body.classList.add("modal-open");
+    updateProgress(`Adaptive Diagnose · Frage ${index + 1}/${CORE_QUESTION_COUNT}`, PROFILE_STEPS.length + index, TOTAL_JOURNEY_STEPS);
+    $("#backButton").style.visibility = "visible";
+    $("#questionHost").innerHTML = `<article class="question-card adaptive-loading" role="status" aria-live="polite">
+      <p class="question-index">Adaptive Diagnose · Frage ${index + 1} von ${CORE_QUESTION_COUNT}</p>
+      <h1 id="questionTitle" tabindex="-1">Ihre Antwort schärft die nächste Frage.</h1>
+      <p class="question-help">GPT‑5.5 prüft, welcher Messanker in Ihrem Branchenkontext jetzt den größten Erkenntnisgewinn liefert.</p>
+      <div class="adaptive-loading-steps" aria-hidden="true"><span>Profil verstanden</span><span>Antwort eingeordnet</span><span class="active">Folgefrage gewählt</span></div>
+    </article>`;
+    focusQuestionTitle();
+  }
+
+  async function loadAdaptiveQuestion(index) {
+    cancelAdaptiveQuestionRequest();
+    if (state.questions[index]) {
+      state.questionIndex = index;
+      renderQuestion();
+      return;
     }
-    throw lastError || new Error("phase");
+    const generation = adaptiveRequestGeneration;
+    const controller = new AbortController();
+    adaptiveRequestController = controller;
+    state.questionIndex = index;
+    saveState();
+    renderAdaptiveLoading(index);
+    try {
+      const question = await fetchAdaptiveQuestion(index, controller.signal);
+      if (generation !== adaptiveRequestGeneration || controller.signal.aborted || state.stage !== "assessment" || state.questionIndex !== index) return;
+      state.questions[index] = question;
+      state.questionIndex = index;
+      saveState();
+      renderQuestion();
+      track("adaptive_question_started", { question_number: String(index + 1), selection_mode: question.selectionMode }, index + 1);
+    } catch (error) {
+      if (generation !== adaptiveRequestGeneration || controller.signal.aborted || error?.name === "AbortError") return;
+      $("#questionHost").innerHTML = `<article class="question-card"><p class="question-index">Verbindung unterbrochen</p><h1 id="questionTitle" tabindex="-1">Die nächste Frage konnte nicht sicher geladen werden.</h1><p class="question-help">Ihre bisherigen Antworten bleiben in dieser Browsersitzung erhalten. Bei einem Modellfehler liefert der Server automatisch eine geprüfte Ersatzfrage; hier ist die Verbindung selbst abgebrochen.</p><div class="question-actions"><button class="button button-accent" id="retryQuestion" type="button">Erneut versuchen</button></div></article>`;
+      focusQuestionTitle();
+      $("#retryQuestion").addEventListener("click", () => loadAdaptiveQuestion(index));
+    } finally {
+      if (generation === adaptiveRequestGeneration) adaptiveRequestController = null;
+    }
   }
 
   async function startAssessment() {
     state.stage = "assessment";
-    await moveToPhase(0);
+    state.questionIndex = Math.max(0, Math.min(state.questionIndex || 0, state.questions.length - 1));
+    if (currentQuestion()) renderQuestion();
+    else await loadAdaptiveQuestion(0);
   }
 
-  async function moveToPhase(index) {
-    showOnlyScreen("assessmentApp");
-    document.body.classList.add("modal-open");
-    const loadingTimer = setTimeout(() => {
-      $("#questionHost").innerHTML = `<article class="question-card phase-loading" role="status"><p class="question-index">Phase ${index + 1} von 3</p><h1 id="questionTitle" tabindex="-1">Der nächste Abschnitt wird sicher geladen.</h1><p class="question-help">Ihre bisherigen Antworten bleiben erhalten.</p></article>`;
-      focusQuestionTitle();
-    }, 400);
-    try {
-      const phase = state.phases[index] || await fetchPhase(index + 1);
-      clearTimeout(loadingTimer);
-      state.phases[index] = phase;
-      state.phaseIndex = index;
-      state.questionIndex = 0;
-      renderQuestion();
-      track("phase_started", { phase: String(index + 1), question_count: phase.questions.length }, index + 1);
-    } catch {
-      clearTimeout(loadingTimer);
-      $("#questionHost").innerHTML = `<article class="question-card"><p class="question-index">Verbindung unterbrochen</p><h1 id="questionTitle" tabindex="-1">Die nächste Runde konnte nicht sicher geladen werden.</h1><p class="question-help">Ihre bisherigen Antworten bleiben in dieser Browsersitzung erhalten.</p><div class="question-actions"><button class="button button-accent" id="retryPhase" type="button">Erneut versuchen</button></div></article>`;
-      focusQuestionTitle();
-      $("#retryPhase").addEventListener("click", () => moveToPhase(index));
-    }
-  }
-
-  function currentPhase() { return state.phases[state.phaseIndex]; }
-  function currentQuestion() { return currentPhase()?.questions[state.questionIndex]; }
+  function currentQuestion() { return state.questions[state.questionIndex]; }
   function existingAnswer(id) { return state.answers.find((answer) => answer.questionId === id); }
 
   function renderQuestion() {
-    const phase = currentPhase();
     const question = currentQuestion();
-    if (!phase || !question) return;
-    const phaseQuestionsBefore = state.phases.slice(0, state.phaseIndex).reduce((sum, item) => sum + item.questions.length, 0);
-    const completed = PROFILE_STEPS.length + phaseQuestionsBefore + state.questionIndex;
+    if (!question) return;
+    const completed = PROFILE_STEPS.length + state.questionIndex;
     const optionalContext = question.required === false;
-    const coreQuestions = phase.questions.filter((item) => item.required !== false);
-    const coreQuestionNumber = phase.questions.slice(0, state.questionIndex + 1).filter((item) => item.required !== false).length;
     const progressLabel = optionalContext
-      ? `Phase ${state.phaseIndex + 1}/3 · optionaler Kontext`
-      : `Phase ${state.phaseIndex + 1}/3 · Frage ${coreQuestionNumber}/${coreQuestions.length}`;
+      ? "Adaptive Diagnose · optionaler Kontext"
+      : `Adaptive Diagnose · Frage ${state.questionIndex + 1}/${CORE_QUESTION_COUNT}`;
     updateProgress(progressLabel, completed, TOTAL_JOURNEY_STEPS);
     $("#backButton").style.visibility = "visible";
     const existing = existingAnswer(question.id);
     const questionIndex = optionalContext
-      ? `${phase.phaseTitle} · optionaler Kontext, nicht Teil der 12 Kernfragen`
-      : `${phase.phaseTitle} · ${coreQuestionNumber} von ${coreQuestions.length}`;
-    const phaseContext = state.questionIndex === 0
-      ? `<aside class="phase-context"><strong>${esc(phase.phaseIntro)}</strong><span>${esc(phase.transitionInsight || "Dieser Abschnitt ordnet den nächsten Teil Ihres Readiness-Profils ein.")}</span></aside>`
+      ? "Ihr konkreter Fokus · optional, nicht Teil des Scores"
+      : `${esc(DIMENSIONS[question.dimension]?.label || "Readiness")} · ${state.questionIndex + 1} von ${CORE_QUESTION_COUNT}`;
+    const rationale = !optionalContext && question.whyNow
+      ? `<aside class="adaptive-rationale"><strong>Warum diese Frage jetzt?</strong><span>${esc(question.whyNow)}</span></aside>`
       : "";
     const helper = question.type === "textarea"
       ? question.help || "Optional — ein oder zwei konkrete Sätze genügen. Bitte keine Namen, Kontakt- oder Kundendaten eingeben."
       : question.help || "";
     const describedBy = helper ? ' aria-describedby="questionHelp"' : "";
-    let body = `<article class="question-card"><p class="question-index">${esc(questionIndex)}</p>${phaseContext}<h1 id="questionTitle" tabindex="-1"${describedBy}>${esc(question.label)}</h1>${helper ? `<p class="question-help" id="questionHelp">${esc(helper)}</p>` : ""}`;
+    let body = `<article class="question-card"><p class="question-index">${questionIndex}</p>${rationale}<h1 id="questionTitle" tabindex="-1"${describedBy}>${esc(question.label)}</h1>${helper ? `<p class="question-help" id="questionHelp">${esc(helper)}</p>` : ""}`;
     if (question.type === "textarea") {
       body += `<div class="question-field"><textarea id="answerText" aria-labelledby="questionTitle" aria-describedby="questionHelp" maxlength="700" placeholder="${esc(question.placeholder || "Ihre Antwort …")}"></textarea></div><div class="question-actions"><button class="button button-accent" id="answerNext" type="button">Weiter</button><button class="text-button" id="answerSkip" type="button">Überspringen</button></div>`;
     } else {
@@ -1073,21 +1150,36 @@
       focusQuestionTitle();
       $$(".option", $("#questionHost")).forEach((button) => button.addEventListener("click", () => {
         if (button.dataset.locked) return;
+        cancelAnswerAdvance();
+        const generation = answerAdvanceGeneration;
+        const questionId = question.id;
         $$(".option", $("#questionHost")).forEach((other) => {
           const selected = other === button;
           other.classList.toggle("selected", selected);
           other.setAttribute("aria-pressed", selected ? "true" : "false");
+          other.dataset.locked = "true";
+          other.disabled = true;
         });
         const option = question.options.find((item) => item.value === button.dataset.value);
         recordAnswer(question, option.value, option.label);
-        button.dataset.locked = "true";
-        setTimeout(advanceQuestion, 190);
+        answerAdvanceTimer = setTimeout(() => {
+          answerAdvanceTimer = null;
+          if (generation !== answerAdvanceGeneration || state.stage !== "assessment" || currentQuestion()?.id !== questionId) return;
+          void advanceQuestion();
+        }, 190);
       }));
     }
     saveState();
   }
 
   function recordAnswer(question, answer, answerLabel) {
+    const previous = existingAnswer(question.id);
+    const pathChanged = previous && previous.answer !== answer;
+    if (pathChanged && state.questionIndex < state.questions.length - 1) {
+      const retainedIds = new Set(state.questions.slice(0, state.questionIndex + 1).map((item) => item.id));
+      state.answers = state.answers.filter((item) => retainedIds.has(item.questionId));
+      state.questions = state.questions.slice(0, state.questionIndex + 1);
+    }
     const entry = {
       questionId: question.id,
       questionLabel: question.label,
@@ -1095,7 +1187,7 @@
       dimension: question.dimension || null,
       answer,
       answerLabel,
-      phase: state.phaseIndex + 1,
+      sequence: state.questionIndex + 1,
     };
     const index = state.answers.findIndex((item) => item.questionId === question.id);
     if (index >= 0) state.answers[index] = entry;
@@ -1103,19 +1195,28 @@
     saveState();
   }
 
-  function advanceQuestion() {
-    const phase = currentPhase();
-    if (state.questionIndex < phase.questions.length - 1) {
-      state.questionIndex += 1;
+  async function advanceQuestion() {
+    const question = currentQuestion();
+    if (question?.required === false) return startContactCapture();
+    const nextIndex = state.questionIndex + 1;
+    if (nextIndex === CORE_QUESTION_COUNT) {
+      state.questions[nextIndex] = OPTIONAL_CONTEXT_QUESTION;
+      state.questionIndex = nextIndex;
+      saveState();
       transitionQuestion(renderQuestion);
       return;
     }
-    track("phase_completed", { phase: String(state.phaseIndex + 1), question_count: phase.questions.length }, state.phaseIndex + 1);
-    if (state.phaseIndex >= 2) return startContactCapture();
-    moveToPhase(state.phaseIndex + 1);
+    if (state.questions[nextIndex]) {
+      state.questionIndex = nextIndex;
+      transitionQuestion(renderQuestion);
+      return;
+    }
+    await loadAdaptiveQuestion(nextIndex);
   }
 
   function goBack() {
+    cancelAnswerAdvance();
+    cancelAdaptiveQuestionRequest();
     if (state.stage === "profile") {
       if (state.profileIndex > 0) { state.profileIndex -= 1; transitionQuestion(renderProfile); }
       return;
@@ -1126,8 +1227,7 @@
         transitionQuestion(renderContactStep);
       } else {
         state.stage = "assessment";
-        state.phaseIndex = 2;
-        state.questionIndex = currentPhase().questions.length - 1;
+        state.questionIndex = state.questions.length - 1;
         transitionQuestion(renderQuestion);
       }
       saveState();
@@ -1137,10 +1237,6 @@
     if (state.questionIndex > 0) {
       state.questionIndex -= 1;
       transitionQuestion(renderQuestion);
-    } else if (state.phaseIndex > 0) {
-      state.phaseIndex -= 1;
-      state.questionIndex = currentPhase().questions.length - 1;
-      transitionQuestion(renderQuestion);
     } else {
       state.stage = "profile";
       state.profileIndex = PROFILE_STEPS.length - 1;
@@ -1149,6 +1245,8 @@
   }
 
   function closeTest() {
+    cancelAnswerAdvance();
+    cancelAdaptiveQuestionRequest();
     hideAllScreens();
     window.scrollTo({ top: 0, behavior: "smooth" });
     const returnTarget = testReturnFocus;
@@ -1208,15 +1306,17 @@
   }
 
   function startContactCapture() {
+    cancelAnswerAdvance();
+    cancelAdaptiveQuestionRequest();
     state.baseline = scoreAssessment();
     state.stage = "contact";
     state.contactIndex = Math.max(0, Math.min(CONTACT_STEPS.length - 1, state.contactIndex || 0));
     formOpenedAt = Date.now();
     saveState();
-    track("phase_completed", { phase: "assessment", question_count: state.answers.length }, 17);
+    track("phase_completed", { phase: "assessment", question_count: state.answers.length }, PROFILE_STEPS.length + CORE_QUESTION_COUNT + OPTIONAL_CONTEXT_COUNT);
     metaEvent("AIReadinessCompleted", { assessment_version: config.assessmentVersion });
     renderContactStep();
-    track("lead_form_viewed", { employee_band: state.profile.mitarbeiter }, 17);
+    track("lead_form_viewed", { employee_band: state.profile.mitarbeiter }, PROFILE_STEPS.length + CORE_QUESTION_COUNT + OPTIONAL_CONTEXT_COUNT);
   }
 
   function validContactValue(step, value) {
@@ -1247,11 +1347,11 @@
     ].filter(Boolean).join(" ");
     const finalContent = isFinal ? `
       <label class="check-row newsletter-choice"><input type="checkbox" name="newsletter"${newsletterChecked ? " checked" : ""}><span><strong>Freiwillige KI-Impulse per E-Mail</strong><small>${esc(config.newsletterConsent.text)}</small></span></label>
-      <p class="result-privacy-note">Mit Klick auf „Meinen Readiness-Score anzeigen“ verarbeiten wir Ihre Angaben zur Zuordnung, Speicherung und unmittelbaren Anzeige der Auswertung. Die Newsletter-Einwilligung ist freiwillig und nicht Voraussetzung. <a href="https://synclaro.de/datenschutz#ki-readiness-test" target="_blank" rel="noopener">Datenschutzhinweise</a></p>
+      <p class="result-privacy-note">Mit Klick auf „Meine Auswertung erstellen“ verarbeiten wir Ihre Angaben zur Zuordnung, Speicherung und unmittelbaren Anzeige. Das Modell erhält weiterhin keine Kontakt- oder Trackingdaten. Die Newsletter-Einwilligung ist freiwillig. <a href="https://synclaro.de/datenschutz#ki-readiness-test" target="_blank" rel="noopener">Datenschutzhinweise</a></p>
       <input class="form-honeypot" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
       <div class="form-error" id="leadFormError" role="alert" hidden></div>` : "";
     const contactIntro = state.contactIndex === 0
-      ? '<aside class="phase-context contact-intro"><strong>Ihr Score ist berechnet.</strong><span>Noch vier Angaben für die sichere Zuordnung und Anzeige: Vorname, Nachname, Unternehmen und E-Mail. Kein Rückruf; Newsletter nur freiwillig.</span></aside>'
+      ? '<aside class="phase-context contact-intro"><strong>Ihre Diagnosefragen sind vollständig.</strong><span>Noch vier Angaben für die sichere Zuordnung und Anzeige: Vorname, Nachname, Unternehmen und E-Mail. Kein Rückruf; Newsletter nur freiwillig.</span></aside>'
       : "";
     $("#questionHost").innerHTML = `<form class="question-card contact-step" id="contactStepForm" novalidate>
       <p class="question-index">Fast geschafft · ${state.contactIndex + 1} von ${CONTACT_STEPS.length}</p>
@@ -1259,7 +1359,7 @@
       <h1 id="questionTitle" tabindex="-1">${esc(step.label)}</h1>
       <div class="question-field"><input ${inputAttributes} value="${esc(stored)}"><small class="field-error" id="contactFieldError" hidden>${esc(step.error)}</small></div>
       ${finalContent}
-      <div class="question-actions"><button class="button button-accent${isFinal ? " button-large" : ""}" id="contactNext" type="submit">${isFinal ? "Meinen Readiness-Score anzeigen" : "Weiter"}</button></div>
+      <div class="question-actions"><button class="button button-accent${isFinal ? " button-large" : ""}" id="contactNext" type="submit">${isFinal ? "Meine Auswertung erstellen" : "Weiter"}</button></div>
       ${isFinal && !config.production ? '<p class="preview-notice">Preview-Modus: Es werden keine Lead-, E-Mail-, Meta- oder Telegram-Daten übertragen.</p>' : ""}
     </form>`;
     const form = $("#contactStepForm");
@@ -1278,7 +1378,7 @@
         input.setAttribute("aria-invalid", "true");
         $("#contactFieldError").hidden = false;
         input.focus();
-        track("lead_form_validation_error", { field: step.id, error_code: "required_or_invalid" }, 17 + state.contactIndex);
+        track("lead_form_validation_error", { field: step.id, error_code: "required_or_invalid" }, PROFILE_STEPS.length + CORE_QUESTION_COUNT + OPTIONAL_CONTEXT_COUNT + state.contactIndex);
         return;
       }
       state.contact[step.id] = value;
@@ -1303,12 +1403,12 @@
     errorBox.hidden = true;
     const button = $("#contactNext");
     button.disabled = true;
-    button.textContent = "Wird sicher gespeichert …";
+    button.textContent = "Ihre KI-Auswertung entsteht …";
     if (!(await ensureSession())) {
       errorBox.textContent = "Die sichere Testsitzung konnte nicht erneuert werden. Bitte versuchen Sie es erneut.";
       errorBox.hidden = false;
       button.disabled = false;
-      button.textContent = "Meinen Readiness-Score anzeigen";
+      button.textContent = "Meine Auswertung erstellen";
       return;
     }
     if (!(await ensureTrackingDecisionForCurrentRun())) {
@@ -1331,6 +1431,8 @@
       formOpenedAt: new Date(formOpenedAt || Date.now()).toISOString(),
       companyProfile: state.profile,
       answers: state.answers,
+      adaptiveVersion: ADAPTIVE_VERSION,
+      aiProcessing: { acknowledged: true, version: AI_PROCESSING_VERSION },
       contact,
       attribution: metaAttribution(),
       consents: {
@@ -1362,7 +1464,7 @@
       state.newsletterStatus = result.newsletterStatus || (result.preview && state.contact.newsletter ? "preview_not_sent" : state.contact.newsletter ? "doi_pending" : "not_requested");
       state.baseline = result.baseline || state.baseline;
       saveState();
-      track("lead_submitted", { score: state.baseline.scores.total.percent, employee_band: state.profile.mitarbeiter }, 17);
+      track("lead_submitted", { score: state.baseline.scores.total.percent, employee_band: state.profile.mitarbeiter }, PROFILE_STEPS.length + CORE_QUESTION_COUNT + OPTIONAL_CONTEXT_COUNT);
       if (result.metaLeadEligible) metaEvent("Lead", {}, { eventID: result.leadEventId || state.submissionId });
       state.result = result.result || localDetailedResult(state.baseline);
       saveState();
@@ -1371,7 +1473,7 @@
       errorBox.textContent = error.message || "Der Lead konnte nicht sicher gespeichert werden. Bitte versuchen Sie es erneut.";
       errorBox.hidden = false;
       button.disabled = false;
-      button.textContent = "Meinen Readiness-Score anzeigen";
+      button.textContent = "Meine Auswertung erstellen";
     }
   }
 
@@ -1436,7 +1538,7 @@
         phase2: { zeitraum: "Tage 31–60", titel: "Klein testen", punkte: [recos[1].naechsterSchritt, state.profile.mitarbeiter === "solo" ? "Test in einem klar abgegrenzten eigenen Arbeitsablauf durchführen" : "Test mit einer klaren Nutzergruppe durchführen"] },
         phase3: { zeitraum: "Tage 61–90", titel: "Wirkung entscheiden", punkte: [recos[2].naechsterSchritt, "Ergebnis messen und nächste Stufe bewusst freigeben"] },
       },
-      diagnosticNote: "Strukturierte Selbsteinschätzung mit fester Bewertungslogik; keine Zertifizierung oder Erfolgsgarantie.",
+      diagnosticNote: "Adaptive Selbsteinschätzung mit festen Messankern; keine Zertifizierung oder Erfolgsgarantie.",
     };
   }
 
@@ -1507,6 +1609,12 @@
     $("#resultLevel").textContent = result.level;
     $("#resultVerdict").textContent = result.gesamteinschaetzung;
     $("#resultContext").textContent = `${advisory.industry.entered} · Ziel: ${advisory.goal.label}`;
+    const analysisBadge = $("#analysisBadge");
+    const frontierAnalysis = result.analysisMode === "frontier_adaptive";
+    analysisBadge.textContent = frontierAnalysis
+      ? `Vertieft mit ${result.analysisModel || "Frontier-KI"} · Score aus festen Messankern`
+      : "Robuste Basisauswertung · Score aus festen Messankern";
+    analysisBadge.classList.toggle("is-ai", frontierAnalysis);
     const scoreRing = $("#resultScoreRing");
     scoreRing.style.strokeDashoffset = `${578 - (Math.max(0, Math.min(100, totalScore)) / 100) * 578}`;
     $("#resultScoreDial").setAttribute("aria-label", `Gesamter Readiness-Score: ${totalScore} von 100. ${result.level}.`);

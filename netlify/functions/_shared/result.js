@@ -3,7 +3,7 @@
 const { DIMENSIONS } = require("./assessment");
 const { buildAdvisory } = require("./advisory");
 
-const RESULT_VERSION = "2026-07-19.v4";
+const RESULT_VERSION = "2026-07-19.v5";
 
 function dimensionSummary(label, score) {
   if (score < 25) return `${label} braucht vor einem KI-Pilot zuerst einen klaren, verlässlichen Grundrahmen.`;
@@ -81,7 +81,7 @@ function buildDeterministicResult(baseline, profile = {}, answers = []) {
       phase2: { zeitraum: "Tage 31–60", titel: "Mit echten Fällen testen", punkte: [solo ? "Den Ablauf mit einer kleinen Serie eigener realer Fälle vergleichen" : "Den Ablauf mit einer kleinen Testgruppe und realen Fällen vergleichen", `Vorher und nachher messen: ${primary.metric}`] },
       phase3: { zeitraum: "Tage 61–90", titel: "Wirkung bewusst entscheiden", punkte: ["Ergebnisse und Fehler gemeinsam auswerten", "Fortführen, anpassen oder stoppen — erst danach über eine Ausweitung entscheiden"] },
     },
-    diagnosticNote: "Strukturierte Selbsteinschätzung mit fester Bewertungslogik; keine Zertifizierung oder Erfolgsgarantie.",
+    diagnosticNote: "Adaptive Selbsteinschätzung mit festen Messankern; keine Zertifizierung oder Erfolgsgarantie.",
   };
 }
 

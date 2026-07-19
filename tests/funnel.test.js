@@ -13,7 +13,8 @@ const meta = require("../netlify/functions/_shared/meta");
 const security = require("../netlify/functions/_shared/security");
 const session = require("../netlify/functions/_shared/session");
 const supabaseAdmin = require("../netlify/functions/_shared/supabase");
-const submit = require("../netlify/functions/submit-lead")._test;
+const submitModule = require("../netlify/functions/submit-lead");
+const submit = submitModule._test;
 const analyze = require("../netlify/functions/analyze")._test;
 const resultBuilder = require("../netlify/functions/_shared/result");
 const tracking = require("../netlify/functions/track-event")._test;
@@ -23,6 +24,19 @@ function answersWith(value) {
   return assessment.PHASES.flatMap((phase) => phase.questions)
     .filter((question) => question.dimension)
     .map((question) => ({ questionId: question.id, answer: String(value), answerLabel: question.options[value - 1].label }));
+}
+
+function adaptiveAnswersWith(value) {
+  return [
+    "prozess_standardisierung",
+    "wissen_verteilung",
+    "ki_nutzung",
+    "verantwortung",
+    "daten_zugriff",
+    "team_digital",
+    "ki_leitplanken",
+    "erfolgsmessung",
+  ].map((questionId) => ({ questionId, answer: String(value) }));
 }
 
 test("der feste Score hat stabile Randwerte und ist branchenneutral", () => {
@@ -35,7 +49,17 @@ test("der feste Score hat stabile Randwerte und ist branchenneutral", () => {
   assert.equal(high.level, "KI-Skalierbar");
   assert.deepEqual(low.scores, otherIndustry.scores);
   assert.equal(low.complete, true);
-  assert.equal(low.assessmentVersion, "2026-07-19.v4");
+  assert.equal(low.assessmentVersion, "2026-07-19.v5");
+});
+
+test("der adaptive Score benötigt exakt zwei Messanker je Dimension", () => {
+  const low = assessment.scoreAdaptiveAssessment(adaptiveAnswersWith(1), { branche: "Beratung", mitarbeiter: "solo" });
+  const high = assessment.scoreAdaptiveAssessment(adaptiveAnswersWith(4), { branche: "Metallbau", mitarbeiter: "1-5" });
+  assert.equal(low.complete, true);
+  assert.equal(low.scores.total.percent, 0);
+  assert.equal(high.scores.total.percent, 100);
+  assert.deepEqual(low.coverage, { prozesse_daten: 2, team_wissen: 2, ki_praxis: 2, umsetzungskraft: 2 });
+  assert.equal(assessment.scoreAdaptiveAssessment(adaptiveAnswersWith(2).slice(1), {}).complete, false);
 });
 
 test("Solo-Selbstständige erhalten passende Fragen bei identischer Bewertungslogik", () => {
@@ -155,7 +179,7 @@ test("Conversion-Gate, Formfelder und Ergebnis-CTAs bleiben transparent und barr
   const html = fs.readFileSync(path.join(__dirname, "../public/index.html"), "utf8");
   const app = fs.readFileSync(path.join(__dirname, "../public/app.js"), "utf8");
   const css = fs.readFileSync(path.join(__dirname, "../public/styles.css"), "utf8");
-  assert.match(html, /Am Ende erforderlich: Name, Unternehmen und E-Mail · kein Rückruf · Newsletter nur freiwillig/);
+  assert.match(html, /Am Ende: Name, Unternehmen und E-Mail · kein Rückruf · Newsletter freiwillig/);
   assert.equal((html.match(/data-calendar-cta/g) || []).length, 2);
   assert.match(app, /id="profileText" aria-labelledby="questionTitle"/);
   assert.match(app, /id="answerText" aria-labelledby="questionTitle"/);
@@ -166,8 +190,16 @@ test("Conversion-Gate, Formfelder und Ergebnis-CTAs bleiben transparent und barr
   assert.match(app, /showOnlyScreen\("fullResult"\)/);
   assert.match(app, /const TOTAL_JOURNEY_STEPS = PROFILE_STEPS\.length \+ CORE_QUESTION_COUNT \+ OPTIONAL_CONTEXT_COUNT \+ CONTACT_STEPS\.length/);
   assert.match(app, /Math\.ceil\(\(total - completed\) \* \.19\)/);
-  assert.equal((app.match(/updateProgress\([^;]+TOTAL_JOURNEY_STEPS\);/g) || []).length, 3);
-  assert.match(app, /optionaler Kontext, nicht Teil der 12 Kernfragen/);
+  assert.equal((app.match(/updateProgress\([^;]+TOTAL_JOURNEY_STEPS\);/g) || []).length, 4);
+  assert.match(app, /optional, nicht Teil des Scores/);
+  assert.match(app, /GPT‑5\.5/);
+  assert.match(app, /Kontaktdaten an OpenRouter/);
+  assert.match(app, /new AbortController\(\)/);
+  assert.match(app, /adaptiveRequestController\?\.abort\(\)/);
+  assert.match(app, /generation !== adaptiveRequestGeneration/);
+  assert.match(app, /function cancelAnswerAdvance\(\)/);
+  assert.match(app, /other\.disabled = true/);
+  assert.match(app, /generation !== answerAdvanceGeneration/);
   assert.match(app, /\["assessmentApp", "fullResult"\]\.includes\(layer\.id\)/);
   assert.match(app, /\$\("#closeResult"\)\.addEventListener\("click", closeTest\)/);
   assert.match(app, /\$\("#resultHomeLink"\)\.addEventListener/);
@@ -177,6 +209,7 @@ test("Conversion-Gate, Formfelder und Ergebnis-CTAs bleiben transparent und barr
   assert.match(css, /\.result-privacy-note[^}]*font-size: 14px/);
   assert.match(css, /\.lever-section > \* \{ min-width: 0; \}/);
   assert.match(css, /\.lever-section h2[^}]*overflow-wrap: anywhere/);
+  assert.deepEqual(submitModule.config.rateLimit, { windowLimit: 6, windowSize: 180, aggregateBy: ["ip", "domain"] });
   assert.match(html, /class="brand-logo" src="\/assets\/synclaro-logo-weiss\.png"/);
   assert.match(html, /id="resultScoreDial"/);
   assert.match(html, /id="useCases"/);
@@ -265,7 +298,7 @@ test("Branche und Antwortsignale ändern konkrete Chancen, niemals den Score", (
   assert.equal(consulting.advisory.industry.key, "beratung");
   assert.notDeepEqual(cleaning.advisory.opportunities.map((item) => item.id), consulting.advisory.opportunities.map((item) => item.id));
   assert.equal(cleaning.advisory.opportunities.length, 3);
-  assert.equal(cleaning.resultVersion, "2026-07-19.v4");
+  assert.equal(cleaning.resultVersion, "2026-07-19.v5");
 });
 
 test("ein konkreter 90-Tage-Fokus priorisiert den passenden Branchenfall deterministisch", () => {
