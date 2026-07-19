@@ -1,11 +1,11 @@
 "use strict";
 
-const { hasAllowedOrigin, isProduction, jsonResponse } = require("./_shared/security");
-const { adaptiveAIConfigured } = require("./_shared/openrouter");
-const { issueSession, readSession, setCookieHeader } = require("./_shared/session");
+const { hasAllowedOrigin, isProduction, jsonResponse } = require("./security");
+const { adaptiveAIConfigured } = require("./openrouter");
+const { issueSession, readSession, setCookieHeader } = require("./session");
 
 exports.handler = async (event) => {
-  if (event.httpMethod === "OPTIONS") return { statusCode: 204, headers: { "Cache-Control": "no-store" }, body: "" };
+  if (event.httpMethod === "OPTIONS") return { statusCode: 204, headers: { "Cache-Control": "no-store" } };
   if (event.httpMethod !== "POST") return jsonResponse(405, { error: "Methode nicht erlaubt." });
   if (!hasAllowedOrigin(event)) return jsonResponse(403, { error: "Ursprung nicht erlaubt." });
   if (Buffer.byteLength(event.body || "", "utf8") > 1024) return jsonResponse(413, { error: "Anfrage zu groß." });
@@ -26,13 +26,4 @@ exports.handler = async (event) => {
     console.error("[start-session] configuration error", error?.name || "unknown");
     return jsonResponse(503, { error: "Der Test kann gerade nicht sicher gestartet werden." });
   }
-};
-
-exports.config = {
-  path: "/.netlify/functions/start-session",
-  rateLimit: {
-    windowLimit: 12,
-    windowSize: 180,
-    aggregateBy: ["ip", "domain"],
-  },
 };

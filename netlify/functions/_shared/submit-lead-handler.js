@@ -1,14 +1,14 @@
 "use strict";
 
 const crypto = require("crypto");
-const { ASSESSMENT_VERSION, cleanText, getQuestion, scoreAdaptiveAssessment } = require("./_shared/assessment");
-const { AI_PROCESSING_VERSION, ANALYTICS_CONSENT_TEXT, COOKIE_CONSENT_VERSION, MARKETING_CONSENT_TEXT, NEWSLETTER_CONSENT_TEXT, NEWSLETTER_CONSENT_VERSION, PRIVACY_VERSION } = require("./_shared/consents");
-const { normalizeClientIp, normalizeEmail } = require("./_shared/meta");
-const { buildDeterministicResult } = require("./_shared/result");
-const { enhanceResultWithAI } = require("./_shared/ai-result");
-const { getSupabaseAdmin } = require("./_shared/supabase");
-const { clientIp, evidenceIpHash, hasAllowedOrigin, isProduction, jsonResponse, privacyHmac, signBookingReference, signNewsletterToken } = require("./_shared/security");
-const { readSession } = require("./_shared/session");
+const { ASSESSMENT_VERSION, cleanText, getQuestion, scoreAdaptiveAssessment } = require("./assessment");
+const { AI_PROCESSING_VERSION, ANALYTICS_CONSENT_TEXT, COOKIE_CONSENT_VERSION, MARKETING_CONSENT_TEXT, NEWSLETTER_CONSENT_TEXT, NEWSLETTER_CONSENT_VERSION, PRIVACY_VERSION } = require("./consents");
+const { normalizeClientIp, normalizeEmail } = require("./meta");
+const { buildDeterministicResult } = require("./result");
+const { enhanceResultWithAI } = require("./ai-result");
+const { getSupabaseAdmin } = require("./supabase");
+const { clientIp, evidenceIpHash, hasAllowedOrigin, isProduction, jsonResponse, privacyHmac, signBookingReference, signNewsletterToken } = require("./security");
+const { readSession } = require("./session");
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -160,7 +160,7 @@ function errorMessage(code) {
 }
 
 exports.handler = async (event) => {
-  if (event.httpMethod === "OPTIONS") return { statusCode: 204, headers: { "Cache-Control": "no-store" }, body: "" };
+  if (event.httpMethod === "OPTIONS") return { statusCode: 204, headers: { "Cache-Control": "no-store" } };
   if (event.httpMethod !== "POST") return jsonResponse(405, { error: "Methode nicht erlaubt." });
   if (!hasAllowedOrigin(event)) return jsonResponse(403, { error: "Ursprung nicht erlaubt." });
   if (Buffer.byteLength(event.body || "", "utf8") > 65536) return jsonResponse(413, { error: "Anfrage zu groß." });
@@ -315,15 +315,6 @@ exports.handler = async (event) => {
     console.error("[submit-lead] rejected", /^[a-z_]+$/.test(code) ? code : error?.name || "unknown");
     return jsonResponse(400, { error: errorMessage(code) });
   }
-};
-
-exports.config = {
-  path: "/.netlify/functions/submit-lead",
-  rateLimit: {
-    windowLimit: 6,
-    windowSize: 180,
-    aggregateBy: ["ip", "domain"],
-  },
 };
 
 module.exports._test = {

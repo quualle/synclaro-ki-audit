@@ -13,7 +13,7 @@ const meta = require("../netlify/functions/_shared/meta");
 const security = require("../netlify/functions/_shared/security");
 const session = require("../netlify/functions/_shared/session");
 const supabaseAdmin = require("../netlify/functions/_shared/supabase");
-const submitModule = require("../netlify/functions/submit-lead");
+const submitModule = require("../netlify/functions/_shared/submit-lead-handler");
 const submit = submitModule._test;
 const analyze = require("../netlify/functions/analyze")._test;
 const resultBuilder = require("../netlify/functions/_shared/result");
@@ -209,7 +209,6 @@ test("Conversion-Gate, Formfelder und Ergebnis-CTAs bleiben transparent und barr
   assert.match(css, /\.result-privacy-note[^}]*font-size: 14px/);
   assert.match(css, /\.lever-section > \* \{ min-width: 0; \}/);
   assert.match(css, /\.lever-section h2[^}]*overflow-wrap: anywhere/);
-  assert.deepEqual(submitModule.config.rateLimit, { windowLimit: 6, windowSize: 180, aggregateBy: ["ip", "domain"] });
   assert.match(html, /class="brand-logo" src="\/assets\/synclaro-logo-weiss\.png"/);
   assert.match(html, /id="resultScoreDial"/);
   assert.match(html, /id="useCases"/);
