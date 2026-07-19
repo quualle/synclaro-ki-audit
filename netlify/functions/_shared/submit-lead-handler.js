@@ -2,6 +2,7 @@
 
 const crypto = require("crypto");
 const { ASSESSMENT_VERSION, cleanText, getQuestion, scoreAdaptiveAssessment } = require("./assessment");
+const { sanitizeMetaObjectId, sanitizePlacement } = require("./attribution");
 const { AI_PROCESSING_VERSION, ANALYTICS_CONSENT_TEXT, COOKIE_CONSENT_VERSION, MARKETING_CONSENT_TEXT, NEWSLETTER_CONSENT_TEXT, NEWSLETTER_CONSENT_VERSION, PRIVACY_VERSION } = require("./consents");
 const { normalizeClientIp, normalizeEmail } = require("./meta");
 const { buildDeterministicResult } = require("./result");
@@ -89,10 +90,6 @@ function sanitizeAttribution(attribution, event, submissionId, marketingGranted)
       user_agent: "",
     };
   }
-  const safeLabel = (key, max = 180) => {
-    const value = take(key, max);
-    return value && /^[\p{L}\p{N} ._|{}-]+$/u.test(value) ? value : "";
-  };
   const source = take("utm_source", 80).toLowerCase();
   const medium = take("utm_medium", 80).toLowerCase();
   const campaign = take("utm_campaign", 120).toLowerCase();
@@ -115,10 +112,10 @@ function sanitizeAttribution(attribution, event, submissionId, marketingGranted)
     utm_campaign: ["ai_readiness_de_prospecting_v1", "meta_ai_readiness_de_prospecting_v1"].includes(campaign)
       ? "ai_readiness_de_prospecting_v1"
       : (campaign ? "other" : ""),
-    utm_id: safeLabel("utm_id", 120),
-    utm_content: safeLabel("utm_content", 180),
-    utm_term: safeLabel("utm_term", 120),
-    placement: /^(facebook|instagram|messenger|threads|audience_network)([._-][a-z0-9_-]+)*$/.test(placement) ? placement : (placement ? "other" : ""),
+    utm_id: sanitizeMetaObjectId(take("utm_id", 32)),
+    utm_content: sanitizeMetaObjectId(take("utm_content", 32)),
+    utm_term: sanitizeMetaObjectId(take("utm_term", 32)),
+    placement: sanitizePlacement(placement),
     fbclid: opaque("fbclid", 500),
     fbp: opaque("fbp", 255),
     fbc: opaque("fbc", 255),

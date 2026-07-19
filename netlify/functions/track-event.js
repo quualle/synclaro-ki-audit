@@ -1,6 +1,7 @@
 "use strict";
 
 const { cleanText } = require("./_shared/assessment");
+const { sanitizePlacement } = require("./_shared/attribution");
 const { COOKIE_CONSENT_VERSION } = require("./_shared/consents");
 const { getSupabaseAdmin } = require("./_shared/supabase");
 const { hasAllowedOrigin, isProduction, jsonResponse } = require("./_shared/security");
@@ -40,6 +41,20 @@ const PROPERTY_KEYS = new Set([
 ]);
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const CONSENT_MAX_AGE_MS = 180 * 24 * 60 * 60 * 1000;
+const ENUM_PROPERTIES = Object.freeze({
+  phase: new Set(["assessment"]),
+  employee_band: new Set(["solo", "1-5", "6-10", "11-20", "21-50", "51+"]),
+  respondent_role: new Set(["inhaber", "geschaeftsfuehrung", "leitung", "mitarbeit", "beratung"]),
+  level: new Set(["KI-Fundament aufbauen", "KI-Startklar", "KI-Umsetzungsbereit", "KI-Skalierbar"]),
+  field: new Set(["firstName", "lastName", "company", "email"]),
+  error_code: new Set(["required_or_invalid"]),
+  duration_bucket: new Set(["0-30", "31-120", "121-300", "300+"]),
+});
+const NUMBER_PROPERTIES = Object.freeze({
+  question_count: [0, 8],
+  score: [0, 100],
+  depth: [0, 100],
+});
 
 function validateAnalyticsConsent(input) {
   if (input?.granted !== true || input.version !== COOKIE_CONSENT_VERSION) return null;
@@ -53,6 +68,25 @@ function sanitizeProperties(input) {
   if (!input || typeof input !== "object" || Array.isArray(input)) return output;
   for (const [key, value] of Object.entries(input)) {
     if (!PROPERTY_KEYS.has(key)) continue;
+    if (key === "assessment_version") {
+      const version = cleanText(value, 32);
+      if (/^\d{4}-\d{2}-\d{2}\.v\d{1,3}$/.test(version)) output[key] = version;
+      continue;
+    }
+    if (Object.hasOwn(ENUM_PROPERTIES, key)) {
+      const candidate = cleanText(value, 40);
+      if (ENUM_PROPERTIES[key].has(candidate)) output[key] = candidate;
+      continue;
+    }
+    if (Object.hasOwn(NUMBER_PROPERTIES, key)) {
+      const [min, max] = NUMBER_PROPERTIES[key];
+      if (typeof value === "number" && Number.isFinite(value) && value >= min && value <= max) output[key] = value;
+      continue;
+    }
+    if (key === "preview") {
+      if (typeof value === "boolean") output[key] = value;
+      continue;
+    }
     if (key === "utm_campaign") {
       const campaign = cleanText(value, 120).toLowerCase();
       output[key] = ["ai_readiness_de_prospecting_v1", "meta_ai_readiness_de_prospecting_v1", "meta_other", "other"].includes(campaign)
@@ -61,13 +95,9 @@ function sanitizeProperties(input) {
       continue;
     }
     if (key === "placement") {
-      const placement = cleanText(value, 80).toLowerCase();
-      output[key] = /^(facebook|instagram|messenger|threads|audience_network)([._-][a-z0-9_-]+)*$/.test(placement) ? placement : "other";
+      output[key] = sanitizePlacement(value) || "other";
       continue;
     }
-    if (typeof value === "number" && Number.isFinite(value)) output[key] = value;
-    else if (typeof value === "boolean") output[key] = value;
-    else output[key] = cleanText(value, 120);
   }
   return output;
 }

@@ -1,6 +1,6 @@
 # KI-Readiness-Funnel – Launch Readiness
 
-Stand: 19.07.2026 · Branch: `feat/meta-ai-readiness-funnel` · **nicht live**
+Stand: 19.07.2026 · Zielbranch: `feat/funnel-preview-refinement` · **nicht live**
 
 ## Status in einem Satz
 
@@ -38,9 +38,13 @@ Anzeigengruppe `120251380526890206`, Anzeige `120251380526870206`.
   erhalten. Das dazugehörige verborgene Feld und der event-spezifische Webhook
   konnten nicht im Admin geprüft werden, weil `app.cal.com` ausgeloggt war.
 - Der Meta-Creative-Wizard ist auf ein Image Ad umgestellt. V2-Primärtext,
-  Überschrift, Beschreibung, CTA, Ziel-URL und UTM-Parameter sind gesetzt; keine
-  der fünf automatisch vorgeschlagenen KI-Textvarianten ist ausgewählt. Der
-  Upload der lokalen V2-Dateien ist noch durch
+  Überschrift, Beschreibung, CTA, Ziel-URL und die ältere namensbasierte
+  UTM-Vorlage sind gesetzt; keine der fünf automatisch vorgeschlagenen
+  KI-Textvarianten ist ausgewählt. Die objektgenaue Campaign-/Adset-/Ad-ID-
+  Vorlage ist noch nicht in Meta übernommen. Der
+  Text der lokalen V2-Dateien ist inzwischen auf „8 adaptive Fragen“
+  korrigiert; alle drei PNG-Formate wurden neu gerendert und visuell geprüft.
+  Der Upload ist weiterhin durch
   die fehlende Chrome-Erweiterungsberechtigung für lokale Dateien
   blockiert (`fileChooser.setFiles: Not allowed`); die globale
   Dateiberechtigung wurde bewusst nicht autonom erweitert und es wurde kein
@@ -54,9 +58,11 @@ prüfen.
 Am 19.07.2026 wurden ohne Production-Write und ohne externen Send folgende
 Prüfungen erfolgreich abgeschlossen:
 
-- `npm run check`: 34 von 34 Node-Tests, atomare lokale PostgreSQL-Migration
-  samt Integrationstest und `npm audit` mit 0 bekannten Schwachstellen;
-- `netlify build --context deploy-preview`: alle Readiness-Functions gebündelt;
+- `npm test`: 58 von 58 Node-Tests; atomare lokale PostgreSQL-Migration samt
+  Integrationstest erfolgreich; `npm audit` mit 0 bekannten Schwachstellen;
+- `netlify build --offline --context deploy-preview`: alle Readiness-Functions
+  gebündelt; der Manifest-Test bestätigt Functions API v2, drei Traffic Rules
+  und ein isoliertes `submit-lead`-Bundle;
 - Datenschutz-Worktree: `astro check` mit 0 Fehlern und vollständiger Build
   erfolgreich;
 - `git diff --check`: Funnel- und Datenschutz-Worktree ohne Whitespace-Fehler;
@@ -75,19 +81,21 @@ Prüfungen erfolgreich abgeschlossen:
   ausgelieferten Asset-Verzeichnis entfernt; die aktuelle Social-Karte bleibt
   branchenoffen;
 - frische mobile Browser-Session: 0 Console-Fehler und 0 Console-Warnungen.
-- finale UX-/Accessibility-Re-Prüfung: `PASS`; finaler Code-Critic nach dem
-  letzten Outbox-/SQL-Delta: `PASS`; zusätzliche unabhängige Terra-QA:
-  `GO-WITH-CHANGES` ausschließlich wegen externer Launch-Gates. Die externe
-  OpenRouter-Vollprüfung meldete zunächst einen operativen P2: Ein nach dem
-  Outbox-Claim widerrufener Consent wurde korrekt neutralisiert, erzeugte aber
-  einen falschen Scheduler-Fehler. Der zielgenaue Fix ist regressionstestet;
-  die abschließende externe Delta-QA lautet `GO` ohne offene P0/P1/P2/P3.
+- finale UX-/Accessibility-Re-Prüfung des vorherigen Vollstands: `PASS`;
+  nachträglich identifizierte Tracking-Lücken sind lokal behoben: Meta-Grants
+  werden erst nach serverseitig bestätigtem Consent aktiviert, Analytics-
+  Property-Werte sind streng typisiert und ein nicht unterstütztes adaptives
+  Phantom-Event wurde entfernt. Der abschließende isolierte Critic lautet
+  `PASS`; die quellenfreie externe Terra-QA lautet `GO-WITH-CHANGES` allein
+  wegen der offengelegten Netlify-/Hosted-Gates.
 
 Der dokumentierte `OPENROUTER_API_KEY` ist vorhanden und wurde read-only gegen
-den Provider erfolgreich authentifiziert. Die vorgeschriebene externe
-OpenRouter-QA ist ausgeführt und unter
-`docs/reviews/2026-07-19-final-production-qa.md` protokolliert. Finales Verdict:
-`GO`, keine offenen P0/P1/P2/P3.
+den Provider erfolgreich authentifiziert. Frühere Voll- und Delta-Prüfungen
+sind unter `docs/reviews/2026-07-19-final-production-qa.md` protokolliert. Für
+das letzte Tracking-Delta gilt erst der neue Abschlusscheck als maßgeblich.
+Dieser ist unter
+[`docs/reviews/2026-07-19-final-tracking-delta-qa.md`](./reviews/2026-07-19-final-tracking-delta-qa.md)
+dokumentiert.
 
 ## Aktueller Provider-Audit (read-only)
 
@@ -96,7 +104,7 @@ Send erhoben:
 
 | Bereich | Verifizierter Stand | Konsequenz vor Launch |
 |---|---|---|
-| Netlify | CLI authentifiziert, Repository mit `synclaro-ki-audit` verknüpft; aktueller Deploy Preview bereit, unveröffentlicht und `production=false` | Technische Vorbereitung und Preview-Prüfung können autonom fortgesetzt werden. |
+| Netlify | CLI authentifiziert und richtige Site-ID dokumentiert. Auch der neueste vorhandene Deploy Preview `6a5d3998654fcbf95ad4f6b1` meldet zwar `production=false`, enthält aber noch den alten Funktionspfad: `/api/readiness-session` liefert dort `404`, während `/.netlify/functions/start-session` antwortet. Der finale V2-Stand ist somit noch nicht gehostet. Zusätzlich zieht die Site-UI derzeit den veralteten Build-Befehl `npm run build` und ein unpassendes Next.js-Plugin; nur der lokale Offline-Build über die Repository-Konfiguration ist grün. | Vor Hosted-QA einen neuen Deploy Preview mit ausschließlich Preview-Secrets erzeugen und die Netlify-Site-Buildkonfiguration korrigieren beziehungsweise ausdrücklich bestätigen. Production bleibt unangetastet. |
 | Resend | Production-Zugang read-only erfolgreich authentifiziert; konfigurierte Absenderdomain verifiziert | Provider ist bereit. Echte DOI-, interne und Newsletter-Sends bleiben bis zur gebündelten Testfreigabe aus. |
 | Core-Sicherheit | `SESSION_HMAC_SECRET`, `LEAD_SIGNING_SECRET`, `LEAD_RATE_LIMIT_SECRET` und `LEAD_IP_HASH_SALT` sind vorhanden, unterschreiten aber jeweils die geforderte Mindestlänge von 32 Zeichen | Vor Production vier neue, getrennte Werte sicher erzeugen und im Functions-Scope setzen. |
 | Supabase | URL vorhanden, aber weder `SUPABASE_SECRET_KEY` noch `SUPABASE_SERVICE_ROLE_KEY` im Production-Functions-Scope. Der read-only Live-Abgleich nennt `20260719050454` als jüngste angewandte Migration; die neue Endmigration `20260719060000` ist dort noch nicht registriert und liegt eindeutig danach. Eine isolierte Cloud-Testbranch würde im aktuellen Tarif reale Kosten auslösen. | Keine kostenpflichtige Branch wurde autonom erzeugt. Kostenfreigabe oder ausdrücklich gewählte Testalternative ist ein Geschäftsführer-Gate. |
@@ -194,14 +202,21 @@ Erledigte oder tote Outbox-Zeilen werden nach 30 Tagen bereinigt.
 Keiner dieser Punkte darf stillschweigend als erledigt behandelt werden.
 
 - [x] `npm run check` ist auf dem vorbereiteten finalen Stand erfolgreich.
-- [x] `netlify build --context deploy-preview` ist erfolgreich.
-- [x] Netlify-CLI und Site-Verknüpfung sind geprüft; der aktuelle Preview ist
-  bereit, unveröffentlicht und meldet `production=false`.
-- [x] Der komplette Preview-Durchlauf wurde auf Desktop und Mobil mit
+- [x] `netlify build --offline --context deploy-preview` und der anschließende
+  Manifest-Test sind erfolgreich.
+- [ ] Ein neuer Deploy Preview enthält nachweislich den finalen Functions-v2-
+  Stand. Der vorhandene Preview ist unveröffentlicht und `production=false`,
+  aber nachweislich veraltet (`/api/readiness-session` liefert `404`).
+- [ ] Die Netlify-Site-Buildkonfiguration enthält keinen veralteten
+  `npm run build`-Befehl und kein unpassendes Next.js-Plugin mehr; ein
+  verbundener Deploy-Preview-Build ist danach grün.
+- [ ] Der finale Preview-Durchlauf wurde auf Desktop und Mobil mit
   „nur notwendig“ sowie mit Analyse-/Marketing-Consent geprüft; keine
-  Console-, Netzwerk-, Fokus- oder Layoutfehler.
-- [x] Die externe OpenRouter-QA wurde mit dem verifizierten Zugang ausgeführt,
-  ihr Verdict dokumentiert und etwaige Befunde wurden erneut geprüft.
+  Console-, Netzwerk-, Fokus- oder Layoutfehler. Insbesondere lädt Meta bei
+  gemischter Einwilligung erst nach bestätigtem Server-Consent.
+- [x] Die quellenfreie externe OpenRouter-QA wurde mit dem verifizierten Zugang
+  ausgeführt und mit `GO-WITH-CHANGES` dokumentiert. Ihre verbleibenden Punkte
+  sind die separat offenen Netlify-/Hosted-Gates, keine verdeckten Codefehler.
 - [ ] Die Datenschutzergänzung ist technisch und rechtlich geprüft und auf
   `https://synclaro.de/datenschutz#ki-readiness-test` veröffentlicht.
 - [ ] Auf einer Supabase-Testbranch wurde die atomare Endmigration
@@ -392,7 +407,8 @@ und [Webhook-Signatur/Payload-Version](https://cal.com/docs/developing/guides/au
   DOI-Idempotenz, scanner-sichere und idempotente Newsletter-Abmeldung,
   consent-gebundene Mehrwert-Mail, Booking-Replay-Schutz und getrennte
   Zustellung mehrerer legitimer Buchungen desselben Assessments.
-- [x] `netlify build --context deploy-preview` ist grün.
+- [x] `netlify build --offline --context deploy-preview` und
+  `npm run test:netlify-manifest` sind grün.
 
 ### Manuell / extern
 
