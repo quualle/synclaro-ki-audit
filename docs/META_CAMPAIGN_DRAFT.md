@@ -3,17 +3,22 @@
 Stand: 19.07.2026 · **als Entwurf vorbereitet, nicht veröffentlicht**
 
 Dieses Dokument ist die Freigabevorlage für den Meta Ads Manager. Der sichtbare
-Draft wurde am 19.07.2026 geprüft; Kampagne und Anzeigengruppe wurden eindeutig
-als V2-Entwürfe umbenannt. Es wurde nichts veröffentlicht. Der Creative-Wizard
-enthält die unten dokumentierte Copy, kann aber erst nach freigeschaltetem
-Dateiupload mit dem lokalen V2-Bild abgeschlossen werden. Nicht sichtbare oder
-nachträglich geänderte Werte gelten nicht als freigegeben; unmittelbar vor dem
-Publish müssen alle drei Ebenen erneut gegen diesen Entwurf geprüft werden.
+Draft wurde am 19.07.2026 geprüft und über seine drei exakten Objekt-IDs
+eindeutig identifiziert. Die sichtbaren Namen tragen noch den älteren
+Draft-Stand; die empfohlenen V2-Zielnamen stehen weiter unten und müssen vor der
+finalen Prüfung übernommen werden. Es wurde nichts veröffentlicht. Der
+Creative-Wizard enthält die unten dokumentierte Copy, kann aber erst nach
+freigeschaltetem Dateiupload mit dem lokalen V2-Bild abgeschlossen werden.
+Nicht sichtbare oder nachträglich geänderte Werte gelten nicht als freigegeben;
+unmittelbar vor dem Publish müssen alle drei Ebenen erneut gegen diesen Entwurf
+geprüft werden.
 
 ## Tatsächlicher Draft-Stand
 
 | Bereich | Read-only-Befund | Noch offen |
 |---|---|---|
+| Exakte Draft-Objekte | Kampagne `120251380526880206` · Anzeigengruppe `120251380526890206` · Anzeige `120251380526870206` | Nur diese drei IDs bearbeiten und später in den Publish-Dialog aufnehmen. |
+| Sichtbare Namen | Kampagne `DRAFT | KI Readiness | Leads | DE | 0–20 MA | BUDGETFREIGABE OFFEN | 2026-07` · Anzeigengruppe `DRAFT | DE | Advantage+ Broad | Unternehmer 0–20 MA | EVENT · START · ZAHLENDER OFFEN` · Anzeige `DRAFT | CREATIVE 893c091e… FEHLT | KI Readiness Video | V1` | Vor der Endprüfung auf die unten dokumentierten V2-Zielnamen umbenennen; Anzeigenname an die tatsächlich gewählte Bild-/Video-Variante anpassen. |
 | Ziel / Kaufart | Leads · Auktion | Beibehalten. |
 | Conversion-Ort / Performance Goal | Website · Conversions maximieren | Beibehalten. |
 | Automatisierung | Advantage+ Kampagnenbudget, Audience und Placements | Creative-Adaptionen in jeder Vorschau kontrollieren. |
@@ -23,7 +28,7 @@ Publish müssen alle drei Ebenen erneut gegen diesen Entwurf geprüft werden.
 | Pixel | `1497847851628194` | Richtigen Business Manager/Dataset bestätigen. |
 | Optimierungs-Event | `Lead` noch nicht auswählbar, weil es noch nicht empfangen wurde | Consent-basiertes Pixel/CAPI-Testevent senden, im Events Manager prüfen, dann `Lead` auswählen. |
 | EU-Werbetreibender / Zahlender | `Synclaro.de` / `Johannes Jaegers` | Geschäftsführer bestätigt die rechtliche und wirtschaftliche Richtigkeit ausdrücklich. |
-| Creative-Upload | Image-Ad-Wizard und Copy vorbereitet; Upload durch fehlende Chrome-Dateiberechtigung blockiert | In der ChatGPT-Chrome-Erweiterung „Allow access to file URLs“ aktivieren, dann V2-Dateien auswählen. |
+| Creative-Upload | Image-Ad-Wizard und Copy vorbereitet; der direkte lokale Upload wurde von der Chrome-Erweiterung mit `Not allowed` blockiert | In der ChatGPT-Chrome-Erweiterung „Allow access to file URLs“ bewusst aktivieren, dann V2-Dateien auswählen. Keine globale Dateiberechtigung wurde autonom erweitert. |
 
 ## Kampagnenziel und Funnel-Logik
 

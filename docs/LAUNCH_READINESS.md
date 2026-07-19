@@ -13,8 +13,11 @@ erfolgt anschließend in der festgelegten Reihenfolge.
 
 ## Externer Read-only-Snapshot
 
-Am 19.07.2026 wurde der sichtbare externe Stand geprüft. Kampagne und
-Anzeigengruppe wurden als V2-Entwürfe umbenannt; veröffentlicht wurde nichts:
+Am 19.07.2026 wurde der sichtbare externe Stand geprüft; veröffentlicht wurde
+nichts. Die empfohlenen V2-Namen sind im Meta-Entwurf dokumentiert, im Ads
+Manager tragen die Objekte noch ihre älteren Draft-Namen. Entscheidend sind die
+exakten IDs: Kampagne `120251380526880206`, Anzeigengruppe
+`120251380526890206`, Anzeige `120251380526870206`.
 
 - Im Meta Ads Manager existiert ein unveröffentlichter Leads-/Website-Draft mit
   Auktion, „Conversions maximieren“, Advantage+ Budget/Audience/Placements,
@@ -35,7 +38,9 @@ Anzeigengruppe wurden als V2-Entwürfe umbenannt; veröffentlicht wurde nichts:
 - Der Meta-Creative-Wizard ist auf ein Image Ad umgestellt und mit der
   dokumentierten Copy vorbereitet. Der Upload der lokalen V2-Dateien ist noch
   durch die fehlende Chrome-Erweiterungsberechtigung für lokale Dateien
-  blockiert; es wurde kein Ersatz-Creative veröffentlicht.
+  blockiert (`fileChooser.setFiles: Not allowed`); die globale
+  Dateiberechtigung wurde bewusst nicht autonom erweitert und es wurde kein
+  Ersatz-Creative veröffentlicht.
 
 Dieser Snapshot kann sich ändern und ist unmittelbar vor dem Publish erneut zu
 prüfen.
