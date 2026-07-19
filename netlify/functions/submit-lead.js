@@ -282,9 +282,7 @@ exports.handler = async (event) => {
     const storedResult = result?.result && typeof result.result === "object" ? result.result : null;
     const responseResult = result?.status === "idempotent" && storedResult ? storedResult : detailedResult;
     const responseBaseline = result?.status === "idempotent" && storedResult ? storedResult : baseline;
-    const metaLeadEligible = result?.status === "idempotent"
-      ? result?.meta_lead_eligible === true || result?.metaLeadEligible === true
-      : consents.marketing.granted;
+    const metaLeadEligible = result?.meta_lead_eligible === true || result?.metaLeadEligible === true;
 
     return jsonResponse(201, {
       accepted: true,

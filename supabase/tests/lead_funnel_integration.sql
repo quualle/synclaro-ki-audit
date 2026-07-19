@@ -179,6 +179,9 @@ declare
   v_consent public.crm_marketing_consents%rowtype;
   v_confirm jsonb;
   v_retry jsonb;
+  v_claim record;
+  v_doi_checked boolean := false;
+  v_welcome_checked boolean := false;
 begin
   select id into v_contact from public.crm_contacts where email = 'newsletter@example.com';
   select * into v_consent from public.crm_marketing_consents where contact_id = v_contact and channel = 'email' and revoked_at is null;
@@ -189,12 +192,55 @@ begin
   if (select pg_catalog.array_agg(delivery_type order by delivery_type) from private.ai_readiness_outbox where assessment_id = '20202020-2020-4020-8020-202020202020')
     <> array['internal_notification', 'newsletter_double_optin', 'telegram_notification']::text[]
   then raise exception 'newsletter outbox set invalid'; end if;
-  v_confirm := public.confirm_ai_readiness_newsletter_v1('20202020-2020-4020-8020-202020202020', '22222222-2222-4222-8222-222222222222');
-  v_retry := public.confirm_ai_readiness_newsletter_v1('20202020-2020-4020-8020-202020202020', '22222222-2222-4222-8222-222222222222');
+  update public.crm_contacts set email = 'crm-changed-before-doi@example.com' where id = v_contact;
+  for v_claim in select * from public.claim_ai_readiness_deliveries_v2(10)
+  loop
+    if v_claim.assessment_id = '20202020-2020-4020-8020-202020202020'
+      and v_claim.delivery_type = 'newsletter_double_optin'
+    then
+      v_doi_checked := true;
+      if v_claim.email <> 'newsletter@example.com'
+      then raise exception 'DOI recipient drifted with CRM email: %', v_claim.email; end if;
+    end if;
+    perform public.complete_ai_readiness_delivery_v2(v_claim.outbox_id, v_claim.lease_token, true, null);
+  end loop;
+  if not v_doi_checked then raise exception 'DOI recipient immutability was not exercised'; end if;
+  update public.crm_contacts set email = 'newsletter@example.com' where id = v_contact;
+  v_confirm := public.confirm_ai_readiness_newsletter_v1(
+    '20202020-2020-4020-8020-202020202020', '22222222-2222-4222-8222-222222222222',
+    'unsubscribe-test-token', 'bookingpayload.bookingsignature'
+  );
+  v_retry := public.confirm_ai_readiness_newsletter_v1(
+    '20202020-2020-4020-8020-202020202020', '22222222-2222-4222-8222-222222222222',
+    'unsubscribe-test-token', 'unusedretry.unusedsignature'
+  );
   if v_confirm ->> 'status' <> 'confirmed' or v_retry ->> 'status' <> 'idempotent'
   then raise exception 'DOI confirmation is not idempotent: %, %', v_confirm, v_retry; end if;
   if not exists (select 1 from public.v_email_marketing_list where contact_id = v_contact)
   then raise exception 'confirmed DOI missing from active email list'; end if;
+  if (select count(*) from private.ai_readiness_outbox
+      where assessment_id = '20202020-2020-4020-8020-202020202020'
+        and delivery_type = 'newsletter_welcome'
+        and delivery_payload ->> 'unsubscribeToken' = 'unsubscribe-test-token'
+        and delivery_payload ->> 'bookingReference' = 'bookingpayload.bookingsignature') <> 1
+  then raise exception 'confirmed DOI did not queue exactly one welcome email'; end if;
+  update public.crm_contacts set email = 'crm-changed-before-welcome@example.com' where id = v_contact;
+  if (select email from public.v_email_marketing_list where contact_id = v_contact) <> 'newsletter@example.com'
+  then raise exception 'active Readiness list drifted with CRM email'; end if;
+  for v_claim in select * from public.claim_ai_readiness_deliveries_v2(10)
+  loop
+    if v_claim.assessment_id = '20202020-2020-4020-8020-202020202020'
+      and v_claim.delivery_type = 'newsletter_welcome'
+    then
+      v_welcome_checked := true;
+      if v_claim.email <> 'newsletter@example.com'
+        or v_claim.delivery_payload ->> 'bookingReference' <> 'bookingpayload.bookingsignature'
+      then raise exception 'welcome recipient or booking reference drifted: %', v_claim; end if;
+    end if;
+    perform public.complete_ai_readiness_delivery_v2(v_claim.outbox_id, v_claim.lease_token, true, null);
+  end loop;
+  if not v_welcome_checked then raise exception 'welcome recipient immutability was not exercised'; end if;
+  update public.crm_contacts set email = 'newsletter@example.com' where id = v_contact;
 end;
 $$;
 
@@ -228,6 +274,38 @@ begin
     or exists (select 1 from private.ai_readiness_outbox where assessment_id = '30303030-3030-4030-8030-303030303030' and delivery_type in ('telegram_notification', 'newsletter_double_optin'))
     or exists (select 1 from public.crm_marketing_consents consent join public.crm_contacts contact on contact.id = consent.contact_id where contact.email = 'meta@example.com')
   then raise exception 'Meta tracking and newsletter consent were conflated'; end if;
+end;
+$$;
+
+do $$
+declare
+  v_payload jsonb;
+  v_result jsonb;
+begin
+  perform public.record_ai_readiness_tracking_consent_v1(
+    '44444444-4444-4444-8444-444444444444', null,
+    'dddddddd-dddd-4ddd-8ddd-dddddddddddd', pg_catalog.repeat('4', 64), pg_catalog.repeat('4', 64),
+    'cookie-v1-2026-07-18', false, true, pg_catalog.repeat('e', 64), 'Integration Test'
+  );
+  v_payload := pg_temp.make_payload(
+    '40404040-4040-4040-8040-404040404040', '44444444-4444-4444-8444-444444444444',
+    'dddddddd-dddd-4ddd-8ddd-dddddddddddd', '4', '4', 'nonfit@example.com', false, true
+  );
+  v_payload := pg_catalog.jsonb_set(v_payload, '{profile,mitarbeiter}', '"21-50"'::jsonb);
+  v_payload := pg_catalog.jsonb_set(v_payload, '{profile,rolle}', '"mitarbeit"'::jsonb);
+  v_result := public.submit_ai_readiness_lead_v2(v_payload);
+  if v_result ->> 'meta_lead_eligible' <> 'false'
+    or not exists (
+      select 1 from public.ai_readiness_assessments
+      where id = '40404040-4040-4040-8040-404040404040'
+        and not lead_fit and meta_delivery_status = 'not_requested'
+    )
+    or exists (
+      select 1 from private.ai_readiness_outbox
+      where assessment_id = '40404040-4040-4040-8040-404040404040'
+        and delivery_type = 'meta_capi'
+    )
+  then raise exception 'non-ICP completion was emitted as Meta Lead: %', v_result; end if;
 end;
 $$;
 
@@ -321,17 +399,274 @@ $$;
 
 do $$
 declare
+  v_outbox_id uuid := '60606060-6060-4060-8060-606060606060';
+  v_valid_lease uuid := '61616161-6161-4161-8161-616161616161';
+  v_wrong_lease uuid := '62626262-6262-4262-8262-626262626262';
+  v_authorization jsonb;
+  v_invalid_rejected boolean := false;
+begin
+  insert into private.ai_readiness_outbox(
+    id, assessment_id, delivery_type, dedupe_key, status, attempts,
+    available_at, locked_at, lease_token, delivery_payload, expires_at
+  ) values (
+    v_outbox_id, '10101010-1010-4010-8010-101010101010', 'internal_notification',
+    'negative-invalid-lease', 'processing', 0, pg_catalog.now(), pg_catalog.now(),
+    v_valid_lease, '{"probe":"invalid-lease"}'::jsonb, pg_catalog.now() + interval '1 day'
+  );
+  v_authorization := public.authorize_ai_readiness_delivery_v2(v_outbox_id, v_wrong_lease);
+  if v_authorization ->> 'lease_valid' <> 'false' or v_authorization ->> 'authorized' <> 'false'
+  then raise exception 'wrong lease was authorized: %', v_authorization; end if;
+  begin
+    perform public.complete_ai_readiness_delivery_v2(v_outbox_id, v_wrong_lease, true, null);
+  exception when others then
+    v_invalid_rejected := sqlerrm like '%delivery_lease_invalid%';
+  end;
+  if not v_invalid_rejected then raise exception 'wrong lease completed delivery'; end if;
+  perform public.complete_ai_readiness_delivery_v2(v_outbox_id, v_valid_lease, true, null);
+  if not exists (
+    select 1 from private.ai_readiness_outbox
+    where id = v_outbox_id and status = 'delivered' and delivery_payload = '{}'::jsonb
+  ) then raise exception 'valid lease did not complete after rejected replay'; end if;
+end;
+$$;
+
+do $$
+declare
+  v_outbox_id uuid := '63636363-6363-4363-8363-636363636363';
+  v_lease uuid := '64646464-6464-4464-8464-646464646464';
+  v_authorization jsonb;
+begin
+  insert into private.ai_readiness_outbox(
+    id, assessment_id, delivery_type, dedupe_key, status, attempts,
+    available_at, locked_at, lease_token, delivery_payload, expires_at
+  ) values (
+    v_outbox_id, '10101010-1010-4010-8010-101010101010', 'internal_notification',
+    'negative-expired-lease', 'processing', 0, pg_catalog.now(),
+    pg_catalog.now() - interval '16 minutes', v_lease,
+    '{"probe":"expired-lease"}'::jsonb, pg_catalog.now() + interval '1 day'
+  );
+  v_authorization := public.authorize_ai_readiness_delivery_v2(v_outbox_id, v_lease);
+  if v_authorization ->> 'lease_valid' <> 'false' then raise exception 'expired lease remained valid: %', v_authorization; end if;
+  perform public.complete_ai_readiness_delivery_v2(v_outbox_id, v_lease, true, null);
+  if not exists (
+    select 1 from private.ai_readiness_outbox
+    where id = v_outbox_id and status = 'dead' and attempts = 1
+      and last_error_code = 'expired' and delivery_payload = '{}'::jsonb
+  ) then raise exception 'expired lease did not fail closed'; end if;
+end;
+$$;
+
+do $$
+declare
+  v_outbox_id uuid := '65656565-6565-4565-8565-656565656565';
+  v_first_lease uuid := '66666666-6666-4666-8666-666666666666';
+  v_final_lease uuid := '67676767-6767-4767-8767-676767676767';
+begin
+  insert into private.ai_readiness_outbox(
+    id, assessment_id, delivery_type, dedupe_key, status, attempts,
+    available_at, locked_at, lease_token, delivery_payload, expires_at
+  ) values (
+    v_outbox_id, '10101010-1010-4010-8010-101010101010', 'internal_notification',
+    'negative-backoff', 'processing', 0, pg_catalog.now(), pg_catalog.now(),
+    v_first_lease, '{"probe":"retry"}'::jsonb, pg_catalog.now() + interval '1 day'
+  );
+  perform public.complete_ai_readiness_delivery_v2(v_outbox_id, v_first_lease, false, 'timeout');
+  if not exists (
+    select 1 from private.ai_readiness_outbox
+    where id = v_outbox_id and status = 'pending' and attempts = 1
+      and last_error_code = 'timeout'
+      and available_at >= pg_catalog.now() + interval '9 minutes'
+      and delivery_payload = '{"probe":"retry"}'::jsonb
+  ) then raise exception 'retry did not retain payload with backoff'; end if;
+  update private.ai_readiness_outbox set
+    status = 'processing', attempts = 7, available_at = pg_catalog.now(),
+    locked_at = pg_catalog.now(), lease_token = v_final_lease
+  where id = v_outbox_id;
+  perform public.complete_ai_readiness_delivery_v2(v_outbox_id, v_final_lease, false, 'timeout');
+  if not exists (
+    select 1 from private.ai_readiness_outbox
+    where id = v_outbox_id and status = 'dead' and attempts = 8
+      and last_error_code = 'timeout' and delivery_payload = '{}'::jsonb
+  ) then raise exception 'retry cap did not terminate delivery safely'; end if;
+end;
+$$;
+
+do $$
+declare
+  v_cancelled_id uuid := '70707070-7070-4070-8070-707070707070';
+  v_outbox_id uuid := '68686868-6868-4868-8868-686868686868';
+  v_lease uuid := '69696969-6969-4969-8969-696969696969';
+  v_authorization jsonb;
+begin
+  insert into private.ai_readiness_outbox(
+    id, assessment_id, delivery_type, dedupe_key, status, attempts,
+    available_at, delivery_payload, expires_at
+  ) values (
+    v_cancelled_id, '30303030-3030-4030-8030-303030303030', 'meta_schedule',
+    'negative-consent-pending', 'pending', 0, pg_catalog.now(),
+    '{"eventId":"pending-revocation-probe","eventTime":1700000000}'::jsonb,
+    pg_catalog.now() + interval '1 day'
+  );
+  perform public.record_ai_readiness_tracking_consent_v1(
+    '77777777-7777-4777-8777-777777777777',
+    '33333333-3333-4333-8333-333333333333',
+    'cccccccc-cccc-4ccc-8ccc-cccccccccccc', pg_catalog.repeat('3', 64), pg_catalog.repeat('3', 64),
+    'cookie-v1-2026-07-18', false, false, pg_catalog.repeat('e', 64), 'Integration Test'
+  );
+  if not exists (
+    select 1 from private.ai_readiness_outbox
+    where id = v_cancelled_id and status = 'dead'
+      and last_error_code = 'consent_revoked' and delivery_payload = '{}'::jsonb
+  ) then raise exception 'pending Meta Schedule survived consent revocation'; end if;
+  insert into private.ai_readiness_outbox(
+    id, assessment_id, delivery_type, dedupe_key, status, attempts,
+    available_at, locked_at, lease_token, delivery_payload, expires_at
+  ) values (
+    v_outbox_id, '30303030-3030-4030-8030-303030303030', 'meta_schedule',
+    'negative-consent-revoked', 'processing', 0, pg_catalog.now(), pg_catalog.now(),
+    v_lease, '{"eventId":"revoked-probe","eventTime":1700000000}'::jsonb,
+    pg_catalog.now() + interval '1 day'
+  );
+  v_authorization := public.authorize_ai_readiness_delivery_v2(v_outbox_id, v_lease);
+  if v_authorization ->> 'lease_valid' <> 'true' or v_authorization ->> 'authorized' <> 'false'
+  then raise exception 'revoked Meta consent remained authorized: %', v_authorization; end if;
+  perform public.complete_ai_readiness_delivery_v2(v_outbox_id, v_lease, false, 'consent_revoked');
+  if not exists (
+    select 1 from private.ai_readiness_outbox
+    where id = v_outbox_id and status = 'dead'
+      and last_error_code = 'consent_revoked' and delivery_payload = '{}'::jsonb
+  ) then raise exception 'revoked Meta delivery did not fail closed'; end if;
+end;
+$$;
+
+do $$
+declare
+  v_revoke jsonb;
+  v_retry jsonb;
+  v_contact_id uuid;
+begin
+  insert into private.ai_readiness_outbox(
+    assessment_id, delivery_type, dedupe_key, status, available_at, expires_at, delivery_payload
+  ) values
+    ('20202020-2020-4020-8020-202020202020', 'newsletter_welcome', 'revoke-probe', 'pending',
+      pg_catalog.now(), pg_catalog.now() + interval '1 day', '{"unsubscribeToken":"revoke-probe"}'::jsonb),
+    ('20202020-2020-4020-8020-202020202020', 'telegram_notification', 'revoke-probe', 'pending',
+      pg_catalog.now(), pg_catalog.now() + interval '1 day', '{"newsletterStatus":"confirmed"}'::jsonb);
+  v_revoke := public.revoke_ai_readiness_newsletter_v1(
+    '20202020-2020-4020-8020-202020202020', '22222222-2222-4222-8222-222222222222'
+  );
+  v_retry := public.revoke_ai_readiness_newsletter_v1(
+    '20202020-2020-4020-8020-202020202020', '22222222-2222-4222-8222-222222222222'
+  );
+  select contact_id into v_contact_id from public.ai_readiness_assessments
+  where id = '20202020-2020-4020-8020-202020202020';
+  if v_revoke ->> 'status' <> 'revoked' or v_retry ->> 'status' <> 'idempotent'
+    or not exists (
+      select 1 from public.ai_readiness_assessments
+      where id = '20202020-2020-4020-8020-202020202020' and newsletter_status = 'revoked'
+    )
+    or not exists (
+      select 1 from public.crm_marketing_consents
+      where contact_id = v_contact_id and channel = 'email'
+        and revoked_at is not null and revoke_source = 'ki-readiness-email-link'
+    )
+    or exists (select 1 from public.v_email_marketing_list where contact_id = v_contact_id)
+    or exists (
+      select 1 from private.ai_readiness_outbox
+      where assessment_id = '20202020-2020-4020-8020-202020202020'
+        and delivery_type in ('telegram_notification', 'newsletter_double_optin', 'newsletter_welcome')
+        and status in ('pending', 'processing')
+    )
+    or exists (
+      select 1 from private.ai_readiness_outbox
+      where assessment_id = '20202020-2020-4020-8020-202020202020'
+        and delivery_type in ('telegram_notification', 'newsletter_double_optin', 'newsletter_welcome')
+        and status = 'dead' and delivery_payload <> '{}'::jsonb
+    )
+    or (select count(*) from public.crm_contact_events
+        where contact_id = v_contact_id and summary = 'Newsletter-Einwilligung widerrufen') <> 1
+  then raise exception 'newsletter revocation was not idempotent and fail-closed: %, %', v_revoke, v_retry; end if;
+end;
+$$;
+
+do $$
+declare
+  v_consent_decided_at timestamptz;
+  v_event_result jsonb;
   v_purge jsonb;
 begin
+  perform public.record_ai_readiness_tracking_consent_v1(
+    '88888888-8888-4888-8888-888888888888',
+    '11111111-1111-4111-8111-111111111111',
+    'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', pg_catalog.repeat('1', 64), pg_catalog.repeat('1', 64),
+    'cookie-v1-2026-07-18', true, false, pg_catalog.repeat('e', 64), 'Integration Test'
+  );
+  select decided_at into v_consent_decided_at
+  from private.ai_readiness_tracking_consents
+  where decision_id = '88888888-8888-4888-8888-888888888888';
+  v_event_result := public.record_ai_readiness_event_v1(
+    '89898989-8989-4989-8989-898989898989'::uuid,
+    'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid, pg_catalog.repeat('1', 64),
+    'report_viewed', 100::smallint, '{"campaign":"purge-probe"}'::jsonb,
+    pg_catalog.now(), 'cookie-v1-2026-07-18', v_consent_decided_at
+  );
+  if v_event_result ->> 'accepted' <> 'true' then raise exception 'purge event fixture failed: %', v_event_result; end if;
+  update public.ai_readiness_events set created_at = pg_catalog.now() - interval '91 days'
+  where event_id = '89898989-8989-4989-8989-898989898989';
+  update private.ai_readiness_tracking_consents set retention_until = pg_catalog.now() - interval '1 day'
+  where decision_id = '88888888-8888-4888-8888-888888888888';
+  update private.ai_readiness_outbox set created_at = pg_catalog.now() - interval '31 days'
+  where id = '60606060-6060-4060-8060-606060606060';
   update private.ai_readiness_booking_receipts
   set received_at = pg_catalog.now() - interval '91 days'
   where booking_uid = 'booking-readiness-001';
   v_purge := public.purge_ai_readiness_ephemeral_v1();
-  if exists (
-    select 1 from private.ai_readiness_booking_receipts
-    where booking_uid = 'booking-readiness-001'
-  ) or coalesce((v_purge ->> 'booking_receipts_deleted')::integer, 0) < 1
-  then raise exception 'stale booking receipt was not purged: %', v_purge; end if;
+  if exists (select 1 from public.ai_readiness_events where event_id = '89898989-8989-4989-8989-898989898989')
+    or exists (select 1 from private.ai_readiness_tracking_consents where decision_id = '88888888-8888-4888-8888-888888888888')
+    or exists (select 1 from private.ai_readiness_outbox where id = '60606060-6060-4060-8060-606060606060')
+    or exists (select 1 from private.ai_readiness_booking_receipts where booking_uid = 'booking-readiness-001')
+    or coalesce((v_purge ->> 'events_deleted')::integer, 0) < 1
+    or coalesce((v_purge ->> 'outbox_deleted')::integer, 0) < 1
+    or coalesce((v_purge ->> 'tracking_consent_evidence_deleted')::integer, 0) < 1
+    or coalesce((v_purge ->> 'booking_receipts_deleted')::integer, 0) < 1
+  then raise exception 'ephemeral purge did not cover every retention class: %', v_purge; end if;
+end;
+$$;
+
+do $$
+begin
+  if has_schema_privilege('anon', 'private', 'usage')
+    or has_schema_privilege('authenticated', 'private', 'usage')
+    or has_table_privilege('anon', 'public.ai_readiness_assessments', 'select')
+    or has_table_privilege('authenticated', 'public.ai_readiness_assessments', 'select')
+    or has_table_privilege('anon', 'public.ai_readiness_events', 'select')
+    or has_table_privilege('authenticated', 'public.ai_readiness_events', 'select')
+    or has_table_privilege('anon', 'public.v_email_marketing_list', 'select')
+    or has_table_privilege('authenticated', 'public.v_email_marketing_list', 'select')
+    or has_function_privilege('anon', 'public.submit_ai_readiness_lead_v2(jsonb)', 'execute')
+    or has_function_privilege('authenticated', 'public.submit_ai_readiness_lead_v2(jsonb)', 'execute')
+    or has_function_privilege('anon', 'public.claim_ai_readiness_deliveries_v2(integer)', 'execute')
+    or has_function_privilege('authenticated', 'public.claim_ai_readiness_deliveries_v2(integer)', 'execute')
+    or has_function_privilege('anon', 'public.confirm_ai_readiness_newsletter_v1(uuid,uuid,text,text)', 'execute')
+    or has_function_privilege('authenticated', 'public.confirm_ai_readiness_newsletter_v1(uuid,uuid,text,text)', 'execute')
+    or has_function_privilege('anon', 'public.revoke_ai_readiness_newsletter_v1(uuid,uuid)', 'execute')
+    or has_function_privilege('authenticated', 'public.revoke_ai_readiness_newsletter_v1(uuid,uuid)', 'execute')
+  then raise exception 'anon/authenticated retained Readiness privileges'; end if;
+  if not has_table_privilege('service_role', 'public.ai_readiness_assessments', 'select,insert,update,delete')
+    or not has_table_privilege('service_role', 'public.ai_readiness_events', 'select,insert,update,delete')
+    or not has_function_privilege('service_role', 'public.submit_ai_readiness_lead_v2(jsonb)', 'execute')
+    or not has_function_privilege('service_role', 'public.claim_ai_readiness_deliveries_v2(integer)', 'execute')
+    or not has_function_privilege('service_role', 'public.confirm_ai_readiness_newsletter_v1(uuid,uuid,text,text)', 'execute')
+    or not has_function_privilege('service_role', 'public.revoke_ai_readiness_newsletter_v1(uuid,uuid)', 'execute')
+    or not exists (
+      select 1 from pg_catalog.pg_class
+      where oid = 'public.ai_readiness_assessments'::regclass and relrowsecurity
+    )
+    or not exists (
+      select 1 from pg_catalog.pg_class
+      where oid = 'public.ai_readiness_events'::regclass and relrowsecurity
+    )
+  then raise exception 'service-role grants or Readiness RLS are incomplete'; end if;
 end;
 $$;
 

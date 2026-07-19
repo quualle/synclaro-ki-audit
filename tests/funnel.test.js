@@ -161,10 +161,28 @@ test("Conversion-Gate, Formfelder und Ergebnis-CTAs bleiben transparent und barr
   assert.doesNotMatch(app, /role="radio"|role="radiogroup"|aria-checked=/);
   assert.match(app, /showOnlyScreen\("measuringScreen"\)/);
   assert.match(app, /showOnlyScreen\("fullResult"\)/);
+  assert.match(app, /const TOTAL_JOURNEY_STEPS = PROFILE_STEPS\.length \+ CORE_QUESTION_COUNT \+ OPTIONAL_CONTEXT_COUNT \+ CONTACT_STEPS\.length/);
+  assert.match(app, /Math\.ceil\(\(total - completed\) \* \.19\)/);
+  assert.equal((app.match(/updateProgress\([^;]+TOTAL_JOURNEY_STEPS\);/g) || []).length, 3);
+  assert.match(app, /optionaler Kontext, nicht Teil der 12 Kernfragen/);
+  assert.match(app, /\["assessmentApp", "fullResult"\]\.includes\(layer\.id\)/);
+  assert.match(app, /\$\("#closeResult"\)\.addEventListener\("click", closeTest\)/);
+  assert.match(app, /\$\("#resultHomeLink"\)\.addEventListener/);
+  assert.match(html, /id="closeResult"[^>]+aria-label="Ergebnis schließen"/);
+  assert.match(html, /id="resultHomeLink"[^>]+aria-label="Ergebnis schließen/);
   assert.match(app, /preview_not_sent/);
   assert.match(css, /\.result-privacy-note[^}]*font-size: 14px/);
   assert.match(css, /\.lever-section > \* \{ min-width: 0; \}/);
   assert.match(css, /\.lever-section h2[^}]*overflow-wrap: anywhere/);
+  for (const page of [
+    "newsletter-abgemeldet.html",
+    "newsletter-abmeldung-fehlgeschlagen.html",
+    "newsletter-abmeldung-preview.html",
+    "newsletter-preview.html",
+  ]) assert.equal(fs.existsSync(path.join(__dirname, `../public/${page}`)), true);
+  for (const oldAsset of ["hero.jpg", "og.jpg", "phase1.jpg", "phase2.jpg", "phase3.jpg"]) {
+    assert.equal(fs.existsSync(path.join(__dirname, `../public/assets/${oldAsset}`)), false);
+  }
 });
 
 test("der frühere externe Analyse-Endpunkt ist dauerhaft deaktiviert", async () => {

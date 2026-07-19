@@ -204,7 +204,8 @@ img, svg { display: block; max-width: 100%; }
 
 /* Score preview & lead gate */
 .score-screen, .result-screen { position: fixed; }
-.result-nav { position: sticky; top: 0; z-index: 10; width: min(100% - 48px, var(--shell)); margin-inline: auto; border-bottom: 1px solid var(--line); background: rgba(11, 11, 12, .92); backdrop-filter: blur(14px); }
+.result-nav { position: sticky; top: 0; z-index: 10; width: min(100% - 48px, var(--shell)); min-height: 76px; margin-inline: auto; display: flex; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 1px solid var(--line); background: rgba(11, 11, 12, .92); backdrop-filter: blur(14px); }
+.result-nav-actions { display: flex; align-items: center; gap: 14px; }
 .score-shell { width: min(100% - 48px, 980px); margin-inline: auto; padding: 76px 0 100px; }
 .score-intro { max-width: 720px; }
 .score-intro h1 { margin: 0; font: 900 clamp(40px, 6vw, 66px)/1 var(--display); letter-spacing: -.05em; }

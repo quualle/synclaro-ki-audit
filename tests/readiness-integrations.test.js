@@ -142,11 +142,13 @@ test("ein idempotenter Lead-Retry bindet den Kalender-Verweis an das bereits ges
 
 test("Newsletter-DOI mutiert niemals per GET und bestätigt erst nach explizitem POST", async () => {
   const previousSecret = process.env.LEAD_SIGNING_SECRET;
+  const previousContext = process.env.CONTEXT;
   const supabasePath = require.resolve("../netlify/functions/_shared/supabase");
   const confirmPath = require.resolve("../netlify/functions/confirm-newsletter");
   const supabaseModule = require(supabasePath);
   const originalGetSupabaseAdmin = supabaseModule.getSupabaseAdmin;
   const calls = [];
+  process.env.CONTEXT = "production";
   process.env.LEAD_SIGNING_SECRET = "doi-post-test-secret-".padEnd(64, "x");
   supabaseModule.getSupabaseAdmin = () => ({
     rpc: async (name, params) => {
@@ -175,14 +177,125 @@ test("Newsletter-DOI mutiert niemals per GET und bestätigt erst nach explizitem
     });
     assert.equal(postResponse.statusCode, 303);
     assert.equal(postResponse.headers.Location, "/newsletter-bestaetigt.html");
-    assert.deepEqual(calls, [{
-      name: "confirm_ai_readiness_newsletter_v1",
-      params: { p_assessment_id: assessmentId, p_submission_id: submissionId },
-    }]);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].name, "confirm_ai_readiness_newsletter_v1");
+    assert.equal(calls[0].params.p_assessment_id, assessmentId);
+    assert.equal(calls[0].params.p_submission_id, submissionId);
+    assert.equal(calls[0].params.p_unsubscribe_token, security.signNewsletterUnsubscribeToken(assessmentId, submissionId));
+    assert.equal(security.verifyBookingReference(calls[0].params.p_booking_reference).assessmentId, assessmentId);
+    assert.equal(security.verifyBookingReference(calls[0].params.p_booking_reference).submissionId, submissionId);
+    process.env.CONTEXT = "deploy-preview";
+    const previewPost = await confirm.handler({
+      httpMethod: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams(queryStringParameters).toString(),
+    });
+    assert.equal(previewPost.statusCode, 303);
+    assert.equal(previewPost.headers.Location, "/newsletter-preview.html");
+    assert.equal(calls.length, 1);
   } finally {
     supabaseModule.getSupabaseAdmin = originalGetSupabaseAdmin;
     delete require.cache[confirmPath];
     restoreEnv("LEAD_SIGNING_SECRET", previousSecret);
+    restoreEnv("CONTEXT", previousContext);
+  }
+});
+
+test("Newsletter-Abmeldung mutiert nie per GET und bleibt im Preview write-frei", async () => {
+  const previousSecret = process.env.LEAD_SIGNING_SECRET;
+  const previousContext = process.env.CONTEXT;
+  const supabasePath = require.resolve("../netlify/functions/_shared/supabase");
+  const unsubscribePath = require.resolve("../netlify/functions/unsubscribe-newsletter");
+  const supabaseModule = require(supabasePath);
+  const originalGetSupabaseAdmin = supabaseModule.getSupabaseAdmin;
+  const calls = [];
+  process.env.CONTEXT = "production";
+  process.env.LEAD_SIGNING_SECRET = "unsubscribe-test-secret-".padEnd(64, "x");
+  supabaseModule.getSupabaseAdmin = () => ({
+    rpc: async (name, params) => {
+      calls.push({ name, params });
+      return { data: [{ accepted: true, status: "revoked" }], error: null };
+    },
+  });
+  delete require.cache[unsubscribePath];
+  const unsubscribe = require(unsubscribePath);
+
+  try {
+    const assessmentId = "11111111-1111-4111-8111-111111111111";
+    const submissionId = "22222222-2222-4222-8222-222222222222";
+    const token = security.signNewsletterUnsubscribeToken(assessmentId, submissionId);
+    const queryStringParameters = { assessment: assessmentId, submission: submissionId, token };
+    assert.equal(security.verifyNewsletterUnsubscribeToken(token, assessmentId, submissionId), true);
+    assert.equal(security.verifyNewsletterUnsubscribeToken(`${token.slice(0, -1)}x`, assessmentId, submissionId), false);
+
+    const getResponse = await unsubscribe.handler({ httpMethod: "GET", queryStringParameters });
+    assert.equal(getResponse.statusCode, 200);
+    assert.match(getResponse.body, /method="post"/);
+    assert.match(getResponse.body, /Jetzt abmelden/);
+    assert.equal(calls.length, 0);
+
+    process.env.CONTEXT = "deploy-preview";
+    const previewPost = await unsubscribe.handler({
+      httpMethod: "POST",
+      queryStringParameters,
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: "List-Unsubscribe=One-Click",
+    });
+    assert.equal(previewPost.statusCode, 303);
+    assert.equal(previewPost.headers.Location, "/newsletter-abmeldung-preview.html");
+    assert.equal(calls.length, 0);
+
+    process.env.CONTEXT = "production";
+    const invalidManualResponse = await unsubscribe.handler({
+      httpMethod: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        ...queryStringParameters,
+        token: `${token.slice(0, -1)}${token.endsWith("a") ? "b" : "a"}`,
+      }).toString(),
+    });
+    assert.equal(invalidManualResponse.statusCode, 303);
+    assert.equal(invalidManualResponse.headers.Location, "/newsletter-abmeldung-fehlgeschlagen.html");
+    assert.equal(calls.length, 0);
+
+    const postResponse = await unsubscribe.handler({
+      httpMethod: "POST",
+      queryStringParameters,
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: "List-Unsubscribe=One-Click",
+    });
+    assert.equal(postResponse.statusCode, 200);
+    assert.equal(postResponse.body, "");
+
+    const boundary = "newsletter-one-click-boundary";
+    const multipartResponse = await unsubscribe.handler({
+      httpMethod: "POST",
+      queryStringParameters,
+      headers: { "content-type": `multipart/form-data; boundary=${boundary}` },
+      body: `--${boundary}\r\nContent-Disposition: form-data; name="List-Unsubscribe"\r\n\r\nOne-Click\r\n--${boundary}--\r\n`,
+    });
+    assert.equal(multipartResponse.statusCode, 200);
+    assert.equal(multipartResponse.body, "");
+
+    const manualResponse = await unsubscribe.handler({
+      httpMethod: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams(queryStringParameters).toString(),
+    });
+    assert.equal(manualResponse.statusCode, 303);
+    assert.equal(manualResponse.headers.Location, "/newsletter-abgemeldet.html");
+    assert.equal(calls.length, 3);
+    for (const call of calls) {
+      assert.deepEqual(call, {
+        name: "revoke_ai_readiness_newsletter_v1",
+        params: { p_assessment_id: assessmentId, p_submission_id: submissionId },
+      });
+    }
+  } finally {
+    supabaseModule.getSupabaseAdmin = originalGetSupabaseAdmin;
+    delete require.cache[unsubscribePath];
+    restoreEnv("LEAD_SIGNING_SECRET", previousSecret);
+    restoreEnv("CONTEXT", previousContext);
   }
 });
 
@@ -201,6 +314,7 @@ test("Cal-Webhooks prüfen Signatur und extrahieren nur kurze Readiness-Referenz
 
 test("Cal-Readiness-Webhook ist allowlist-gebunden und verbucht Wiederholungen über denselben RPC-Vertrag", async () => {
   const envNames = [
+    "CONTEXT",
     "LEAD_SIGNING_SECRET",
     "CAL_READINESS_WEBHOOK_SECRET",
     "CAL_READINESS_EVENT_TYPE_ID",
@@ -213,6 +327,7 @@ test("Cal-Readiness-Webhook ist allowlist-gebunden und verbucht Wiederholungen �
   const supabaseModule = require(supabasePath);
   const originalGetSupabaseAdmin = supabaseModule.getSupabaseAdmin;
   const calls = [];
+  process.env.CONTEXT = "production";
   process.env.LEAD_SIGNING_SECRET = "booking-test-secret-".padEnd(64, "x");
   process.env.CAL_READINESS_WEBHOOK_SECRET = "cal-webhook-test-secret-".padEnd(64, "x");
   process.env.CAL_READINESS_EVENT_TYPE_ID = "12345";
@@ -276,6 +391,11 @@ test("Cal-Readiness-Webhook ist allowlist-gebunden und verbucht Wiederholungen �
       p_body_hash: security.sha256(Buffer.from(event.body)),
       p_booking_created_at: createdAt,
     });
+    process.env.CONTEXT = "deploy-preview";
+    const preview = await cal.handler(event);
+    assert.equal(preview.statusCode, 202);
+    assert.deepEqual(JSON.parse(preview.body), { accepted: false, preview: true });
+    assert.equal(calls.length, 2);
   } finally {
     supabaseModule.getSupabaseAdmin = originalGetSupabaseAdmin;
     delete require.cache[calPath];
@@ -322,6 +442,74 @@ test("Newsletter-DOI-Mail geht nur an den Lead und enthält den gebundenen Best�
     restoreEnv("RESEND_API_KEY", previousApiKey);
     restoreEnv("NEWSLETTER_FROM_EMAIL", previousNewsletterFrom);
     restoreEnv("LEADS_FROM_EMAIL", previousLeadsFrom);
+  }
+});
+
+test("bestätigtes DOI erzeugt eine Mehrwert-Mail mit standardisiertem Abmeldeweg", async () => {
+  const previousFetch = global.fetch;
+  const previousApiKey = process.env.RESEND_API_KEY;
+  const previousNewsletterFrom = process.env.NEWSLETTER_FROM_EMAIL;
+  const previousSigningSecret = process.env.LEAD_SIGNING_SECRET;
+  process.env.RESEND_API_KEY = "test-key";
+  process.env.NEWSLETTER_FROM_EMAIL = "Synclaro <impulse@example.com>";
+  process.env.LEAD_SIGNING_SECRET = "newsletter-booking-test-secret-".padEnd(64, "x");
+  const requests = [];
+  global.fetch = async (url, options) => {
+    requests.push({ url, headers: options.headers, body: JSON.parse(options.body) });
+    return { ok: true };
+  };
+  try {
+    const assessmentId = "11111111-1111-4111-8111-111111111111";
+    const submissionId = "22222222-2222-4222-8222-222222222222";
+    const unsubscribeToken = "unsubscribe_token";
+    const bookingReference = security.signBookingReference(assessmentId, submissionId);
+    const input = {
+      assessmentId,
+      submissionId,
+      contact: { email: "ada@example.com", firstName: "Ada", company: "Analytical GmbH", phone: "+491701234567" },
+      deliveryContext: { unsubscribeToken, bookingReference },
+    };
+    const outcome = await deliveries.sendNewsletterWelcome(input);
+    const retryOutcome = await deliveries.sendNewsletterWelcome(input);
+    assert.deepEqual(outcome, { sent: true });
+    assert.deepEqual(retryOutcome, { sent: true });
+    assert.equal(requests.length, 2);
+    assert.deepEqual(requests[1], requests[0]);
+    const request = requests[0];
+    assert.equal(request.url, "https://api.resend.com/emails");
+    assert.deepEqual(request.body.to, ["ada@example.com"]);
+    assert.equal(request.body.from, "Synclaro <impulse@example.com>");
+    assert.equal(request.headers["Idempotency-Key"], `ai-readiness-welcome-${assessmentId}`);
+    const unsubscribeUrl = new URL(request.body.headers["List-Unsubscribe"].slice(1, -1));
+    assert.equal(request.body.headers["List-Unsubscribe-Post"], "List-Unsubscribe=One-Click");
+    assert.equal(unsubscribeUrl.origin, "https://ki-check.synclaro.de");
+    assert.equal(unsubscribeUrl.pathname, "/.netlify/functions/unsubscribe-newsletter");
+    assert.equal(unsubscribeUrl.searchParams.get("assessment"), assessmentId);
+    assert.equal(unsubscribeUrl.searchParams.get("submission"), submissionId);
+    assert.equal(unsubscribeUrl.searchParams.get("token"), unsubscribeToken);
+    const bookingHref = [...request.body.html.matchAll(/href="([^"]+)"/g)]
+      .map((match) => match[1].replaceAll("&amp;", "&"))
+      .find((href) => href.startsWith("https://cal.com/"));
+    const bookingUrl = new URL(bookingHref);
+    assert.equal(bookingUrl.pathname, "/marcoheer/ki-erstgespraech");
+    assert.equal(bookingUrl.searchParams.get("utm_source"), "newsletter");
+    assert.equal(bookingUrl.searchParams.get("utm_medium"), "email");
+    assert.equal(bookingUrl.searchParams.get("utm_campaign"), "ai_readiness_nurture_v1");
+    assert.equal(bookingUrl.searchParams.get("utm_content"), "welcome");
+    const verifiedReference = security.verifyBookingReference(bookingUrl.searchParams.get("readiness_ref"));
+    assert.equal(verifiedReference.assessmentId, assessmentId);
+    assert.equal(verifiedReference.submissionId, submissionId);
+    assert.equal(bookingUrl.searchParams.get("readiness_ref"), bookingReference);
+    assert.match(request.body.html, /Einen wiederkehrenden Prozess auswählen/);
+    assert.match(request.body.html, /Kostenlose Potenzialanalyse buchen/);
+    for (const pii of ["Ada", "Analytical GmbH", "+491701234567"]) {
+      assert.equal(request.body.html.includes(pii), false);
+    }
+  } finally {
+    global.fetch = previousFetch;
+    restoreEnv("RESEND_API_KEY", previousApiKey);
+    restoreEnv("NEWSLETTER_FROM_EMAIL", previousNewsletterFrom);
+    restoreEnv("LEAD_SIGNING_SECRET", previousSigningSecret);
   }
 });
 

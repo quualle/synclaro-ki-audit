@@ -7,8 +7,10 @@ Draft wurde am 19.07.2026 geprüft und über seine drei exakten Objekt-IDs
 eindeutig identifiziert. Die sichtbaren Namen tragen noch den älteren
 Draft-Stand; die empfohlenen V2-Zielnamen stehen weiter unten und müssen vor der
 finalen Prüfung übernommen werden. Es wurde nichts veröffentlicht. Der
-Creative-Wizard enthält die unten dokumentierte Copy, kann aber erst nach
-freigeschaltetem Dateiupload mit dem lokalen V2-Bild abgeschlossen werden.
+Creative-Wizard enthält noch eine ältere Draft-Copy. Sie ist **nicht** der
+unten dokumentierte, nachgeschärfte V2-Text und muss vor der Endprüfung ersetzt
+werden. Der Wizard kann außerdem erst nach freigeschaltetem Dateiupload mit dem
+lokalen V2-Bild abgeschlossen werden.
 Nicht sichtbare oder nachträglich geänderte Werte gelten nicht als freigegeben;
 unmittelbar vor dem Publish müssen alle drei Ebenen erneut gegen diesen Entwurf
 geprüft werden.
@@ -28,7 +30,8 @@ geprüft werden.
 | Pixel | `1497847851628194` | Richtigen Business Manager/Dataset bestätigen. |
 | Optimierungs-Event | `Lead` noch nicht auswählbar, weil es noch nicht empfangen wurde | Consent-basiertes Pixel/CAPI-Testevent senden, im Events Manager prüfen, dann `Lead` auswählen. |
 | EU-Werbetreibender / Zahlender | `Synclaro.de` / `Johannes Jaegers` | Geschäftsführer bestätigt die rechtliche und wirtschaftliche Richtigkeit ausdrücklich. |
-| Creative-Upload | Image-Ad-Wizard und Copy vorbereitet; der direkte lokale Upload wurde von der Chrome-Erweiterung mit `Not allowed` blockiert | In der ChatGPT-Chrome-Erweiterung „Allow access to file URLs“ bewusst aktivieren, dann V2-Dateien auswählen. Keine globale Dateiberechtigung wurde autonom erweitert. |
+| Anzeigen-Copy im Wizard | Älterer Draft-Text; nicht identisch mit „Anzeigen-Copy V2“ unten | Vor der Endprüfung vollständig durch Primärtext, Headline und Beschreibung aus diesem Dokument ersetzen und in jeder Placement-Vorschau prüfen. |
+| Creative-Upload | Image-Ad-Wizard vorbereitet; der direkte lokale Upload wurde von der Chrome-Erweiterung mit `Not allowed` blockiert | In der ChatGPT-Chrome-Erweiterung „Allow access to file URLs“ bewusst aktivieren, dann V2-Dateien auswählen. Keine globale Dateiberechtigung wurde autonom erweitert. |
 
 ## Kampagnenziel und Funnel-Logik
 
@@ -36,8 +39,8 @@ geprüft werden.
 - Conversion-Ort: **Website**.
 - Ziel-URL: `https://ki-check.synclaro.de/`.
 - Optimierung zu Beginn: Standardevent **`Lead`**, weil es nach erfolgreicher,
-  atomarer Speicherung des vollständigen Tests entsteht und früher als eine
-  Terminbuchung ausreichend Lernsignale liefern kann.
+  atomarer Speicherung eines vollständigen, ICP-passenden Tests entsteht und
+  früher als eine Terminbuchung ausreichend Lernsignale liefern kann.
 - Sekundäre Qualitätsconversion: **`Schedule`** nach einer tatsächlich
   verifizierten Cal-Buchung. Nicht auf CTA-Klick und nicht bloß auf
   Kalenderansicht feuern.
@@ -76,10 +79,11 @@ Der kostenlose Test selbst besitzt bewusst kein hartes 20-Mitarbeitenden- oder
 Rollen-Gate: Auch eine größere Firma oder eine vorbereitende Fachperson erhält
 das versprochene Ergebnis, statt nach vier Minuten abgewiesen zu werden. Das
 CRM kennzeichnet nur Inhaber/Geschäftsführung mit Solo bis 20 Mitarbeitenden als
-`lead_fit=true`. Deshalb werden `lead_fit`, verifizierte Termine und spätere
-Gesprächsqualität gemeinsam ausgewertet. Falls der Anteil außerhalb des ICP
-materiell steigt, wird zuerst Creative/Audience getestet und erst auf Basis
-belastbarer Daten ein engeres Conversion-Signal eingeführt.
+`lead_fit=true`. Nur ein solcher Abschluss darf bei gültigem Marketing-Consent
+als dedupliziertes Meta-`Lead`-Event ausgegeben werden. Consent-basierte Starts
+und Testabschlüsse außerhalb des ICP bleiben separate Custom Events und
+verunreinigen das Optimierungsziel nicht. Verifizierte Terminbuchungen werden
+zusätzlich als `Schedule` ausgewertet.
 
 ## Empfohlene Struktur
 
@@ -116,7 +120,7 @@ und [Advantage+ Placements](https://www.facebook.com/business/ads/meta-advantage
 | `PageView` | Pixel | Landingpage nach Marketing-Consent geladen | Diagnose |
 | `StartAIReadinessTest` | Pixel, Custom Event | Test gestartet | Funnel-Diagnose |
 | `AIReadinessCompleted` | Pixel, Custom Event | Bewertungsfragen abgeschlossen, Kontaktphase beginnt | Funnel-Diagnose |
-| `Lead` | Pixel + CAPI, gemeinsame `event_id` | Vollständiger Test atomar in CRM/Supabase gespeichert | Primäre Adset-Optimierung |
+| `Lead` | Pixel + CAPI, gemeinsame `event_id` | ICP-passender Test von Inhaber/Geschäftsführung mit 0–20 Mitarbeitenden atomar gespeichert | Primäre Adset-Optimierung |
 | `Schedule` | Nur CAPI nach verifiziertem Cal-Webhook | Tatsächlicher Marco-Termin gebucht | Sekundäre Qualitätsconversion |
 
 Ohne Marketing-Consent werden diese Meta-Ereignisse nicht gesendet. Meta
@@ -154,15 +158,15 @@ hochgeladen noch als geprüft dokumentiert werden. Falls es wieder bereitsteht,
 wird Video gegen Static V2 als getrennte Anzeige im gleichen Adset getestet;
 nicht beide Variablen gleichzeitig mit neuer Copy verändern.
 
-## Anzeigen-Copy V1
+## Anzeigen-Copy V2
 
 **Primärtext**
 
 > Viele Unternehmen testen KI – ohne zu wissen, ob Prozesse, Daten und
 > Verantwortlichkeiten dafür bereit sind. Der kostenlose Synclaro AI Readiness
-> Test zeigt Ihnen in ca. 4 Minuten Ihren nachvollziehbaren Score, die drei
-> stärksten Hebel und einen konkreten 90-Tage-Fahrplan. Für Selbstständige,
-> Geschäftsführer und kleine Betriebe – branchenoffen.
+> Test zeigt Ihnen in ca. 4 Minuten Ihren nachvollziehbaren Score, den größten
+> Hebel, drei klare Prioritäten und einen konkreten 90-Tage-Fahrplan. Für
+> Selbstständige, Inhaber und Unternehmen bis 20 Mitarbeitende – branchenoffen.
 
 **Headline**
 
@@ -199,7 +203,7 @@ Nicht nur CPM oder Reichweite bewerten. Die entscheidende Kette lautet:
 1. Ausgehende Klickrate und Landingpage-Aufrufe;
 2. Startquote des Tests;
 3. Abschlussquote der zwölf Kernfragen;
-4. Quote von Kontaktphase zu gespeichertem `Lead`;
+4. Quote von Kontaktphase zu gespeichertem, ICP-passendem `Lead`;
 5. Kosten pro `Lead`, getrennt nach Solo / 1–5 / 6–10 / 11–20;
 6. freiwillige Newsletter-Auswahl und tatsächliche DOI-Bestätigung;
 7. Klickrate vom Ergebnis zum Kalender;

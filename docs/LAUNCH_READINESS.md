@@ -30,14 +30,17 @@ exakten IDs: Kampagne `120251380526880206`, Anzeigengruppe
   Freigabe und müssen von der Geschäftsführung bestätigt werden.
 - Der öffentliche Cal-Termin `/marcoheer/ki-erstgespraech` dauert 20 Minuten und
   nutzt Google Meet. Die Beschreibung duzt; das Buchungsformular verlangt
-  derzeit Name, E-Mail, **Telefonnummer** und „Wie sind Sie auf uns aufmerksam
-  geworden?“ als Pflichtfelder. Der Anlass ist optional.
+  derzeit Name, E-Mail und „Wie sind Sie auf uns aufmerksam geworden?“ als
+  Pflichtfelder. Die Telefonnummer ist optional, aber weiterhin sichtbar; der
+  Anlass ist optional.
 - Der URL-Parameter `readiness_ref` bleibt beim öffentlichen Cal-Aufruf
   erhalten. Das dazugehörige verborgene Feld und der event-spezifische Webhook
   konnten nicht im Admin geprüft werden, weil `app.cal.com` ausgeloggt war.
-- Der Meta-Creative-Wizard ist auf ein Image Ad umgestellt und mit der
-  dokumentierten Copy vorbereitet. Der Upload der lokalen V2-Dateien ist noch
-  durch die fehlende Chrome-Erweiterungsberechtigung für lokale Dateien
+- Der Meta-Creative-Wizard ist auf ein Image Ad umgestellt, enthält jedoch noch
+  eine ältere Draft-Copy. Die nachgeschärfte V2-Copy ist verbindlich in
+  `META_CAMPAIGN_DRAFT.md` dokumentiert und muss vor der Endprüfung in den
+  Wizard übernommen werden. Der Upload der lokalen V2-Dateien ist noch durch
+  die fehlende Chrome-Erweiterungsberechtigung für lokale Dateien
   blockiert (`fileChooser.setFiles: Not allowed`); die globale
   Dateiberechtigung wurde bewusst nicht autonom erweitert und es wurde kein
   Ersatz-Creative veröffentlicht.
@@ -50,7 +53,7 @@ prüfen.
 Am 19.07.2026 wurden ohne Production-Write und ohne externen Send folgende
 Prüfungen erfolgreich abgeschlossen:
 
-- `npm run check`: 31 von 31 Node-Tests, atomare lokale PostgreSQL-Migration
+- `npm run check`: 33 von 33 Node-Tests, atomare lokale PostgreSQL-Migration
   samt Integrationstest und `npm audit` mit 0 bekannten Schwachstellen;
 - `netlify build --context deploy-preview`: alle Readiness-Functions gebündelt;
 - Datenschutz-Worktree: `astro check` mit 0 Fehlern und vollständiger Build
@@ -63,6 +66,13 @@ Prüfungen erfolgreich abgeschlossen:
   Overflow;
 - Newsletter-Auswahl im Preview: sichtbarer Hinweis, dass absichtlich weder
   eine Bestätigungs-E-Mail versendet noch eine Anmeldung gespeichert wurde;
+- einheitliche 21-Schritte-Fortschrittslogik ohne Rücksprung, eindeutig als
+  optional gekennzeichnete Zusatzfrage, sichtbarer/Escape-fähiger
+  Ergebnisabschluss, zum Creative passende initiale Restzeit „ca. 4 Min.“ und
+  getrennte Abmelde-Erfolgs-, Fehler- und Preview-Seiten;
+- alle fünf ungenutzten, handwerksgeprägten Altbilder wurden aus dem öffentlich
+  ausgelieferten Asset-Verzeichnis entfernt; die aktuelle Social-Karte bleibt
+  branchenoffen;
 - frische mobile Browser-Session: 0 Console-Fehler und 0 Console-Warnungen.
 - finale UX-/Accessibility-Re-Prüfung: `PASS`; finaler Code-Critic:
   `PASS-WITH-CONCERNS` ausschließlich wegen externer Launch-Gates; zusätzliche
@@ -95,7 +105,10 @@ Qualitätsgate. Eine interne Prüfung darf sie nicht stillschweigend ersetzen.
   Person selbst und bewusst eine kostenlose KI-Potenzialanalyse mit Marco.
 - Sekundäre Folgewirkung: freiwillige E-Mail-Nurture-Strecke nach separater
   Newsletter-Auswahl und bestätigtem Double-Opt-in. Kein Setter- oder
-  Kaltoutreach-Prozess.
+  Kaltoutreach-Prozess. Die branchenoffene, auf fünf E-Mails in 20 Tagen
+  begrenzte Sequenz liegt sendefertig unter
+  [`marketing/ai-readiness-nurture-sequence.md`](../marketing/ai-readiness-nurture-sequence.md);
+  aktiviert wird sie erst nach Provider-, Suppression- und Zustelltests.
 - Analyse-Tracking und Meta-Marketing sind getrennte, freiwillige Entscheidungen
   und blockieren den Test nicht.
 
@@ -104,18 +117,22 @@ Qualitätsgate. Eine interne Prüfung darf sie nicht stillschweigend ersetzen.
 | Auslöser | Speicherung / Zustellung | Harte Bedingung |
 |---|---|---|
 | Auswertung angefordert | Kontakt, Assessment, Antworten, deterministisches Ergebnis und CRM-Ereignis werden atomar über `submit_ai_readiness_lead_v2` geschrieben. Eine interne E-Mail ohne kopierte Kontaktdaten wird in die Outbox gestellt. | Gültige Sitzung, vollständige Kernfragen, Datenschutzhinweis bestätigt und aktueller Tracking-Entscheid. |
-| Newsletter freiwillig ausgewählt | Eine append-only CRM-Marketing-Consent-Zeile wird zunächst als DOI-pending angelegt. Die Bestätigungs-E-Mail läuft über Resend. Pending-Einträge erscheinen nicht in `v_email_marketing_list`. Bereits aktive historische Consents bleiben aktiv. | Exakter versionierter Einwilligungstext; Link und Bestätigungsseite sind signiert und 24 Stunden gültig. Das Ergebnis weist sichtbar auf Postfach und Spam-Ordner hin. |
+| Newsletter freiwillig ausgewählt | Eine append-only CRM-Marketing-Consent-Zeile wird zunächst als DOI-pending angelegt. Die Bestätigungs-E-Mail läuft über Resend und bleibt wie die spätere Mehrwert-Mail an den im Consent-Nachweis gespeicherten E-Mail-Snapshot gebunden; spätere CRM-Adressänderungen führen nicht zu einem Empfängerwechsel. Pending-Einträge erscheinen nicht in `v_email_marketing_list`. Bereits aktive historische Consents bleiben aktiv. | Exakter versionierter Einwilligungstext; Link und Bestätigungsseite sind signiert und 24 Stunden gültig. Das Ergebnis weist sichtbar auf Postfach und Spam-Ordner hin. |
 | DOI-Seite per GET geöffnet | Der Token wird nur geprüft und eine noindex-Bestätigungsseite angezeigt. | Kein CRM-/Consent-Write; automatische Mail-Scanner-Aufrufe dürfen nichts aktivieren. |
-| DOI-Button bewusst per POST bestätigt | Die bestehende Consent-Zeile und das Assessment werden idempotent auf bestätigt gesetzt; erst dann ist der neue Kontakt in der aktiven E-Mail-Liste. | Gültige Signatur, passende Assessment-/Submission-ID, Consent nicht widerrufen. |
+| DOI-Button bewusst per POST bestätigt | Die bestehende Consent-Zeile und das Assessment werden idempotent auf bestätigt gesetzt; erst dann ist der neue Kontakt in der aktiven E-Mail-Liste. Genau eine consent-gebundene Mehrwert-Mail wird über die Outbox vorgemerkt. | Gültige Signatur, passende Assessment-/Submission-ID, Consent nicht widerrufen. Deploy Previews leiten ohne Datenbankzugriff auf eine eindeutige Preview-Seite um. |
+| Bestätigte Mehrwert-Mail | Resend sendet drei konkrete erste Umsetzungsschritte und die freiwillige Marco-Terminoption. Der Cal-CTA enthält eigene Newsletter-UTMs und die beim ersten erfolgreichen DOI dauerhaft in der Outbox gespeicherte signierte Readiness-Zuordnung; ein Retry erzeugt weder einen abweichenden Link noch eine zweite logische Nachricht. Die E-Mail enthält außerdem einen signierten Abmeldelink sowie standardisierte `List-Unsubscribe`- und One-Click-Header. | Nur nach bestätigtem DOI und erneuter Consent-Prüfung unmittelbar vor dem Send. |
+| Newsletter-Abmeldelink per GET geöffnet | Der Token wird nur geprüft und eine noindex-Abmeldeseite angezeigt. | Kein CRM-/Consent-Write; Mail-Scanner und Link-Previews verändern nichts. |
+| Abmeldung bewusst per POST oder standardisiertem One-Click bestätigt | Der CRM-Marketing-Consent wird idempotent widerrufen, der Kontakt verschwindet aus `v_email_marketing_list` und alle noch ausstehenden Newsletter- und Telegram-Statusaufträge werden neutralisiert. Das menschliche Formular erhält eine Bestätigungsseite; der RFC-8058-One-Click-POST eine leere `200 OK`-Antwort. | Gültige signierte Zuordnung; Deploy Previews bleiben write-frei. |
 | Newsletter ausgewählt | Telegram kann eine rein generische Statusmeldung „neuer Lead / DOI ausstehend oder bereits aktiv“ senden. Name, Firma, E-Mail, Telefonnummer, Antworten, Score, IDs und individuelle CRM-Links werden nicht übertragen. | Nur wenn `TELEGRAM_TRANSFER_APPROVED` exakt `true` ist; sonst fail-closed. |
-| Marketing-Tracking erteilt und Lead atomar gespeichert | Browser-Pixel und CAPI senden `Lead` mit derselben `event_id` zur Deduplizierung. CAPI nutzt minimierte Matching-Daten, insbesondere gehashte E-Mail sowie nur bei Consent zulässige Browser-/Netzwerkkennungen. | Aktuell gültiger Marketing-Consent unmittelbar vor Zustellung; kein Score, keine Firma und keine Antworten an Meta. |
+| Marketing-Tracking erteilt und ein ICP-passender Lead atomar gespeichert | Browser-Pixel und CAPI senden `Lead` mit derselben `event_id` zur Deduplizierung. Als ICP-passend gelten Inhaber/Geschäftsführung mit 0–20 Mitarbeitenden. Alle consent-basierten Teststarts und Abschlüsse bleiben separate Custom Events; sie werden nicht als `Lead` ausgegeben. CAPI nutzt minimierte Matching-Daten, insbesondere gehashte E-Mail sowie nur bei Consent zulässige Browser-/Netzwerkkennungen. | Aktuell gültiger Marketing-Consent unmittelbar vor Zustellung **und** `lead_fit=true`; kein Score, keine Firma und keine Antworten an Meta. |
 | Ergebnis angezeigt | Der Cal-Link erhält UTM-Parameter und eine signierte, 30 Tage gültige `readiness_ref`. | Noch kein `Schedule`-Event; ein CTA-Klick allein zählt nicht als Termin. |
 | Cal meldet `BOOKING_CREATED` | Der separate Webhook prüft HMAC, Webhook-Version, Zeitfenster, Event-Type-ID, Slug, Organizer und `readiness_ref`. Danach entstehen idempotent ein CRM-Terminereignis, eine PII-freie Telegram-Buchungsmeldung und – bei weiterhin gültigem Marketing-Consent – ein serverseitiges Meta-`Schedule`. Jede eigenständige Buchungskennung besitzt einen eigenen gehashten Outbox-Schlüssel. | Ausschließlich der definierte Readiness-Termin. Replay mit identischem Body ist idempotent, widersprüchlicher Replay wird abgelehnt; zwei tatsächlich verschiedene Buchungen desselben Assessments bleiben getrennt. |
 
 Die Scheduled Function `process-lead-outbox` läuft alle zwei Minuten. Vor jedem
 externen Send werden Lease und erforderlicher Consent erneut geprüft. Temporäre
 Fehler werden mit Backoff bis zu acht Versuchen wiederholt. DOI- und
-Telegram-Aufträge laufen nach 24 Stunden, Meta-Aufträge nach sieben Tagen ab.
+Telegram-Aufträge laufen nach 24 Stunden, die bestätigte Mehrwert-Mail und
+Meta-Aufträge nach sieben Tagen ab.
 Erledigte oder tote Outbox-Zeilen werden nach 30 Tagen bereinigt.
 
 ## Harte Launch-Gates
@@ -124,7 +141,7 @@ Keiner dieser Punkte darf stillschweigend als erledigt behandelt werden.
 
 - [x] `npm run check` ist auf dem vorbereiteten finalen Stand erfolgreich.
 - [x] `netlify build --context deploy-preview` ist erfolgreich.
-- [ ] Der komplette Preview-Durchlauf wurde auf Desktop und Mobil mit
+- [x] Der komplette Preview-Durchlauf wurde auf Desktop und Mobil mit
   „nur notwendig“ sowie mit Analyse-/Marketing-Consent geprüft; keine
   Console-, Netzwerk-, Fokus- oder Layoutfehler.
 - [ ] Die Datenschutzergänzung ist technisch und rechtlich geprüft und auf
@@ -148,7 +165,8 @@ Keiner dieser Punkte darf stillschweigend als erledigt behandelt werden.
 - [ ] Alle erforderlichen Production-Umgebungsvariablen sind im richtigen
   Netlify-Scope gesetzt und durch einen Test ohne Secret-Ausgabe geprüft.
 - [ ] Resend-Absenderdomain, interner Empfänger, Newsletter-Absender,
-  Zustellbarkeit und Abmeldeweg wurden geprüft.
+  Zustellbarkeit sowie der implementierte GET→POST-/One-Click-Abmeldeweg wurden
+  im Zielsystem geprüft.
 - [ ] Telegram-Transfer und Zielchat sind dokumentiert freigegeben; erst danach
   darf `TELEGRAM_TRANSFER_APPROVED=true` gesetzt werden. Testmeldungen enthalten
   nachweislich keine PII.
@@ -165,14 +183,15 @@ Keiner dieser Punkte darf stillschweigend als erledigt behandelt werden.
   Consent – genau ein Meta-`Schedule`.
 - [ ] Meta Pixel/CAPI-Deduplizierung für `Lead` ist im Events Manager geprüft;
   `Schedule` erscheint ausschließlich nach einer verifizierten Buchung.
-- [ ] Zuerst wurde mit gültigem Marketing-Consent ein klar markiertes
-  `Lead`-Testevent an Pixel/CAPI gesendet. Erst nachdem es im Events Manager
+- [ ] Zuerst wurde mit gültigem Marketing-Consent und einem klar als ICP-Fit
+  markierten Testdatensatz ein `Lead`-Testevent an Pixel/CAPI gesendet. Erst nachdem es im Events Manager
   angekommen und als Website-Conversion auswählbar ist, wurde es im Draft als
   Optimierungs-Event gesetzt.
 - [ ] Der Meta-Kampagnenentwurf wurde gegen
   [`META_CAMPAIGN_DRAFT.md`](./META_CAMPAIGN_DRAFT.md) geprüft. Budget,
   Startzeit, Zahlender, Ziel-URL, Pixel/Dataset, Ausschlüsse, Placements und
-  Creative sind ausdrücklich bestätigt.
+  Creative sind ausdrücklich bestätigt; die alte Wizard-Copy wurde vollständig
+  durch die dokumentierte V2-Copy ersetzt.
 - [ ] Im Meta Ads Manager befinden sich keine fremden oder ungeprüften Objekte
   in derselben globalen Veröffentlichungsmenge.
 - [ ] EU-Werbetreibender und Zahlender `Synclaro.de` / `Johannes Jaegers` sind
@@ -222,8 +241,9 @@ werden.
 
 1. Nur das Event `https://cal.com/marcoheer/ki-erstgespraech` bearbeiten.
 2. Die aktuelle Beschreibung von „du“ auf die formelle „Sie“-Ansprache des
-   Funnels umstellen. Telefonnummer vollständig aus dem Buchungsformular
-   entfernen. Name und E-Mail bleiben erforderlich; die Quellenfrage wird
+   Funnels umstellen. Das derzeit optionale, aber sichtbare Telefonfeld
+   vollständig aus dem Buchungsformular entfernen. Name und E-Mail bleiben
+   erforderlich; die Quellenfrage wird
    optional oder entfällt zugunsten der automatisch erfassten UTM-Parameter.
 3. Unter „Advanced → Booking Questions“ ein verborgenes, nicht erforderliches
    Feld vom Typ „Short Text“ mit stabilem Identifier `readiness_ref` anlegen.
@@ -268,10 +288,14 @@ und [Webhook-Signatur/Payload-Version](https://cal.com/docs/developing/guides/au
    Assessment, Ergebnis, CRM-Ereignis und interne Outbox; keine Marketing-
    Consent-Zeile, kein Telegram, kein Meta.
 7. Einen Testlead mit Newsletter prüfen: DOI-pending ist nicht in der aktiven
-   E-Mail-Liste; erst der signierte Link aktiviert die Liste. Abmeldeweg prüfen.
-8. Einen Testlead mit Marketing-Consent im Meta-Testmodus prüfen: `Lead` wird
-   per Pixel/CAPI dedupliziert; ohne Consent entsteht kein Meta-Auftrag. Danach
-   `Lead` im Draft als Optimierungs-Event auswählen.
+   E-Mail-Liste; erst der signierte Link aktiviert die Liste und stellt genau
+   eine Mehrwert-Mail mit `List-Unsubscribe` bereit. GET des Abmeldelinks darf
+   nichts verändern; POST/One-Click muss idempotent widerrufen und alle noch
+   ausstehenden Newsletter-Aufträge neutralisieren.
+8. Einen ICP-passenden Testlead mit Marketing-Consent im Meta-Testmodus prüfen:
+   `Lead` wird per Pixel/CAPI dedupliziert; ohne Consent oder bei `lead_fit=false`
+   entsteht kein Meta-`Lead`-Auftrag. Danach `Lead` im Draft als
+   Optimierungs-Event auswählen.
 9. Einen echten, anschließend stornierten Cal-Testtermin prüfen: CRM-
    Terminereignis, generische Telegram-Meldung und consent-gebundenes
    `Schedule`; ein CTA-Klick allein erzeugt nichts.
@@ -290,8 +314,9 @@ und [Webhook-Signatur/Payload-Version](https://cal.com/docs/developing/guides/au
   Pflichtfelder ohne Telefon, versionierte Consent-Texte, deaktivierter
   Analyse-Endpunkt, Attribution-Minimierung, Session-/Origin-Sicherheit,
   PII-freies Telegram, fail-closed Transfergate, Meta-Deduplizierung,
-  DOI-Idempotenz, Booking-Replay-Schutz und getrennte Zustellung mehrerer
-  legitimer Buchungen desselben Assessments.
+  DOI-Idempotenz, scanner-sichere und idempotente Newsletter-Abmeldung,
+  consent-gebundene Mehrwert-Mail, Booking-Replay-Schutz und getrennte
+  Zustellung mehrerer legitimer Buchungen desselben Assessments.
 - [x] `netlify build --context deploy-preview` ist grün.
 
 ### Manuell / extern
@@ -311,6 +336,8 @@ und [Webhook-Signatur/Payload-Version](https://cal.com/docs/developing/guides/au
   sind jeweils einmal positiv und einmal fail-closed getestet.
 - [ ] Ein automatischer GET-Aufruf des DOI-Links verändert keine Einwilligung;
   erst der explizite POST-Button bestätigt idempotent.
+- [ ] Ein automatischer GET-Aufruf des Abmeldelinks verändert keine
+  Einwilligung; POST und standardisiertes One-Click widerrufen idempotent.
 - [ ] Es gibt in UI, Payload, CRM-Write und Migration keinen Telefon- oder
   Rückrufpfad und keinen OpenAI-Aufruf für den Readiness-Test.
 

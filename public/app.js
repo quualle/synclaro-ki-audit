@@ -85,6 +85,9 @@
     { id: "company", label: "Für welches Unternehmen machen Sie den Test?", autocomplete: "organization", maxlength: 160, error: "Bitte nennen Sie Ihr Unternehmen oder Ihre selbstständige Tätigkeit." },
     { id: "email", label: "Welche E-Mail-Adresse gehört zu Ihrer Auswertung?", autocomplete: "email", maxlength: 254, type: "email", inputmode: "email", error: "Bitte geben Sie eine gültige E-Mail-Adresse ein." },
   ];
+  const CORE_QUESTION_COUNT = 12;
+  const OPTIONAL_CONTEXT_COUNT = 1;
+  const TOTAL_JOURNEY_STEPS = PROFILE_STEPS.length + CORE_QUESTION_COUNT + OPTIONAL_CONTEXT_COUNT + CONTACT_STEPS.length;
 
   let config = { ...DEFAULT_CONFIG };
   let consent = { necessary: true, analytics: false, marketing: false, version: DEFAULT_CONFIG.cookieConsentVersion, grantedAt: null, globalDecisionId: null };
@@ -255,7 +258,7 @@
       if (layer.id === "consentLayer" && !$("#closeConsentSettings").hidden) {
         event.preventDefault();
         closeConsentDialog();
-      } else if (layer.id === "assessmentApp") {
+      } else if (["assessmentApp", "fullResult"].includes(layer.id)) {
         event.preventDefault();
         closeTest();
       }
@@ -911,7 +914,7 @@
 
   function updateProgress(label, completed, total) {
     $("#progressLabel").textContent = label;
-    const remaining = Math.max(1, Math.ceil((total - completed) * .22));
+    const remaining = Math.max(1, Math.ceil((total - completed) * .19));
     $("#progressTime").textContent = completed >= total ? "fast geschafft" : `noch ca. ${remaining} Min.`;
     $("#progressBar").style.width = `${Math.max(2, Math.min(100, (completed / total) * 100))}%`;
   }
@@ -931,7 +934,7 @@
     const item = PROFILE_STEPS[state.profileIndex];
     if (!item) return startAssessment();
     state.stage = "profile";
-    updateProgress("Unternehmensprofil", state.profileIndex, 17);
+    updateProgress("Unternehmensprofil", state.profileIndex, TOTAL_JOURNEY_STEPS);
     $("#backButton").style.visibility = state.profileIndex === 0 ? "hidden" : "visible";
     const current = state.profile[item.id] || "";
     let body = `<article class="question-card"><p class="question-index">${esc(item.kicker)}</p><h1 id="questionTitle" tabindex="-1">${esc(item.label)}</h1>${item.help ? `<p class="question-help">${esc(item.help)}</p>` : ""}`;
@@ -1040,10 +1043,19 @@
     if (!phase || !question) return;
     const phaseQuestionsBefore = state.phases.slice(0, state.phaseIndex).reduce((sum, item) => sum + item.questions.length, 0);
     const completed = PROFILE_STEPS.length + phaseQuestionsBefore + state.questionIndex;
-    updateProgress(`Phase ${state.phaseIndex + 1}/3 · Frage ${state.questionIndex + 1}/${phase.questions.length}`, completed, 17);
+    const optionalContext = question.required === false;
+    const coreQuestions = phase.questions.filter((item) => item.required !== false);
+    const coreQuestionNumber = phase.questions.slice(0, state.questionIndex + 1).filter((item) => item.required !== false).length;
+    const progressLabel = optionalContext
+      ? `Phase ${state.phaseIndex + 1}/3 · optionaler Kontext`
+      : `Phase ${state.phaseIndex + 1}/3 · Frage ${coreQuestionNumber}/${coreQuestions.length}`;
+    updateProgress(progressLabel, completed, TOTAL_JOURNEY_STEPS);
     $("#backButton").style.visibility = "visible";
     const existing = existingAnswer(question.id);
-    let body = `<article class="question-card"><p class="question-index">${esc(phase.phaseTitle)} · ${state.questionIndex + 1} von ${phase.questions.length}</p><h1 id="questionTitle" tabindex="-1">${esc(question.label)}</h1>`;
+    const questionIndex = optionalContext
+      ? `${phase.phaseTitle} · optionaler Kontext, nicht Teil der 12 Kernfragen`
+      : `${phase.phaseTitle} · ${coreQuestionNumber} von ${coreQuestions.length}`;
+    let body = `<article class="question-card"><p class="question-index">${esc(questionIndex)}</p><h1 id="questionTitle" tabindex="-1">${esc(question.label)}</h1>`;
     if (question.type === "textarea") {
       body += `<p class="question-help">Optional — ein oder zwei konkrete Sätze genügen. Bitte keine Namen, Kontakt- oder Kundendaten eingeben.</p><div class="question-field"><textarea id="answerText" aria-labelledby="questionTitle" maxlength="700" placeholder="${esc(question.placeholder || "Ihre Antwort …")}"></textarea></div><div class="question-actions"><button class="button button-accent" id="answerNext" type="button">Weiter</button><button class="text-button" id="answerSkip" type="button">Überspringen</button></div>`;
     } else {
@@ -1228,7 +1240,7 @@
     const step = CONTACT_STEPS[state.contactIndex];
     if (!step) return;
     state.stage = "contact";
-    updateProgress(`Auswertung · ${state.contactIndex + 1}/${CONTACT_STEPS.length}`, 17 + state.contactIndex, 21);
+    updateProgress(`Auswertung · ${state.contactIndex + 1}/${CONTACT_STEPS.length}`, PROFILE_STEPS.length + CORE_QUESTION_COUNT + OPTIONAL_CONTEXT_COUNT + state.contactIndex, TOTAL_JOURNEY_STEPS);
     $("#backButton").style.visibility = "visible";
     const isFinal = state.contactIndex === CONTACT_STEPS.length - 1;
     const stored = state.contact?.[step.id] || "";
@@ -1521,6 +1533,8 @@
     $$('[data-cookie-settings]').forEach((button) => button.addEventListener("click", openConsentSettings));
     $("#backButton").addEventListener("click", goBack);
     $("#closeButton").addEventListener("click", closeTest);
+    $("#closeResult").addEventListener("click", closeTest);
+    $("#resultHomeLink").addEventListener("click", (event) => { event.preventDefault(); closeTest(); });
     $("#restartResult").addEventListener("click", restart);
     $$('[data-calendar-cta]').forEach((cta) => cta.addEventListener("click", () => track("calendar_cta_clicked", { score: state.result?.scores?.total?.percent || 0 }, 19)));
     $("#acceptAll").addEventListener("click", () => { void saveConsent(true, true); });

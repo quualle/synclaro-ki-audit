@@ -108,7 +108,17 @@ Bestätigungs-E-Mail. Der signierte, zeitlich begrenzte Link öffnet nur eine
 sichere Bestätigungsseite. Erst wenn die Person dort den gesonderten Button
 bewusst absendet, wird die Adresse in die aktive Newsletter-Liste aufgenommen.
 Automatische Linkaufrufe durch Mail-Scanner ändern den Einwilligungsstatus
-nicht. Ohne diese ausdrückliche Bestätigung erfolgt keine Aufnahme. Ist für
+nicht. Ohne diese ausdrückliche Bestätigung erfolgt keine Aufnahme. Nach der
+Bestätigung senden wir eine erste Mehrwert-Mail mit konkreten nächsten
+Schritten. Die Bestätigungs- und Readiness-E-Mails bleiben an die bei der
+Einwilligung dokumentierte E-Mail-Adresse gebunden; eine spätere Änderung des
+allgemeinen CRM-Kontakts leitet sie nicht stillschweigend an eine andere Adresse
+um. Jede daraus versendete Readiness-E-Mail enthält einen signierten
+Abmeldelink und standardisierte One-Click-Abmeldeinformationen. Das bloße
+Öffnen des Links verändert nichts; erst die bewusste Bestätigung beziehungsweise
+ein standardisierter One-Click-Widerruf setzt den Marketing-Consent
+idempotent auf widerrufen und stoppt noch ausstehende Newsletter-Zustellungen.
+Ist für
 denselben Kontakt bereits eine aktive, nicht widerrufene Einwilligung
 vorhanden, bleibt dieser bestehende Status maßgeblich.
 
@@ -144,9 +154,13 @@ kryptografisch gehashte E-Mail-Adresse an Meta Platforms Ireland Limited
 übermittelt werden. Meta erhält aus diesem Funnel keine Testantworten, keine
 offene Angabe, keine Firma und keinen Readiness-Score.
 
-Nach erfolgreicher Speicherung des Testlaufs übermitteln Browser und Server das
-Ereignis `Lead` mit derselben Ereigniskennung, damit Meta Doppelzählungen
-vermeiden kann. Ein Klick auf „Kostenlosen Termin buchen“ ist noch kein
+Nur wenn der gespeicherte Test zugleich dem vorab festgelegten Kampagnenprofil
+„Inhaber oder Geschäftsführung mit 0–20 Mitarbeitenden“ entspricht,
+übermitteln Browser und Server das Ereignis `Lead` mit derselben
+Ereigniskennung, damit Meta Doppelzählungen vermeiden kann. Andere
+consent-basierte Teststarts und -abschlüsse bleiben getrennte Analyseereignisse
+und werden nicht als `Lead` ausgegeben. Ein Klick auf „Kostenlosen Termin
+buchen“ ist noch kein
 `Schedule`. Dieses Ereignis wird nur serverseitig erzeugt, wenn Cal.com eine
 tatsächlich angelegte und sicher dem Readiness-Test zugeordnete Buchung meldet
 und Ihre Marketing-Einwilligung zu diesem Zeitpunkt weiterhin gilt.
@@ -180,9 +194,10 @@ Voraussetzung für den Readiness-Score.
 
 ### Interne Benachrichtigungen, Resend und Telegram
 
-Für die Zustellung der Double-Opt-in-E-Mail nutzen wir einen E-Mail-Dienst. Der
-Dienst erhält dafür insbesondere die Empfängeradresse und den zeitlich
-begrenzten Bestätigungslink. Eine interne Lead-Benachrichtigung enthält keine
+Für die Zustellung der Double-Opt-in- und der ersten Mehrwert-E-Mail nutzen wir
+einen E-Mail-Dienst. Der Dienst erhält dafür insbesondere die Empfängeradresse,
+den zeitlich begrenzten Bestätigungslink beziehungsweise den signierten
+Abmeldelink. Eine interne Lead-Benachrichtigung enthält keine
 direkt identifizierenden Kontaktangaben. Sie kann jedoch Score, Reifegrad,
 pseudonyme Vorgangskennungen und einen Link auf den zugriffsgeschützten
 CRM-Kontakt enthalten; auch diese Angaben sind gegenüber dem E-Mail-Dienst als
@@ -238,11 +253,14 @@ Anfang dieser Datenschutzerklärung.
   einrichten und testen. Verbindliche Löschfrist und Löschprozess für
   Assessment, CRM-Kontakt und Marketing-Consent beschließen; Text danach
   finalisieren.
-- [ ] Newsletter-Abmeldeweg technisch testen und im Text exakt benennen.
+- [x] Scanner-sicherer GET→POST-Abmeldeweg und standardisierte One-Click-Header
+  sind implementiert und lokal automatisiert getestet.
+- [ ] Newsletter-Abmeldeweg mit dem freigegebenen Resend-Absender in Production
+  end-to-end testen und im produktiven Gesamttext exakt benennen.
 - [ ] Cookie-Einstellungen verlinken; Widerruf für Analyse und Meta end-to-end
   testen.
-- [ ] Im separaten Cal-Formular die derzeit verpflichtende Telefonnummer
-  entfernen, die Quellenfrage optional stellen beziehungsweise UTMs verwenden
+- [ ] Im separaten Cal-Formular das derzeit optionale, aber sichtbare
+  Telefonfeld entfernen, die Quellenfrage optional stellen beziehungsweise UTMs verwenden
   und die formelle „Sie“-Ansprache herstellen.
 - [ ] Verdecktes Cal-Feld `readiness_ref` und event-spezifischen, signierten
   Readiness-Webhook im eingeloggten Cal-Admin prüfen.

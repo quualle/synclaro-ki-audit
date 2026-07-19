@@ -437,7 +437,7 @@ begin
       from public.ai_readiness_assessments as assessment
       where outbox.assessment_id = assessment.id
         and assessment.tracking_subject_hash = p_tracking_subject_hash
-        and outbox.delivery_type = 'meta_capi'
+        and outbox.delivery_type in ('meta_capi', 'meta_schedule')
         and outbox.status in ('pending', 'processing')
       returning outbox.assessment_id
     )
@@ -1773,7 +1773,7 @@ alter table public.ai_readiness_assessments
     check (submission_fingerprint is null or submission_fingerprint ~ '^[0-9a-f]{64}$'),
   add column privacy_notice_acknowledged_at timestamptz not null default now(),
   add column newsletter_status text not null default 'not_requested'
-    check (newsletter_status in ('not_requested', 'doi_pending', 'already_active', 'confirmed')),
+    check (newsletter_status in ('not_requested', 'doi_pending', 'already_active', 'confirmed', 'revoked')),
   add column newsletter_marketing_consent_id uuid references public.crm_marketing_consents(id) on delete restrict,
   add column newsletter_requested_at timestamptz,
   add column newsletter_confirmed_at timestamptz,
@@ -1782,6 +1782,7 @@ alter table public.ai_readiness_assessments
     or (newsletter_status = 'doi_pending' and newsletter_marketing_consent_id is not null and newsletter_requested_at is not null and newsletter_confirmed_at is null)
     or (newsletter_status = 'already_active' and newsletter_marketing_consent_id is not null and newsletter_requested_at is not null)
     or (newsletter_status = 'confirmed' and newsletter_marketing_consent_id is not null and newsletter_requested_at is not null and newsletter_confirmed_at is not null)
+    or (newsletter_status = 'revoked' and newsletter_marketing_consent_id is not null and newsletter_requested_at is not null)
   );
 alter table public.ai_readiness_assessments alter column result drop default;
 
@@ -1791,7 +1792,7 @@ alter table private.ai_readiness_rate_limits add constraint ai_readiness_rate_li
 
 alter table private.ai_readiness_outbox drop constraint if exists ai_readiness_outbox_delivery_type_check;
 alter table private.ai_readiness_outbox add constraint ai_readiness_outbox_delivery_type_check
-  check (delivery_type in ('internal_notification', 'telegram_notification', 'telegram_booking', 'newsletter_double_optin', 'meta_capi', 'meta_schedule'));
+  check (delivery_type in ('internal_notification', 'telegram_notification', 'telegram_booking', 'newsletter_double_optin', 'newsletter_welcome', 'meta_capi', 'meta_schedule'));
 
 create table if not exists private.ai_readiness_booking_receipts (
   id uuid primary key default extensions.gen_random_uuid(),
@@ -1823,7 +1824,10 @@ select distinct on (contact.id)
   contact.id as contact_id,
   contact.first_name,
   contact.last_name,
-  contact.email,
+  case when consent.source = 'ki-readiness-test'
+    then nullif(pg_catalog.lower(pg_catalog.btrim(consent.evidence ->> 'email')), '')
+    else contact.email
+  end as email,
   contact.company,
   consent.granted_at,
   consent.source,
@@ -1900,7 +1904,7 @@ begin
     'assessment_id', v_assessment.id, 'contact_id', v_assessment.contact_id,
     'contact_created', false, 'dedupe_status', 'idempotent',
     'newsletter_status', v_assessment.newsletter_status,
-    'meta_lead_eligible', v_assessment.marketing_tracking_consent,
+    'meta_lead_eligible', v_assessment.marketing_tracking_consent and v_assessment.lead_fit,
     'result', v_assessment.result
   );
 end;
@@ -1963,7 +1967,7 @@ begin
       'accepted', true, 'status', 'idempotent', 'assessment_id', v_existing_assessment.id,
       'contact_id', v_existing_assessment.contact_id, 'contact_created', false, 'dedupe_status', 'idempotent',
       'newsletter_status', v_existing_assessment.newsletter_status,
-      'meta_lead_eligible', v_existing_assessment.marketing_tracking_consent,
+      'meta_lead_eligible', v_existing_assessment.marketing_tracking_consent and v_existing_assessment.lead_fit,
       'result', v_existing_assessment.result
     );
   end if;
@@ -2098,7 +2102,7 @@ begin
     case when v_marketing_tracking then pg_catalog.encode(extensions.digest(c_marketing_text, 'sha256'), 'hex') else null end,
     case when v_marketing_tracking then v_tracking_decision.decided_at else null end,
     nullif(p_payload #>> '{consents,evidence,ipHash}', ''), pg_catalog.left(p_payload #>> '{consents,evidence,userAgent}', 500),
-    case when v_marketing_tracking then 'pending' else 'not_requested' end
+    case when v_marketing_tracking and v_lead_fit then 'pending' else 'not_requested' end
   );
 
   update private.ai_readiness_tracking_consents set assessment_id = v_assessment_id
@@ -2144,7 +2148,7 @@ begin
       pg_catalog.jsonb_build_object('confirmationToken', p_payload ->> 'newsletter_confirmation_token')
     ) on conflict do nothing;
   end if;
-  if v_marketing_tracking then
+  if v_marketing_tracking and v_lead_fit then
     insert into private.ai_readiness_outbox(assessment_id, delivery_type, available_at, expires_at, delivery_payload)
     values (
       v_assessment_id, 'meta_capi', pg_catalog.now(), pg_catalog.now() + interval '7 days',
@@ -2161,7 +2165,8 @@ begin
   return pg_catalog.jsonb_build_object(
     'accepted', true, 'status', 'created', 'assessment_id', v_assessment_id,
     'contact_id', v_contact_id, 'contact_created', v_contact_created,
-    'dedupe_status', v_dedupe_status, 'newsletter_status', v_newsletter_status
+    'dedupe_status', v_dedupe_status, 'newsletter_status', v_newsletter_status,
+    'meta_lead_eligible', v_marketing_tracking and v_lead_fit
   );
 end;
 $$;
@@ -2177,7 +2182,7 @@ security invoker
 set search_path = ''
 as $$
 begin
-  if p_delivery_type not in ('internal_notification', 'telegram_notification', 'telegram_booking', 'newsletter_double_optin', 'meta_capi', 'meta_schedule')
+  if p_delivery_type not in ('internal_notification', 'telegram_notification', 'telegram_booking', 'newsletter_double_optin', 'newsletter_welcome', 'meta_capi', 'meta_schedule')
     or p_status not in ('delivered', 'retry_pending', 'not_configured', 'dead')
   then raise exception 'invalid_delivery_status'; end if;
   if p_delivery_type = 'internal_notification' then
@@ -2233,6 +2238,13 @@ begin
     v_authorized := found and v_consent.revoked_at is null
       and v_consent.double_optin_requested_at is not null
       and v_consent.double_optin_confirmed_at is null;
+  elsif v_outbox.delivery_type = 'newsletter_welcome' then
+    select * into v_consent from public.crm_marketing_consents
+    where id = v_assessment.newsletter_marketing_consent_id;
+    v_authorized := found and v_consent.revoked_at is null
+      and v_consent.double_optin_requested_at is not null
+      and v_consent.double_optin_confirmed_at is not null
+      and v_assessment.newsletter_status = 'confirmed';
   elsif v_outbox.delivery_type in ('meta_capi', 'meta_schedule') then
     select consent.marketing_consent into v_current_marketing
     from private.ai_readiness_tracking_consents as consent
@@ -2283,6 +2295,7 @@ begin
         outbox.delivery_type in ('internal_notification', 'telegram_booking')
         or (outbox.delivery_type = 'telegram_notification' and assessment.newsletter_status in ('doi_pending', 'already_active', 'confirmed'))
         or (outbox.delivery_type = 'newsletter_double_optin' and assessment.newsletter_status = 'doi_pending')
+        or (outbox.delivery_type = 'newsletter_welcome' and assessment.newsletter_status = 'confirmed')
         or (outbox.delivery_type in ('meta_capi', 'meta_schedule') and assessment.marketing_tracking_consent)
       )
     order by outbox.available_at, outbox.created_at
@@ -2296,12 +2309,17 @@ begin
   select claimed.id, claimed.lease_token, assessment.id, assessment.submission_id,
     case when claimed.delivery_type = 'internal_notification' then contact.id else null end,
     claimed.delivery_type, null::text, null::text, null::text,
-    case when claimed.delivery_type = 'newsletter_double_optin' then contact.email else null end,
+    case when claimed.delivery_type in ('newsletter_double_optin', 'newsletter_welcome')
+      then nullif(pg_catalog.lower(pg_catalog.btrim(newsletter_consent.evidence ->> 'email')), '')
+      else null
+    end,
     null::text, null::text, null::text, assessment.score_total, assessment.readiness_level,
     assessment.attribution, claimed.delivery_payload, assessment.submitted_at
   from claimed
   join public.ai_readiness_assessments as assessment on assessment.id = claimed.assessment_id
-  join public.crm_contacts as contact on contact.id = assessment.contact_id;
+  join public.crm_contacts as contact on contact.id = assessment.contact_id
+  left join public.crm_marketing_consents as newsletter_consent
+    on newsletter_consent.id = assessment.newsletter_marketing_consent_id;
 end;
 $$;
 revoke all on function public.claim_ai_readiness_deliveries_v2(integer) from public, anon, authenticated;
@@ -2454,7 +2472,12 @@ $$;
 revoke all on function public.record_ai_readiness_booking_v1(text, uuid, uuid, bigint, text, text, timestamptz) from public, anon, authenticated;
 grant execute on function public.record_ai_readiness_booking_v1(text, uuid, uuid, bigint, text, text, timestamptz) to service_role;
 
-create or replace function public.confirm_ai_readiness_newsletter_v1(p_assessment_id uuid, p_submission_id uuid)
+drop function if exists public.confirm_ai_readiness_newsletter_v1(uuid, uuid);
+drop function if exists public.confirm_ai_readiness_newsletter_v1(uuid, uuid, text);
+create or replace function public.confirm_ai_readiness_newsletter_v1(
+  p_assessment_id uuid, p_submission_id uuid,
+  p_unsubscribe_token text, p_booking_reference text
+)
 returns jsonb
 language plpgsql
 security invoker
@@ -2465,6 +2488,13 @@ declare
   v_consent public.crm_marketing_consents%rowtype;
   v_new_confirmation boolean := false;
 begin
+  if coalesce(pg_catalog.btrim(p_unsubscribe_token), '') = ''
+    or pg_catalog.char_length(p_unsubscribe_token) > 240
+  then raise exception 'unsubscribe_token_invalid'; end if;
+  if coalesce(pg_catalog.btrim(p_booking_reference), '') = ''
+    or pg_catalog.char_length(p_booking_reference) > 800
+    or p_booking_reference !~ '^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$'
+  then raise exception 'booking_reference_invalid'; end if;
   select * into v_assessment from public.ai_readiness_assessments
   where id = p_assessment_id and submission_id = p_submission_id for update;
   if not found or v_assessment.newsletter_marketing_consent_id is null
@@ -2487,14 +2517,73 @@ begin
       'Double-Opt-in für Synclaro KI-Impulse bestätigt',
       pg_catalog.jsonb_build_object('assessment_id', p_assessment_id, 'marketing_consent_id', v_consent.id),
       'system', v_consent.double_optin_confirmed_at);
+    insert into private.ai_readiness_outbox(
+      assessment_id, delivery_type, available_at, expires_at, delivery_payload
+    ) values (
+      p_assessment_id, 'newsletter_welcome', pg_catalog.now(), pg_catalog.now() + interval '7 days',
+      pg_catalog.jsonb_build_object(
+        'unsubscribeToken', p_unsubscribe_token,
+        'bookingReference', p_booking_reference
+      )
+    ) on conflict do nothing;
   end if;
   return pg_catalog.jsonb_build_object('accepted', true,
     'status', case when v_new_confirmation then 'confirmed' else 'idempotent' end,
     'confirmed_at', v_consent.double_optin_confirmed_at);
 end;
 $$;
-revoke all on function public.confirm_ai_readiness_newsletter_v1(uuid, uuid) from public, anon, authenticated;
-grant execute on function public.confirm_ai_readiness_newsletter_v1(uuid, uuid) to service_role;
+revoke all on function public.confirm_ai_readiness_newsletter_v1(uuid, uuid, text, text) from public, anon, authenticated;
+grant execute on function public.confirm_ai_readiness_newsletter_v1(uuid, uuid, text, text) to service_role;
+
+create or replace function public.revoke_ai_readiness_newsletter_v1(
+  p_assessment_id uuid, p_submission_id uuid
+)
+returns jsonb
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  v_assessment public.ai_readiness_assessments%rowtype;
+  v_consent public.crm_marketing_consents%rowtype;
+  v_revoked_at timestamptz := pg_catalog.statement_timestamp();
+begin
+  select * into v_assessment from public.ai_readiness_assessments
+  where id = p_assessment_id and submission_id = p_submission_id for update;
+  if not found or v_assessment.newsletter_marketing_consent_id is null
+  then return pg_catalog.jsonb_build_object('accepted', false, 'status', 'not_found'); end if;
+  select * into v_consent from public.crm_marketing_consents
+  where id = v_assessment.newsletter_marketing_consent_id for update;
+  if not found then return pg_catalog.jsonb_build_object('accepted', false, 'status', 'not_found'); end if;
+  if v_consent.revoked_at is not null then
+    update public.ai_readiness_assessments set newsletter_status = 'revoked'
+    where newsletter_marketing_consent_id = v_consent.id and newsletter_status <> 'revoked';
+    return pg_catalog.jsonb_build_object('accepted', true, 'status', 'idempotent');
+  end if;
+  update public.crm_marketing_consents set
+    revoked_at = v_revoked_at,
+    revoke_source = 'ki-readiness-email-link'
+  where id = v_consent.id;
+  update public.ai_readiness_assessments set newsletter_status = 'revoked'
+  where newsletter_marketing_consent_id = v_consent.id;
+  update private.ai_readiness_outbox set
+    status = 'dead', delivery_payload = '{}'::jsonb,
+    locked_at = null, lease_token = null, last_error_code = 'consent_revoked'
+  where assessment_id = p_assessment_id
+    and delivery_type in ('telegram_notification', 'newsletter_double_optin', 'newsletter_welcome')
+    and status in ('pending', 'processing');
+  insert into public.crm_contact_events(contact_id, event_type, channel, source, summary, details, actor, created_at)
+  values (
+    v_assessment.contact_id, 'email', 'email', 'ki_readiness_newsletter',
+    'Newsletter-Einwilligung widerrufen',
+    pg_catalog.jsonb_build_object('assessment_id', p_assessment_id, 'marketing_consent_id', v_consent.id),
+    'system', v_revoked_at
+  );
+  return pg_catalog.jsonb_build_object('accepted', true, 'status', 'revoked');
+end;
+$$;
+revoke all on function public.revoke_ai_readiness_newsletter_v1(uuid, uuid) from public, anon, authenticated;
+grant execute on function public.revoke_ai_readiness_newsletter_v1(uuid, uuid) to service_role;
 
 create or replace function public.purge_ai_readiness_ephemeral_v1()
 returns jsonb
@@ -2542,7 +2631,8 @@ grant execute on function public.purge_ai_readiness_ephemeral_v1() to service_ro
 
 comment on table public.ai_readiness_assessments is 'Server-only AI-Readiness assessments with a deterministic result and separate newsletter/Meta consent states.';
 comment on function public.submit_ai_readiness_lead_v2(jsonb) is 'Atomic, email-only AI-Readiness lead, CRM, DOI-pending consent and outbox integration; no callback and no external AI processing.';
-comment on function public.confirm_ai_readiness_newsletter_v1(uuid, uuid) is 'Idempotently confirms a server-authenticated DOI request and activates the existing append-only CRM marketing-consent row.';
+comment on function public.confirm_ai_readiness_newsletter_v1(uuid, uuid, text, text) is 'Idempotently confirms a server-authenticated DOI request, activates the existing append-only CRM marketing-consent row, and queues one consent-bound welcome email with immutable unsubscribe and booking references.';
+comment on function public.revoke_ai_readiness_newsletter_v1(uuid, uuid) is 'Idempotently revokes the Readiness newsletter consent and cancels all unsent newsletter deliveries.';
 comment on function public.authorize_ai_readiness_delivery_v2(uuid, uuid) is 'Revalidates lease and the delivery-specific consent immediately before any external transfer.';
 comment on function public.purge_ai_readiness_ephemeral_v1() is 'Deletes pseudonymous funnel events and private booking replay receipts after 90 days, completed delivery state after 30 days, and expired rate-limit/tracking-consent evidence.';
 

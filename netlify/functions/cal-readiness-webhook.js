@@ -2,7 +2,7 @@
 
 const crypto = require("crypto");
 const { getSupabaseAdmin } = require("./_shared/supabase");
-const { jsonResponse, sha256, verifyBookingReference } = require("./_shared/security");
+const { isProduction, jsonResponse, sha256, verifyBookingReference } = require("./_shared/security");
 
 function rawBody(event) {
   return event.isBase64Encoded
@@ -33,6 +33,7 @@ function header(event, name) {
 
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") return jsonResponse(405, { error: "Methode nicht erlaubt." }, { Allow: "POST" });
+  if (!isProduction()) return jsonResponse(202, { accepted: false, preview: true });
   const body = rawBody(event);
   if (!body.length || body.length > 65536) return jsonResponse(413, { error: "Anfrage zu groß oder leer." });
   const secret = process.env.CAL_READINESS_WEBHOOK_SECRET || "";

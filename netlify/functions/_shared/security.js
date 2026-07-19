@@ -91,6 +91,22 @@ function verifyNewsletterToken(token, assessmentId, submissionId) {
   }
 }
 
+function signNewsletterUnsubscribeToken(assessmentId, submissionId) {
+  const data = `newsletter-unsubscribe:${assessmentId}:${submissionId}`;
+  return crypto.createHmac("sha256", signingSecret()).update(data).digest("base64url");
+}
+
+function verifyNewsletterUnsubscribeToken(token, assessmentId, submissionId) {
+  try {
+    const expected = signNewsletterUnsubscribeToken(assessmentId, submissionId);
+    const suppliedBuffer = Buffer.from(String(token || ""));
+    const expectedBuffer = Buffer.from(expected);
+    return suppliedBuffer.length === expectedBuffer.length && crypto.timingSafeEqual(suppliedBuffer, expectedBuffer);
+  } catch {
+    return false;
+  }
+}
+
 function signBookingReference(assessmentId, submissionId, ttlSeconds = 30 * 24 * 60 * 60) {
   const payload = Buffer.from(JSON.stringify({
     a: assessmentId,
@@ -131,6 +147,8 @@ module.exports = {
   sha256,
   signBookingReference,
   signNewsletterToken,
+  signNewsletterUnsubscribeToken,
   verifyBookingReference,
   verifyNewsletterToken,
+  verifyNewsletterUnsubscribeToken,
 };

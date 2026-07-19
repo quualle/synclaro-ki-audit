@@ -1,5 +1,7 @@
 "use strict";
 
+const { verifyBookingReference } = require("./security");
+
 function escapeHtml(value) {
   return String(value || "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
 }
@@ -172,4 +174,86 @@ async function sendNewsletterConfirmation({ assessmentId, submissionId, contact,
   }
 }
 
-module.exports = { campaignLabel, crmContactsUrl, markDelivery, sendLeadNotification, sendNewsletterConfirmation, sendTelegramBookingNotification, sendTelegramLeadNotification };
+function newsletterUnsubscribeUrl(assessmentId, submissionId, token) {
+  const url = new URL("https://ki-check.synclaro.de/.netlify/functions/unsubscribe-newsletter");
+  url.searchParams.set("assessment", assessmentId);
+  url.searchParams.set("submission", submissionId);
+  url.searchParams.set("token", token);
+  return url;
+}
+
+function newsletterBookingUrl(bookingReference) {
+  const url = new URL("https://cal.com/marcoheer/ki-erstgespraech");
+  url.searchParams.set("utm_source", "newsletter");
+  url.searchParams.set("utm_medium", "email");
+  url.searchParams.set("utm_campaign", "ai_readiness_nurture_v1");
+  url.searchParams.set("utm_content", "welcome");
+  url.searchParams.set("readiness_ref", bookingReference);
+  return url;
+}
+
+async function sendNewsletterWelcome({ assessmentId, submissionId, contact, deliveryContext = {} }) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.NEWSLETTER_FROM_EMAIL || process.env.LEADS_FROM_EMAIL;
+  const token = String(deliveryContext.unsubscribeToken || "");
+  const bookingReference = String(deliveryContext.bookingReference || "");
+  if (!apiKey || !from) return { sent: false, skipped: "not_configured" };
+  const verifiedBooking = verifyBookingReference(bookingReference);
+  if (!contact?.email || !token || !assessmentId || !submissionId
+    || verifiedBooking?.assessmentId !== assessmentId || verifiedBooking?.submissionId !== submissionId) {
+    return { sent: false, errorCode: "welcome_payload_invalid" };
+  }
+  const unsubscribeUrl = newsletterUnsubscribeUrl(assessmentId, submissionId, token);
+  const unsubscribeHref = escapeHtml(unsubscribeUrl.toString());
+  const bookingHref = escapeHtml(newsletterBookingUrl(bookingReference).toString());
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 6000);
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "Idempotency-Key": `ai-readiness-welcome-${assessmentId}`,
+      },
+      body: JSON.stringify({
+        from,
+        to: [contact.email],
+        subject: "Vom Readiness-Test zur Umsetzung: drei nächste Schritte",
+        headers: {
+          "List-Unsubscribe": `<${unsubscribeUrl.toString()}>`,
+          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        },
+        html: `<h1>Aus Ihrem Score wird erst durch Umsetzung ein Vorteil.</h1>
+          <p>Danke für Ihre bestätigte Anmeldung zu den Synclaro KI-Impulsen. Für einen belastbaren Start brauchen Sie keine lange Tool-Liste, sondern eine klare Reihenfolge:</p>
+          <ol>
+            <li><strong>Einen wiederkehrenden Prozess auswählen</strong>, der heute messbar Zeit oder Qualität kostet.</li>
+            <li><strong>Daten, Zuständigkeit und Leitplanken klären</strong>, bevor ein KI-Werkzeug eingeführt wird.</li>
+            <li><strong>Ein Erfolgskriterium für 30 Tage festlegen</strong>, zum Beispiel Bearbeitungszeit, Fehlerquote oder Durchlaufzeit.</li>
+          </ol>
+          <p>Wenn Sie Ihren größten Hebel gemeinsam priorisieren möchten, können Sie eine kostenlose KI-Potenzialanalyse mit Marco buchen:</p>
+          <p><a href="${bookingHref}">Kostenlose Potenzialanalyse buchen</a></p>
+          <hr><p style="font-size:13px;color:#666">Sie erhalten diese E-Mail, weil Sie die Synclaro KI-Impulse im AI Readiness Test per Double-Opt-in bestätigt haben. <a href="${unsubscribeHref}">KI-Impulse abmelden</a>.</p>`,
+      }),
+      signal: controller.signal,
+    });
+    return response.ok ? { sent: true } : { sent: false, errorCode: "resend_error" };
+  } catch (error) {
+    return { sent: false, errorCode: error?.name === "AbortError" ? "timeout" : "resend_network_error" };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+module.exports = {
+  campaignLabel,
+  crmContactsUrl,
+  markDelivery,
+  newsletterBookingUrl,
+  newsletterUnsubscribeUrl,
+  sendLeadNotification,
+  sendNewsletterConfirmation,
+  sendNewsletterWelcome,
+  sendTelegramBookingNotification,
+  sendTelegramLeadNotification,
+};

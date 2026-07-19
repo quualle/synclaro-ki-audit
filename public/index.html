@@ -60,7 +60,7 @@
       <div class="hero-scrim" aria-hidden="true"></div>
       <div class="shell hero-grid">
         <div class="hero-copy">
-          <p class="kicker">AI Readiness Test · branchenoffen</p>
+          <p class="kicker">Für Selbstständige, Inhaber und Unternehmen bis 20 Mitarbeitende · branchenoffen</p>
           <h1>Wie bereit ist Ihr Unternehmen für <em>echten KI-Nutzen?</em></h1>
           <p class="hero-lead">12 präzise Fragen zeigen, ob Prozesse, Daten, Arbeitsweise und Umsetzungskraft schon zusammenpassen — oder wo Sie zuerst ansetzen sollten.</p>
           <div class="hero-actions">
@@ -123,7 +123,7 @@
         <ol class="process-list">
           <li><span>01</span><div><h3>Unternehmen einordnen</h3><p>Branche, Unternehmensgröße, Rolle und wichtigstes Ziel.</p></div></li>
           <li><span>02</span><div><h3>12 Kernfragen beantworten</h3><p>Eine Frage pro Bildschirm, ohne Fachjargon und ohne Fangfragen.</p></div></li>
-          <li><span>03</span><div><h3>Auswertung abschließen</h3><p>Am Ende fragen wir Name, Unternehmen und E-Mail einzeln ab, damit wir Ihr Ergebnis bereitstellen können.</p></div></li>
+          <li><span>03</span><div><h3>Auswertung abschließen</h3><p>Am Ende fragen wir Name, Unternehmen und E-Mail einzeln ab, um Ihre Auswertung zuzuordnen, sicher zu speichern und unmittelbar anzuzeigen.</p></div></li>
           <li><span>04</span><div><h3>Score und Fahrplan erhalten</h3><p>Sie sehen Ihren Score, vier Teilwerte, drei Prioritäten und einen konkreten 90-Tage-Fahrplan.</p></div></li>
         </ol>
       </div>
@@ -211,10 +211,15 @@
 
   <section class="result-screen" id="fullResult" role="dialog" aria-modal="true" aria-labelledby="resultTitle" hidden>
     <header class="result-nav">
-      <a class="brand" href="#top" aria-label="Synclaro">
+      <a class="brand" id="resultHomeLink" href="#top" aria-label="Ergebnis schließen und zur Synclaro-Startseite zurückkehren">
         <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="14"/><path d="M20 6v28M6 20h28"/></svg><span>Synclaro</span>
       </a>
-      <button class="text-button" id="restartResult" type="button">Neu starten</button>
+      <div class="result-nav-actions">
+        <button class="text-button" id="restartResult" type="button">Neu starten</button>
+        <button class="icon-button" id="closeResult" type="button" aria-label="Ergebnis schließen">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
     </header>
     <div class="result-hero">
       <div class="shell result-hero-grid">

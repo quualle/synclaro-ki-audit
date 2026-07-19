@@ -1,6 +1,13 @@
 "use strict";
 
-const { markDelivery, sendLeadNotification, sendNewsletterConfirmation, sendTelegramBookingNotification, sendTelegramLeadNotification } = require("./_shared/deliveries");
+const {
+  markDelivery,
+  sendLeadNotification,
+  sendNewsletterConfirmation,
+  sendNewsletterWelcome,
+  sendTelegramBookingNotification,
+  sendTelegramLeadNotification,
+} = require("./_shared/deliveries");
 const { sendMetaEvent, sendMetaLead } = require("./_shared/meta");
 const { getSupabaseAdmin } = require("./_shared/supabase");
 
@@ -50,6 +57,8 @@ async function processDelivery(supabase, row) {
     outcome = await sendTelegramBookingNotification(input);
   } else if (row.delivery_type === "newsletter_double_optin") {
     outcome = await sendNewsletterConfirmation(input);
+  } else if (row.delivery_type === "newsletter_welcome") {
+    outcome = await sendNewsletterWelcome(input);
   } else if (row.delivery_type === "meta_capi") {
       outcome = await sendMetaLead({
         contact: input.contact,

@@ -1,7 +1,12 @@
 "use strict";
 
 const { getSupabaseAdmin } = require("./_shared/supabase");
-const { verifyNewsletterToken } = require("./_shared/security");
+const {
+  isProduction,
+  signBookingReference,
+  signNewsletterUnsubscribeToken,
+  verifyNewsletterToken,
+} = require("./_shared/security");
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -60,9 +65,15 @@ exports.handler = async (event) => {
     return redirect("/newsletter-link-ungueltig.html");
   }
   if (event.httpMethod === "GET") return confirmationPage({ assessmentId, submissionId, token });
+  if (!isProduction()) return redirect("/newsletter-preview.html");
   try {
     const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase.rpc("confirm_ai_readiness_newsletter_v1", { p_assessment_id: assessmentId, p_submission_id: submissionId });
+    const { data, error } = await supabase.rpc("confirm_ai_readiness_newsletter_v1", {
+      p_assessment_id: assessmentId,
+      p_submission_id: submissionId,
+      p_booking_reference: signBookingReference(assessmentId, submissionId),
+      p_unsubscribe_token: signNewsletterUnsubscribeToken(assessmentId, submissionId),
+    });
     const result = Array.isArray(data) ? data[0] : data;
     return redirect(!error && result?.accepted === true ? "/newsletter-bestaetigt.html" : "/newsletter-link-ungueltig.html");
   } catch {
