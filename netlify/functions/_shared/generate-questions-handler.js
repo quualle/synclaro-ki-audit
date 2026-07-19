@@ -6,16 +6,16 @@ const {
   PHASES,
   cleanText,
   getQuestion,
-} = require("./_shared/assessment");
-const { AI_PROCESSING_VERSION } = require("./_shared/consents");
+} = require("./assessment");
+const { AI_PROCESSING_VERSION } = require("./consents");
 const {
   adaptiveAIConfigured,
   adaptiveModel,
   modelLabel,
   requestStructuredJson,
-} = require("./_shared/openrouter");
-const { hasAllowedOrigin, isProduction, jsonResponse } = require("./_shared/security");
-const { readSession } = require("./_shared/session");
+} = require("./openrouter");
+const { hasAllowedOrigin, isProduction, jsonResponse } = require("./security");
+const { readSession } = require("./session");
 
 const TOTAL_QUESTIONS = 8;
 const QUESTIONS_PER_DIMENSION = 2;
@@ -237,7 +237,7 @@ async function generateNextQuestion({ profile, history, questionNumber, request 
 }
 
 async function handler(event) {
-  if (event.httpMethod === "OPTIONS") return { statusCode: 204, headers: jsonResponse(204, {}).headers, body: "" };
+  if (event.httpMethod === "OPTIONS") return { statusCode: 204, headers: jsonResponse(204, {}).headers };
   if (event.httpMethod !== "POST") return jsonResponse(405, { error: "Methode nicht erlaubt." });
   if (!hasAllowedOrigin(event)) return jsonResponse(403, { error: "Ursprung nicht erlaubt." });
   if (Buffer.byteLength(event.body || "", "utf8") > 32768) return jsonResponse(413, { error: "Anfrage zu groß." });
@@ -285,14 +285,6 @@ async function handler(event) {
 }
 
 exports.handler = handler;
-exports.config = {
-  path: "/.netlify/functions/generate-questions",
-  rateLimit: {
-    windowLimit: 20,
-    windowSize: 180,
-    aggregateBy: ["ip", "domain"],
-  },
-};
 exports._test = {
   TOTAL_QUESTIONS,
   adaptiveQuestionSchema,

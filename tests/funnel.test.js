@@ -13,7 +13,7 @@ const meta = require("../netlify/functions/_shared/meta");
 const security = require("../netlify/functions/_shared/security");
 const session = require("../netlify/functions/_shared/session");
 const supabaseAdmin = require("../netlify/functions/_shared/supabase");
-const submitModule = require("../netlify/functions/submit-lead");
+const submitModule = require("../netlify/functions/_shared/submit-lead-handler");
 const submit = submitModule._test;
 const analyze = require("../netlify/functions/analyze")._test;
 const resultBuilder = require("../netlify/functions/_shared/result");
@@ -196,6 +196,18 @@ test("Conversion-Gate, Formfelder und Ergebnis-CTAs bleiben transparent und barr
   assert.match(app, /GPT‑5\.5/);
   assert.match(app, /Kontaktdaten an OpenRouter/);
   assert.match(app, /new AbortController\(\)/);
+  assert.match(app, /applyConsentEffects\(\{ allowGrants: false \}\)/);
+  assert.match(app, /function applyConsentEffects\(\{ allowGrants = true \} = \{\}\)/);
+  assert.match(app, /allowGrants && consent\.marketing/);
+  assert.match(app, /const incomingWasServerConfirmed = Boolean\(/);
+  assert.match(app, /const synced = await syncTrackingConsent\(\)/);
+  assert.match(app, /storageGeneration !== storageConsentGeneration/);
+  assert.match(app, /question_count: CORE_QUESTION_COUNT/);
+  assert.doesNotMatch(app, /adaptive_question_started/);
+  assert.match(app, /session: "\/api\/readiness-session"/);
+  assert.match(app, /question: "\/api\/readiness-question"/);
+  assert.match(app, /result: "\/api\/readiness-result"/);
+  assert.doesNotMatch(app, /`\$\{API\}\/(?:start-session|generate-questions|submit-lead)`/);
   assert.match(app, /adaptiveRequestController\?\.abort\(\)/);
   assert.match(app, /generation !== adaptiveRequestGeneration/);
   assert.match(app, /function cancelAnswerAdvance\(\)/);
@@ -213,7 +225,6 @@ test("Conversion-Gate, Formfelder und Ergebnis-CTAs bleiben transparent und barr
   assert.match(css, /\.result-privacy-note[^}]*font-size: 14px/);
   assert.match(css, /\.lever-section > \* \{ min-width: 0; \}/);
   assert.match(css, /\.lever-section h2[^}]*overflow-wrap: anywhere/);
-  assert.deepEqual(submitModule.config.rateLimit, { windowLimit: 6, windowSize: 180, aggregateBy: ["ip", "domain"] });
   assert.match(html, /class="brand-logo" src="\/assets\/synclaro-logo-weiss\.png"/);
   assert.match(html, /id="resultScoreDial"/);
   assert.match(html, /id="useCases"/);
@@ -247,22 +258,37 @@ test("Attribution bleibt ohne Marketing-Consent leer und entfernt mit Consent fr
     utm_source: "meta",
     utm_medium: "paid_social",
     utm_campaign: "ai_readiness_de_prospecting_v1",
-    utm_content: "ada@example.com",
+    utm_id: "120251380526880206",
+    utm_term: "120251380526890206",
+    utm_content: "120251380526870206",
     placement: "instagram_stories",
     fbclid: "abc-123",
     fbp: "fb.1.1234567890.abc",
   };
   const denied = submit.sanitizeAttribution(raw, event, "55555555-5555-4555-8555-555555555555", false);
   assert.equal(denied.landingUrl, "https://ki-check.synclaro.de/");
-  for (const key of ["referrer", "utm_source", "utm_campaign", "utm_content", "placement", "fbclid", "fbp", "user_agent"]) {
+  for (const key of ["referrer", "utm_source", "utm_campaign", "utm_id", "utm_term", "utm_content", "placement", "fbclid", "fbp", "user_agent"]) {
     assert.equal(denied[key], "");
   }
   const granted = submit.sanitizeAttribution(raw, event, "55555555-5555-4555-8555-555555555555", true);
   assert.equal(granted.referrer, "https://example.com");
   assert.equal(granted.utm_campaign, "ai_readiness_de_prospecting_v1");
-  assert.equal(granted.utm_content, "");
+  assert.equal(granted.utm_id, "120251380526880206");
+  assert.equal(granted.utm_term, "120251380526890206");
+  assert.equal(granted.utm_content, "120251380526870206");
   assert.equal(granted.placement, "instagram_stories");
   assert.equal(granted.fbclid, "abc-123");
+  const injected = submit.sanitizeAttribution({
+    ...raw,
+    utm_id: "+491701234567",
+    utm_term: "Ada Beispiel",
+    utm_content: "ada@example.com",
+    placement: "instagram_ada_example_com",
+  }, event, "55555555-5555-4555-8555-555555555555", true);
+  assert.equal(injected.utm_id, "");
+  assert.equal(injected.utm_term, "");
+  assert.equal(injected.utm_content, "");
+  assert.equal(injected.placement, "instagram");
 });
 
 test("deterministische Detailanalyse liefert die sichtbare Gesamteinschätzung", () => {
@@ -368,8 +394,53 @@ test("ausgeglichene Teilwerte erfinden weder Stärke noch Fokus", () => {
 });
 
 test("Tracking-Properties verwerfen Antworten, Kontaktdaten und freie Kampagnenwerte", () => {
-  const result = tracking.sanitizeProperties({ score: 47, phase: "2", email: "ada@example.com", phone: "+49170", answers: [{ answer: "x" }], utm_campaign: "ada@example.com", placement: "instagram_stories", preview: false });
-  assert.deepEqual(result, { score: 47, phase: "2", utm_campaign: "other", placement: "instagram_stories", preview: false });
+  const result = tracking.sanitizeProperties({
+    assessment_version: "2026-07-19.v5",
+    question_count: 8,
+    score: 47,
+    depth: 75,
+    phase: "assessment",
+    employee_band: "1-5",
+    respondent_role: "inhaber",
+    level: "KI-Startklar",
+    field: "email",
+    error_code: "required_or_invalid",
+    duration_bucket: "31-120",
+    email: "ada@example.com",
+    phone: "+49170",
+    answers: [{ answer: "x" }],
+    utm_campaign: "ada@example.com",
+    placement: "instagram_stories",
+    preview: false,
+  });
+  assert.deepEqual(result, {
+    assessment_version: "2026-07-19.v5",
+    question_count: 8,
+    score: 47,
+    depth: 75,
+    phase: "assessment",
+    employee_band: "1-5",
+    respondent_role: "inhaber",
+    level: "KI-Startklar",
+    field: "email",
+    error_code: "required_or_invalid",
+    duration_bucket: "31-120",
+    utm_campaign: "other",
+    placement: "instagram_stories",
+    preview: false,
+  });
+  const injected = tracking.sanitizeProperties(Object.fromEntries([
+    "assessment_version", "phase", "employee_band", "respondent_role", "question_count", "score", "level", "field",
+    "error_code", "depth", "duration_bucket", "preview",
+  ].map((key) => [key, "ada@example.com"])));
+  assert.equal(JSON.stringify(injected).includes("ada"), false);
+  const encodedPlacement = tracking.sanitizeProperties({
+    placement: "instagram_ada_example_com",
+    utm_campaign: "facebook_491701234567",
+  });
+  assert.deepEqual(encodedPlacement, { placement: "instagram", utm_campaign: "other" });
+  assert.equal(JSON.stringify(encodedPlacement).includes("ada"), false);
+  assert.equal(JSON.stringify(encodedPlacement).includes("491701234567"), false);
 });
 
 test("Readiness-Handoff trägt nur signierte Zuordnung und freigegebene Meta-Kampagnenwerte", () => {

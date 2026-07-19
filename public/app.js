@@ -4,6 +4,11 @@
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
   const API = "/.netlify/functions";
+  const READINESS_API = {
+    session: "/api/readiness-session",
+    question: "/api/readiness-question",
+    result: "/api/readiness-result",
+  };
   const CONSENT_STATE = window.SynclaroConsentState;
   const HANDOFF = window.SynclaroReadinessHandoff;
   const STATE_KEY = "synclaro_ai_readiness_state_v8";
@@ -122,6 +127,7 @@
   let landingTrackPromise = null;
   let consentSaving = false;
   let pendingConsentIntent = null;
+  let storageConsentGeneration = 0;
   let consentReturnFocus = null;
   let testReturnFocus = null;
   let currentInteractionLayer = null;
@@ -451,6 +457,7 @@
 
   function handleConsentStorage(event) {
     if (event.key !== CONSENT_KEY) return;
+    const storageGeneration = ++storageConsentGeneration;
     let incoming = null;
     try { incoming = JSON.parse(event.newValue || "null"); } catch {}
     if (!storedConsentIsValid(incoming)) {
@@ -481,22 +488,54 @@
       consent.globalDecisionId = incomingGlobalDecisionId || consent.globalDecisionId || null;
       consent.analytics = consent.analytics && incoming.analytics === true;
       consent.marketing = consent.marketing && incoming.marketing === true;
-      if (!consent.analytics || !consent.marketing) applyConsentEffects();
+      if (!consent.analytics || !consent.marketing) applyConsentEffects({ allowGrants: false });
       return;
     }
     if (!choiceChanged) {
       consent.globalDecisionId = incomingGlobalDecisionId || consent.globalDecisionId || null;
       return;
     }
+    const incomingWasServerConfirmed = Boolean(
+      incoming.decisionId
+      && incoming.decisionId === incomingGlobalDecisionId
+      && Number.isFinite(Date.parse(incoming.grantedAt || "")),
+    );
     consent = {
       necessary: true,
       ...incoming,
+      analytics: incomingWasServerConfirmed && incoming.analytics === true,
+      marketing: incomingWasServerConfirmed && incoming.marketing === true,
       globalDecisionId: incomingGlobalDecisionId,
       decisionId: null,
       syncedSessionIssuedAt: null,
       syncedRunId: null,
     };
-    applyConsentEffects();
+    applyConsentEffects({ allowGrants: false });
+    if (!incomingWasServerConfirmed || (!consent.analytics && !consent.marketing)) return;
+    const expectedAnalytics = consent.analytics;
+    const expectedMarketing = consent.marketing;
+    void (async () => {
+      const synced = await syncTrackingConsent();
+      if (storageGeneration !== storageConsentGeneration
+        || pendingConsentIntent
+        || consent.analytics !== expectedAnalytics
+        || consent.marketing !== expectedMarketing) return;
+      if (!synced) {
+        consent = {
+          ...consent,
+          analytics: false,
+          marketing: false,
+          grantedAt: null,
+          decisionId: null,
+          syncedSessionIssuedAt: null,
+          syncedRunId: null,
+        };
+        applyConsentEffects();
+        toast("Tracking bleibt aus, weil die Entscheidung aus dem anderen Tab nicht sicher bestätigt werden konnte.");
+        return;
+      }
+      applyConsentEffects();
+    })();
   }
 
   async function syncTrackingConsent({ rebaseOnStale = false, intentId = null } = {}) {
@@ -538,7 +577,7 @@
             globalDecisionId: queuedObservation.decisionId || consent.globalDecisionId || null,
           };
           pendingConsentIntent.observedDecision = null;
-          applyConsentEffects();
+          applyConsentEffects({ allowGrants: false });
           if (!queuedObservation.decisionId) return false;
           previousDecisionId = queuedObservation.decisionId;
         }
@@ -574,7 +613,7 @@
               targetAnalytics = targetAnalytics && result.currentAnalytics === true;
               targetMarketing = targetMarketing && result.currentMarketing === true;
               consent = { ...consent, analytics: targetAnalytics, marketing: targetMarketing };
-              applyConsentEffects();
+              applyConsentEffects({ allowGrants: false });
               continue;
             }
             if (!pendingConsentIntent) {
@@ -617,7 +656,7 @@
               globalDecisionId: observed.decisionId || consent.globalDecisionId || null,
             };
             pendingConsentIntent.observedDecision = null;
-            applyConsentEffects();
+            applyConsentEffects({ allowGrants: false });
             if (acceptedResolution.canAdoptObserved) {
               const matchesAccepted = targetAnalytics === requestAnalytics
                 && targetMarketing === requestMarketing;
@@ -683,7 +722,7 @@
       observationSerial: 0,
       observedDecision: null,
     };
-    if (!consent.analytics || !consent.marketing) applyConsentEffects();
+    applyConsentEffects({ allowGrants: false });
     try {
       const synced = await syncTrackingConsent({ rebaseOnStale: true, intentId });
       if (!synced && (consent.analytics || consent.marketing || previous.analytics || previous.marketing)) {
@@ -709,10 +748,10 @@
     }
   }
 
-  function applyConsentEffects() {
+  function applyConsentEffects({ allowGrants = true } = {}) {
     $("#analyticsToggle").checked = consent.analytics;
     $("#marketingToggle").checked = consent.marketing;
-    if (consent.analytics && !landingTracked && !landingTrackPromise) {
+    if (allowGrants && consent.analytics && !landingTracked && !landingTrackPromise) {
       const pendingLandingTrack = (async () => {
         const ready = await ensureTrackingDecisionForCurrentRun();
         if (!ready || !consent.analytics || landingTracked) return false;
@@ -725,11 +764,11 @@
         if (landingTrackPromise === pendingLandingTrack) landingTrackPromise = null;
       });
     }
-    if (consent.marketing) {
+    if (allowGrants && consent.marketing) {
       restoreConsentedAttribution();
       try { sessionStorage.setItem(ATTRIBUTION_KEY, JSON.stringify(attribution)); } catch {}
       loadMeta();
-    } else {
+    } else if (!consent.marketing) {
       if (typeof window.fbq === "function") window.fbq("consent", "revoke");
       try { sessionStorage.removeItem(ATTRIBUTION_KEY); } catch {}
       ["_fbp", "_fbc"].forEach((name) => { document.cookie = `${name}=; Max-Age=0; Path=/; SameSite=Lax` });
@@ -842,7 +881,7 @@
       sessionReady = false;
       await configPromise;
       try {
-        const response = await fetch(`${API}/start-session`, {
+        const response = await fetch(READINESS_API.session, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ fresh: requestFresh }),
@@ -1052,7 +1091,7 @@
   }
 
   async function fetchAdaptiveQuestion(index, signal) {
-    const response = await fetch(`${API}/generate-questions`, {
+    const response = await fetch(READINESS_API.question, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       signal,
@@ -1107,7 +1146,6 @@
       state.questionIndex = index;
       saveState();
       renderQuestion();
-      track("adaptive_question_started", { question_number: String(index + 1), selection_mode: question.selectionMode }, index + 1);
     } catch (error) {
       if (generation !== adaptiveRequestGeneration || controller.signal.aborted || error?.name === "AbortError") return;
       $("#questionHost").innerHTML = `<article class="question-card"><p class="question-index">Verbindung unterbrochen</p><h1 id="questionTitle" tabindex="-1">Die nächste Frage konnte nicht sicher geladen werden.</h1><p class="question-help">Ihre bisherigen Antworten bleiben in dieser Browsersitzung erhalten. Bei einem Modellfehler liefert der Server automatisch eine geprüfte Ersatzfrage; hier ist die Verbindung selbst abgebrochen.</p><div class="question-actions"><button class="button button-accent" id="retryQuestion" type="button">Erneut versuchen</button></div></article>`;
@@ -1334,7 +1372,7 @@
     state.contactIndex = Math.max(0, Math.min(CONTACT_STEPS.length - 1, state.contactIndex || 0));
     formOpenedAt = Date.now();
     saveState();
-    track("phase_completed", { phase: "assessment", question_count: state.answers.length }, PROFILE_STEPS.length + CORE_QUESTION_COUNT + OPTIONAL_CONTEXT_COUNT);
+    track("phase_completed", { phase: "assessment", question_count: CORE_QUESTION_COUNT }, PROFILE_STEPS.length + CORE_QUESTION_COUNT + OPTIONAL_CONTEXT_COUNT);
     metaEvent("AIReadinessCompleted", { assessment_version: config.assessmentVersion });
     renderContactStep();
     track("lead_form_viewed", { employee_band: state.profile.mitarbeiter }, PROFILE_STEPS.length + CORE_QUESTION_COUNT + OPTIONAL_CONTEXT_COUNT);
@@ -1468,7 +1506,7 @@
       },
     };
     try {
-      const response = await fetch(`${API}/submit-lead`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const response = await fetch(READINESS_API.result, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const result = await response.json().catch(() => ({}));
       if (!response.ok || !result.accepted) throw new Error(result.error || "Der Lead konnte nicht sicher gespeichert werden.");
       if (!result.assessmentId) {

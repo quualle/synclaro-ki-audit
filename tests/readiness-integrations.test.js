@@ -98,7 +98,7 @@ test("ein idempotenter Lead-Retry bindet den Kalender-Verweis an das bereits ges
   const previousEnv = Object.fromEntries(envNames.map((name) => [name, process.env[name]]));
   const supabasePath = require.resolve("../netlify/functions/_shared/supabase");
   const sessionPath = require.resolve("../netlify/functions/_shared/session");
-  const submitPath = require.resolve("../netlify/functions/submit-lead");
+  const submitPath = require.resolve("../netlify/functions/_shared/submit-lead-handler");
   const supabaseModule = require(supabasePath);
   const sessionModule = require(sessionPath);
   const originalGetSupabaseAdmin = supabaseModule.getSupabaseAdmin;

@@ -5,10 +5,12 @@
   "private": true,
   "scripts": {
     "test": "node --test tests/*.test.js",
+    "test:netlify-manifest": "node scripts/assert-netlify-function-manifest.mjs",
     "test:migration": "./scripts/test-migration-local.sh",
     "check": "npm test && npm run test:migration && npm audit --audit-level=high"
   },
   "dependencies": {
+    "@netlify/aws-lambda-compat": "1.0.2",
     "@supabase/supabase-js": "^2.110.7",
     "openai": "^4.85.0",
     "react": "^19.2.7",

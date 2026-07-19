@@ -2,11 +2,16 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const path = require("node:path");
+const { pathToFileURL } = require("node:url");
 
 const assessment = require("../netlify/functions/_shared/assessment");
-const generateQuestions = require("../netlify/functions/generate-questions");
-const startSession = require("../netlify/functions/start-session");
+const generateQuestions = require("../netlify/functions/_shared/generate-questions-handler");
 const adaptive = generateQuestions._test;
+
+function importFunctionEntry(name) {
+  return import(pathToFileURL(path.join(__dirname, `../netlify/functions/${name}.mjs`)).href);
+}
 
 const PROFILE = {
   branche: "Gebäudereinigung",
@@ -216,19 +221,26 @@ test("aktivierter KI-Preview stellt eine Sitzung aus und schützt die bezahlten 
   process.env.OPENROUTER_API_KEY = "test-key";
   process.env.SESSION_HMAC_SECRET = "a".repeat(32);
   try {
-    const issued = await startSession.handler({ httpMethod: "POST", headers: {}, body: "{}" });
-    assert.equal(issued.statusCode, 200);
-    assert.match(issued.headers["Set-Cookie"], /^synclaro_ai_session=/);
-    assert.equal(JSON.parse(issued.body).preview, true);
+    const [startEntry, questionsEntry] = await Promise.all([
+      importFunctionEntry("start-session"),
+      importFunctionEntry("generate-questions"),
+    ]);
+    const issued = await startEntry.default(new Request("https://preview.example/api/readiness-session", {
+      method: "POST",
+      body: "{}",
+    }), {});
+    assert.equal(issued.status, 200);
+    assert.match(issued.headers.get("set-cookie"), /^synclaro_ai_session=/);
+    assert.equal((await issued.json()).preview, true);
 
-    const unauthenticated = await generateQuestions.handler({
-      httpMethod: "POST",
-      headers: {},
+    const unauthenticated = await questionsEntry.default(new Request("https://preview.example/api/readiness-question", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
       body: JSON.stringify({ protocolVersion: "adaptive-v1", aiProcessing: { acknowledged: true, version: "ai-processing-v1-2026-07-19" }, companyProfile: PROFILE, previousAnswers: [], questionNumber: 1 }),
-    });
-    assert.equal(unauthenticated.statusCode, 401);
-    assert.deepEqual(generateQuestions.config.rateLimit, { windowLimit: 20, windowSize: 180, aggregateBy: ["ip", "domain"] });
-    assert.deepEqual(startSession.config.rateLimit, { windowLimit: 12, windowSize: 180, aggregateBy: ["ip", "domain"] });
+    }), {});
+    assert.equal(unauthenticated.status, 401);
+    assert.deepEqual(questionsEntry.config.rateLimit, { windowLimit: 20, windowSize: 180, aggregateBy: ["ip", "domain"] });
+    assert.deepEqual(startEntry.config.rateLimit, { windowLimit: 12, windowSize: 180, aggregateBy: ["ip", "domain"] });
   } finally {
     const restore = (key, value) => { if (value === undefined) delete process.env[key]; else process.env[key] = value; };
     restore("CONTEXT", previous.context);
