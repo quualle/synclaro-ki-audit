@@ -245,7 +245,9 @@ end;
 $$;
 
 do $$
-declare v_historical_contact uuid;
+declare
+  v_historical_contact uuid;
+  v_result jsonb;
 begin
   insert into public.crm_contacts(first_name, last_name, email, company, contact_type, contact_source, lead_source, first_touch_channel)
   values ('Historisch', 'Optin', 'historical@example.com', 'Historisch GmbH', 'lead', 'marketing', 'marketing', 'website_formular')
@@ -254,6 +256,32 @@ begin
   values (v_historical_contact, 'email', pg_catalog.now(), 'herocon-2026-optin', 'Historischer Bestand', '{"email":"historical@example.com"}'::jsonb);
   if not exists (select 1 from public.v_email_marketing_list where contact_id = v_historical_contact)
   then raise exception 'historical consent was removed by DOI hardening'; end if;
+  perform public.record_ai_readiness_tracking_consent_v1(
+    '26262626-2626-4262-8262-262626262626', null,
+    '27272727-2727-4272-8272-272727272727', pg_catalog.repeat('5', 64), pg_catalog.repeat('5', 64),
+    'cookie-v1-2026-07-18', false, false, pg_catalog.repeat('e', 64), 'Integration Test'
+  );
+  v_result := public.submit_ai_readiness_lead_v2(pg_temp.make_payload(
+    '25252525-2525-4252-8252-252525252525', '26262626-2626-4262-8262-262626262626',
+    '27272727-2727-4272-8272-272727272727', '5', '5', 'historical@example.com', true, false
+  ));
+  if v_result ->> 'status' <> 'created'
+    or v_result ->> 'newsletter_status' <> 'already_active'
+    or not exists (
+      select 1 from public.ai_readiness_assessments
+      where id = '25252525-2525-4252-8252-252525252525'
+        and newsletter_status = 'already_active'
+        and newsletter_marketing_consent_id is not null
+        and newsletter_requested_at is not null
+        and newsletter_confirmed_at is null
+    )
+    or (select count(*) from public.crm_marketing_consents where contact_id = v_historical_contact and channel = 'email' and revoked_at is null) <> 1
+    or exists (
+      select 1 from private.ai_readiness_outbox
+      where assessment_id = '25252525-2525-4252-8252-252525252525'
+        and delivery_type = 'newsletter_double_optin'
+    )
+  then raise exception 'historical active consent could not be reused safely: %', v_result; end if;
 end;
 $$;
 

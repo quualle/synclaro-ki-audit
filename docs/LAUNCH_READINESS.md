@@ -14,17 +14,18 @@ erfolgt anschließend in der festgelegten Reihenfolge.
 ## Externer Read-only-Snapshot
 
 Am 19.07.2026 wurde der sichtbare externe Stand geprüft; veröffentlicht wurde
-nichts. Die empfohlenen V2-Namen sind im Meta-Entwurf dokumentiert, im Ads
-Manager tragen die Objekte noch ihre älteren Draft-Namen. Entscheidend sind die
-exakten IDs: Kampagne `120251380526880206`, Anzeigengruppe
-`120251380526890206`, Anzeige `120251380526870206`.
+nichts. Die dokumentierten V2-Namen und die V2-Copy sind im Meta-Entwurf
+gesetzt. Entscheidend sind die exakten IDs: Kampagne `120251380526880206`,
+Anzeigengruppe `120251380526890206`, Anzeige `120251380526870206`.
 
 - Im Meta Ads Manager existiert ein unveröffentlichter Leads-/Website-Draft mit
   Auktion, „Conversions maximieren“, Advantage+ Budget/Audience/Placements,
   25 € Tagesbudget, Deutschland, 18–65+, allen Geschlechtern,
-  Zielgruppenvorschlägen „Unternehmertum“ und Arbeitgeber „Selbstständig“ sowie
-  Pixel `1497847851628194`. Das Event `Lead` ist noch nicht auswählbar, weil der
-  Pixel es noch nicht empfangen hat.
+  Zielgruppenvorschlägen „Unternehmertum“, Arbeitgeber „Selbstständig“ und
+  Verhalten „Inhaber von Kleinunternehmen“. Der aktive Website-Datensatz
+  `1497847851628194` und das Event `Lead` sind im Adset ausgewählt. Meta warnt
+  erwartungsgemäß, dass dieses Event in den letzten 14 Tagen keine Aktivität
+  hatte; ein consent-basiertes Pixel/CAPI-Testevent bleibt deshalb Launch-Gate.
 - Als EU-Werbetreibender/Zahlender werden sichtbar `Synclaro.de` und
   `Johannes Jaegers` geführt. Diese Angaben sind keine stillschweigende
   Freigabe und müssen von der Geschäftsführung bestätigt werden.
@@ -36,10 +37,10 @@ exakten IDs: Kampagne `120251380526880206`, Anzeigengruppe
 - Der URL-Parameter `readiness_ref` bleibt beim öffentlichen Cal-Aufruf
   erhalten. Das dazugehörige verborgene Feld und der event-spezifische Webhook
   konnten nicht im Admin geprüft werden, weil `app.cal.com` ausgeloggt war.
-- Der Meta-Creative-Wizard ist auf ein Image Ad umgestellt, enthält jedoch noch
-  eine ältere Draft-Copy. Die nachgeschärfte V2-Copy ist verbindlich in
-  `META_CAMPAIGN_DRAFT.md` dokumentiert und muss vor der Endprüfung in den
-  Wizard übernommen werden. Der Upload der lokalen V2-Dateien ist noch durch
+- Der Meta-Creative-Wizard ist auf ein Image Ad umgestellt. V2-Primärtext,
+  Überschrift, Beschreibung, CTA, Ziel-URL und UTM-Parameter sind gesetzt; keine
+  der fünf automatisch vorgeschlagenen KI-Textvarianten ist ausgewählt. Der
+  Upload der lokalen V2-Dateien ist noch durch
   die fehlende Chrome-Erweiterungsberechtigung für lokale Dateien
   blockiert (`fileChooser.setFiles: Not allowed`); die globale
   Dateiberechtigung wurde bewusst nicht autonom erweitert und es wurde kein
@@ -53,7 +54,7 @@ prüfen.
 Am 19.07.2026 wurden ohne Production-Write und ohne externen Send folgende
 Prüfungen erfolgreich abgeschlossen:
 
-- `npm run check`: 33 von 33 Node-Tests, atomare lokale PostgreSQL-Migration
+- `npm run check`: 34 von 34 Node-Tests, atomare lokale PostgreSQL-Migration
   samt Integrationstest und `npm audit` mit 0 bekannten Schwachstellen;
 - `netlify build --context deploy-preview`: alle Readiness-Functions gebündelt;
 - Datenschutz-Worktree: `astro check` mit 0 Fehlern und vollständiger Build
@@ -74,17 +75,35 @@ Prüfungen erfolgreich abgeschlossen:
   ausgelieferten Asset-Verzeichnis entfernt; die aktuelle Social-Karte bleibt
   branchenoffen;
 - frische mobile Browser-Session: 0 Console-Fehler und 0 Console-Warnungen.
-- finale UX-/Accessibility-Re-Prüfung: `PASS`; finaler Code-Critic:
-  `PASS-WITH-CONCERNS` ausschließlich wegen externer Launch-Gates; zusätzliche
-  unabhängige Terra-QA: `GO-WITH-CHANGES` ebenfalls ausschließlich wegen
-  dieser externen Gates. Der zwischenzeitlich gefundene Outbox-Claim-Fehler
-  und die zu grobe Booking-Deduplizierung wurden vor diesen Verdicts behoben
-  und durch reale SQL-Zyklen abgedeckt.
+- finale UX-/Accessibility-Re-Prüfung: `PASS`; finaler Code-Critic nach dem
+  letzten Outbox-/SQL-Delta: `PASS`; zusätzliche unabhängige Terra-QA:
+  `GO-WITH-CHANGES` ausschließlich wegen externer Launch-Gates. Die externe
+  OpenRouter-Vollprüfung meldete zunächst einen operativen P2: Ein nach dem
+  Outbox-Claim widerrufener Consent wurde korrekt neutralisiert, erzeugte aber
+  einen falschen Scheduler-Fehler. Der zielgenaue Fix ist regressionstestet;
+  die abschließende externe Delta-QA lautet `GO` ohne offene P0/P1/P2/P3.
 
-Die vorgeschriebene externe OpenRouter-QA konnte nicht ausgeführt werden, weil
-in der dokumentierten Secret-Quelle kein `OPENROUTER_API_KEY` eingerichtet ist.
-Das ist kein Codefehler, bleibt aber vor einer Production-Freigabe ein
-Qualitätsgate. Eine interne Prüfung darf sie nicht stillschweigend ersetzen.
+Der dokumentierte `OPENROUTER_API_KEY` ist vorhanden und wurde read-only gegen
+den Provider erfolgreich authentifiziert. Die vorgeschriebene externe
+OpenRouter-QA ist ausgeführt und unter
+`docs/reviews/2026-07-19-final-production-qa.md` protokolliert. Finales Verdict:
+`GO`, keine offenen P0/P1/P2/P3.
+
+## Aktueller Provider-Audit (read-only)
+
+Der folgende Stand wurde ohne Production-Write, Secret-Ausgabe oder externen
+Send erhoben:
+
+| Bereich | Verifizierter Stand | Konsequenz vor Launch |
+|---|---|---|
+| Netlify | CLI authentifiziert, Repository mit `synclaro-ki-audit` verknüpft; aktueller Deploy Preview bereit, unveröffentlicht und `production=false` | Technische Vorbereitung und Preview-Prüfung können autonom fortgesetzt werden. |
+| Resend | Production-Zugang read-only erfolgreich authentifiziert; konfigurierte Absenderdomain verifiziert | Provider ist bereit. Echte DOI-, interne und Newsletter-Sends bleiben bis zur gebündelten Testfreigabe aus. |
+| Core-Sicherheit | `SESSION_HMAC_SECRET`, `LEAD_SIGNING_SECRET`, `LEAD_RATE_LIMIT_SECRET` und `LEAD_IP_HASH_SALT` sind vorhanden, unterschreiten aber jeweils die geforderte Mindestlänge von 32 Zeichen | Vor Production vier neue, getrennte Werte sicher erzeugen und im Functions-Scope setzen. |
+| Supabase | URL vorhanden, aber weder `SUPABASE_SECRET_KEY` noch `SUPABASE_SERVICE_ROLE_KEY` im Production-Functions-Scope. Der read-only Live-Abgleich nennt `20260719050454` als jüngste angewandte Migration; die neue Endmigration `20260719060000` ist dort noch nicht registriert und liegt eindeutig danach. Eine isolierte Cloud-Testbranch würde im aktuellen Tarif reale Kosten auslösen. | Keine kostenpflichtige Branch wurde autonom erzeugt. Kostenfreigabe oder ausdrücklich gewählte Testalternative ist ein Geschäftsführer-Gate. |
+| Telegram | Lead-Token und Zielchat sind zwar belegt, aber formal ungültig; die Bot-API lehnt den Zugang ab. `TELEGRAM_TRANSFER_APPROVED` bleibt fail-closed. Andere vorhandene Bots sind für andere Zwecke dokumentiert. | Bot-Identität und Zielchat ausdrücklich festlegen; keinen bestehenden Bot stillschweigend umwidmen. Danach PII-freien Test senden. |
+| Meta | Pixel-ID und Graph-Version vorhanden; `META_CAPI_ACCESS_TOKEN` und temporärer Test-Event-Code fehlen | CAPI-Zugang erst nach Freigabe sicher erzeugen/hinterlegen, dann dedupliziertes `Lead`-Testevent prüfen. |
+| Cal.com | Sämtliche `CAL_READINESS_*`-Variablen fehlen; die Admin-Sitzung war beim letzten UI-Audit ausgeloggt | Nach Login das öffentliche Event und den event-spezifischen Webhook erst im freigegebenen Aktivierungsfenster ändern. |
+| OpenRouter | Dokumentierter Zugang vorhanden und read-only erfolgreich authentifiziert | Externe QA benötigt keine Mitwirkung von Marco. |
 
 ## Verbindliches Zielbild
 
@@ -135,21 +154,57 @@ Telegram-Aufträge laufen nach 24 Stunden, die bestätigte Mehrwert-Mail und
 Meta-Aufträge nach sieben Tagen ab.
 Erledigte oder tote Outbox-Zeilen werden nach 30 Tagen bereinigt.
 
+## Aufgabenverteilung bis zur Freigabe
+
+### Autonom ohne Marcos Mitwirkung
+
+- externe OpenRouter-QA ausführen, Befunde beheben und Verdict dokumentieren;
+- Code-, SQL-, Build-, Preview-, Browser- und Provider-Read-only-Prüfungen
+  wiederholen sowie das exakte Production-Change-Manifest vorbereiten;
+- den unveröffentlichten Meta-Draft mit der dokumentierten Copy, Zielgruppe,
+  Ziel-URL und den lokalen Creatives vervollständigen, soweit keine neue
+  Browserberechtigung erforderlich ist;
+- Resend-, Telegram-, Meta- und Cal-Testdrehbücher inklusive erwarteter
+  fail-closed Ergebnisse vorbereiten;
+- alle Änderungen weiterhin ausschließlich in Branches, Deploy Previews und
+  lokalen Testsystemen halten.
+
+### Echte Marco-Gates
+
+- Kostenentscheidung für eine Supabase-Cloud-Testbranch oder ausdrückliche
+  Freigabe einer dokumentierten Testalternative;
+- Festlegung des Lead-Bots und Zielchats oder ausdrückliche Freigabe zur
+  Umwidmung eines bestehenden Bots; bei einem neuen Bot gegebenenfalls die
+  BotFather-Erstellung;
+- Login, 2FA oder neue Browser-/Dateiberechtigung nur dann, wenn die vorhandene
+  Sitzung die autonome Konfiguration tatsächlich blockiert;
+- Freigabe unmittelbar vor der Erzeugung eines persistenten Meta-CAPI-Zugangs,
+  vor Production-Env-Änderungen, Änderungen am öffentlichen Cal-Event sowie
+  echten Resend-, Telegram-, Meta- und Cal-Testtransaktionen;
+- rechtliche/operative Freigabe, Budget, Zahlender und der abschließende
+  Publish-Klick.
+
 ## Harte Launch-Gates
 
 Keiner dieser Punkte darf stillschweigend als erledigt behandelt werden.
 
 - [x] `npm run check` ist auf dem vorbereiteten finalen Stand erfolgreich.
 - [x] `netlify build --context deploy-preview` ist erfolgreich.
+- [x] Netlify-CLI und Site-Verknüpfung sind geprüft; der aktuelle Preview ist
+  bereit, unveröffentlicht und meldet `production=false`.
 - [x] Der komplette Preview-Durchlauf wurde auf Desktop und Mobil mit
   „nur notwendig“ sowie mit Analyse-/Marketing-Consent geprüft; keine
   Console-, Netzwerk-, Fokus- oder Layoutfehler.
+- [x] Die externe OpenRouter-QA wurde mit dem verifizierten Zugang ausgeführt,
+  ihr Verdict dokumentiert und etwaige Befunde wurden erneut geprüft.
 - [ ] Die Datenschutzergänzung ist technisch und rechtlich geprüft und auf
   `https://synclaro.de/datenschutz#ki-readiness-test` veröffentlicht.
 - [ ] Auf einer Supabase-Testbranch wurde die atomare Endmigration
-  `202607180001_ai_readiness_lead_funnel.sql` angewandt und der SQL-
+  `20260719060000_ai_readiness_lead_funnel.sql` angewandt und der SQL-
   Integrationstest ausgeführt. Der frühere v1→v2-Zwischenstand wurde vor jeder
-  Production-Anwendung in diese einzelne Transaktion zusammengeführt.
+  Production-Anwendung in diese einzelne Transaktion zusammengeführt. Da eine
+  Cloud-Testbranch im aktuellen Tarif reale Kosten auslöst, wurde sie nicht
+  autonom angelegt; Kostenfreigabe oder Testalternative sind noch offen.
 - [ ] Backup/PITR-Stand und Wartungsfenster für die Production-Migration sind
   dokumentiert. Die atomare Endmigration ist derzeit **nicht in Production
   angewandt**.
@@ -164,16 +219,22 @@ Keiner dieser Punkte darf stillschweigend als erledigt behandelt werden.
   nach 24 Monaten ist nur ein Prüfmarker, keine automatische Löschung.
 - [ ] Alle erforderlichen Production-Umgebungsvariablen sind im richtigen
   Netlify-Scope gesetzt und durch einen Test ohne Secret-Ausgabe geprüft.
-- [ ] Resend-Absenderdomain, interner Empfänger, Newsletter-Absender,
-  Zustellbarkeit sowie der implementierte GET→POST-/One-Click-Abmeldeweg wurden
-  im Zielsystem geprüft.
-- [ ] Telegram-Transfer und Zielchat sind dokumentiert freigegeben; erst danach
-  darf `TELEGRAM_TRANSFER_APPROVED=true` gesetzt werden. Testmeldungen enthalten
+  Aktuell fehlen der Supabase-Admin-Key, Meta-CAPI und sämtliche Cal-Variablen;
+  die vier Core-Sicherheitswerte sind zu kurz.
+- [x] Resend-Zugang und konfigurierte Absenderdomain sind read-only erfolgreich
+  geprüft.
+- [ ] Interner Empfänger, effektiver Newsletter-Absender, Zustellbarkeit sowie
+  der implementierte GET→POST-/One-Click-Abmeldeweg wurden durch freigegebene
+  Testnachrichten im Zielsystem geprüft.
+- [ ] Lead-Bot und Zielchat sind ausdrücklich festgelegt und technisch gültig;
+  der aktuell hinterlegte Lead-Zugang ist ungültig und andere Bots dürfen nicht
+  stillschweigend umgewidmet werden. Erst danach darf
+  `TELEGRAM_TRANSFER_APPROVED=true` gesetzt werden. Testmeldungen enthalten
   nachweislich keine PII.
 - [ ] Cal.com hat beim Event `ki-erstgespraech` ein verborgenes Feld mit dem
   Schlüssel `readiness_ref` und einen ausschließlich auf `BOOKING_CREATED`
   beschränkten Readiness-Webhook. Event-Type-ID, Slug und Organizer entsprechen
-  exakt den Netlify-Variablen.
+  exakt den Netlify-Variablen; diese Variablen fehlen aktuell vollständig.
 - [ ] Das Cal-Formular verlangt keine Telefonnummer. Name und E-Mail bleiben
   erforderliche Buchungsfelder; „Wie sind Sie auf uns aufmerksam geworden?“
   ist optional oder wird durch die vorhandenen UTM-Parameter ersetzt. Die
@@ -182,7 +243,8 @@ Keiner dieser Punkte darf stillschweigend als erledigt behandelt werden.
   genau eine generische Telegram-Buchungsmeldung und – nur mit Marketing-
   Consent – genau ein Meta-`Schedule`.
 - [ ] Meta Pixel/CAPI-Deduplizierung für `Lead` ist im Events Manager geprüft;
-  `Schedule` erscheint ausschließlich nach einer verifizierten Buchung.
+  `Schedule` erscheint ausschließlich nach einer verifizierten Buchung. Der
+  Pixel ist konfiguriert, der serverseitige CAPI-Zugang fehlt aktuell.
 - [ ] Zuerst wurde mit gültigem Marketing-Consent und einem klar als ICP-Fit
   markierten Testdatensatz ein `Lead`-Testevent an Pixel/CAPI gesendet. Erst nachdem es im Events Manager
   angekommen und als Website-Conversion auswählbar ist, wurde es im Draft als
@@ -275,15 +337,18 @@ und [Webhook-Signatur/Payload-Version](https://cal.com/docs/developing/guides/au
    und End-to-End-Tests durchführen.
 2. Datenschutztext, Auftragsverarbeitung, Transfergrundlagen, Löschfristen und
    Newsletter-Nachweis rechtlich/operativ freigeben.
-3. Die atomare Endmigration auf einer isolierten Supabase-Branch anwenden und
+3. Nach der dokumentierten Kosten-/Testalternativen-Entscheidung die atomare
+   Endmigration auf einer isolierten Supabase-Branch anwenden und
    `supabase/tests/lead_funnel_integration.sql` erfolgreich ausführen.
 4. Production-Backup/PITR verifizieren. Kampagne und öffentlicher Traffic
    bleiben aus. Die einzelne Migration läuft vollständig in einer Transaktion:
    bei einem Fehler wird der gesamte Readiness-Stand zurückgerollt. Erst nach
    erfolgreichem Commit den kompatiblen Funnel-Deploy veröffentlichen und
    smoke-testen.
-5. Core-, Resend-, Telegram-, Meta- und Cal-Variablen setzen. Telegram bleibt
-   bis zur separaten Transferfreigabe fail-closed.
+5. Die vier zu kurzen Core-Sicherheitswerte ersetzen, den Supabase-Admin-Key
+   ergänzen und Telegram-, Meta-CAPI- sowie Cal-Variablen setzen. Der bereits
+   verifizierte Resend-Zugang bleibt unverändert; Telegram bleibt bis zur
+   separaten Transferfreigabe fail-closed.
 6. Einen klar markierten Testlead ohne Newsletter/Tracking prüfen: Kontakt,
    Assessment, Ergebnis, CRM-Ereignis und interne Outbox; keine Marketing-
    Consent-Zeile, kein Telegram, kein Meta.
@@ -393,6 +458,10 @@ und [Webhook-Signatur/Payload-Version](https://cal.com/docs/developing/guides/au
 
 - [ ] Datenschutztext, DOI, Meta-Consent, Cal, Resend und Telegram-Transfer sind
   freigegeben.
+- [ ] Supabase-Branchkosten beziehungsweise die dokumentierte Testalternative
+  und die Production-Migration sind ausdrücklich freigegeben.
+- [ ] Der Lead-Telegram-Bot und sein interner Zielchat sind namentlich
+  festgelegt; kein Bot mit anderer dokumentierter Aufgabe wird still umgewidmet.
 - [ ] Production-Migration, Backup, Umgebungsvariablen und Monitoring wurden mit
   Nachweis abgenommen.
 - [ ] Ein vollständiger Testlead und ein vollständiger Testtermin waren

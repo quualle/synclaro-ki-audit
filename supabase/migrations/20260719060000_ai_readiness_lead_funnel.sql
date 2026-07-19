@@ -1971,8 +1971,6 @@ begin
       'result', v_existing_assessment.result
     );
   end if;
-  v_assessment_id := (p_payload ->> 'assessment_id')::uuid;
-
   if p_payload ->> 'privacy_version' <> c_privacy_version
     or p_payload #>> '{consents,privacyNotice,version}' <> c_privacy_version
     or coalesce((p_payload #>> '{consents,privacyNotice,acknowledged}')::boolean, false) is not true
@@ -2069,7 +2067,9 @@ begin
       )),
       v_newsletter_requested_at, null
     ) on conflict (contact_id, channel) where revoked_at is null do nothing;
-    select consent.id, consent.double_optin_requested_at, consent.double_optin_confirmed_at,
+    select consent.id,
+      coalesce(consent.double_optin_requested_at, v_newsletter_requested_at),
+      consent.double_optin_confirmed_at,
       case when consent.double_optin_requested_at is not null and consent.double_optin_confirmed_at is null
         then 'doi_pending' else 'already_active' end
     into v_newsletter_consent_id, v_newsletter_requested_at, v_newsletter_confirmed_at, v_newsletter_status

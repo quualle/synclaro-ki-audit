@@ -80,7 +80,7 @@ async function processDelivery(supabase, row) {
     outcome = { sent: false, errorCode: "invalid_delivery_type" };
   }
   await markDelivery(supabase, row.outbox_id, row.lease_token, outcome);
-  return outcome.sent === true;
+  return outcome.sent === true || outcome.skipped === "consent_revoked";
 }
 
 exports.handler = async () => {
@@ -98,4 +98,4 @@ exports.handler = async () => {
   return { statusCode: 204, body: "" };
 };
 
-module.exports._test = { deliveryInput };
+module.exports._test = { deliveryInput, processDelivery };

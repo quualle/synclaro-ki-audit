@@ -5,12 +5,12 @@ Stand: 19.07.2026 · **als Entwurf vorbereitet, nicht veröffentlicht**
 Dieses Dokument ist die Freigabevorlage für den Meta Ads Manager. Der sichtbare
 Draft wurde am 19.07.2026 geprüft und über seine drei exakten Objekt-IDs
 eindeutig identifiziert. Die sichtbaren Namen tragen noch den älteren
-Draft-Stand; die empfohlenen V2-Zielnamen stehen weiter unten und müssen vor der
-finalen Prüfung übernommen werden. Es wurde nichts veröffentlicht. Der
-Creative-Wizard enthält noch eine ältere Draft-Copy. Sie ist **nicht** der
-unten dokumentierte, nachgeschärfte V2-Text und muss vor der Endprüfung ersetzt
-werden. Der Wizard kann außerdem erst nach freigeschaltetem Dateiupload mit dem
-lokalen V2-Bild abgeschlossen werden.
+V2-Namen. Der nachgeschärfte V2-Primärtext, die Überschrift, Beschreibung,
+Ziel-URL, UTM-Parameter, der aktive Website-Pixel und das Optimierungsereignis
+`Lead` sind im Entwurf gesetzt. Zusätzlich wurde „Inhaber von
+Kleinunternehmen“ als unverbindliches Advantage+-Seed-Signal ergänzt. Es wurde
+nichts veröffentlicht. Der Creative-Wizard kann erst nach freigeschaltetem
+Dateiupload mit dem lokalen V2-Bild abgeschlossen werden.
 Nicht sichtbare oder nachträglich geänderte Werte gelten nicht als freigegeben;
 unmittelbar vor dem Publish müssen alle drei Ebenen erneut gegen diesen Entwurf
 geprüft werden.
@@ -20,17 +20,17 @@ geprüft werden.
 | Bereich | Read-only-Befund | Noch offen |
 |---|---|---|
 | Exakte Draft-Objekte | Kampagne `120251380526880206` · Anzeigengruppe `120251380526890206` · Anzeige `120251380526870206` | Nur diese drei IDs bearbeiten und später in den Publish-Dialog aufnehmen. |
-| Sichtbare Namen | Kampagne `DRAFT | KI Readiness | Leads | DE | 0–20 MA | BUDGETFREIGABE OFFEN | 2026-07` · Anzeigengruppe `DRAFT | DE | Advantage+ Broad | Unternehmer 0–20 MA | EVENT · START · ZAHLENDER OFFEN` · Anzeige `DRAFT | CREATIVE 893c091e… FEHLT | KI Readiness Video | V1` | Vor der Endprüfung auf die unten dokumentierten V2-Zielnamen umbenennen; Anzeigenname an die tatsächlich gewählte Bild-/Video-Variante anpassen. |
+| Sichtbare Namen | Kampagne `DRAFT | KI Readiness | Leads | DE | 0–20 MA | CBO 25 EUR/Tag | FREIGABE OFFEN | V2` · Anzeigengruppe `DRAFT | DE | Advantage+ Broad | ICP Solo/Unternehmer 0–20 MA | OPT Lead EVENT OFFEN | V2` · Anzeige `DRAFT | STATIC V2 | KI Readiness | 4x5 + 1x1 + 9x16 | FREIGABE OFFEN` | Nach dem echten Lead-Testevent den Anzeigengruppennamen auf den dann bestätigten Event-Status aktualisieren; Anzeigenname nur ändern, falls stattdessen das Video freigegeben wird. |
 | Ziel / Kaufart | Leads · Auktion | Beibehalten. |
 | Conversion-Ort / Performance Goal | Website · Conversions maximieren | Beibehalten. |
 | Automatisierung | Advantage+ Kampagnenbudget, Audience und Placements | Creative-Adaptionen in jeder Vorschau kontrollieren. |
 | Budget | 25 € pro Tag im Draft | Geschäftsführung bestätigt Betrag und Kostenlimits. |
 | Zielgruppe | Deutschland · 18–65+ · alle Geschlechter | Beibehalten; nicht künstlich verengen. |
-| Audience-Signale | Interesse „Unternehmertum“ und Arbeitgeber „Selbstständig“ | Nur als Vorschläge, 0–20 MA über Creative/Test qualifizieren. |
-| Pixel | `1497847851628194` | Richtigen Business Manager/Dataset bestätigen. |
-| Optimierungs-Event | `Lead` noch nicht auswählbar, weil es noch nicht empfangen wurde | Consent-basiertes Pixel/CAPI-Testevent senden, im Events Manager prüfen, dann `Lead` auswählen. |
+| Audience-Signale | Interesse „Unternehmertum“, Arbeitgeber „Selbstständig“ und Verhalten „Inhaber von Kleinunternehmen“ | Nur als Advantage+-Vorschläge, 0–20 MA über Creative/Test qualifizieren. |
+| Pixel | Aktiver Datensatz `Website`, ID `1497847851628194`, im Adset ausgewählt | Richtigen Business Manager/Dataset vor Publish nochmals bestätigen. |
+| Optimierungs-Event | Standardevent `Lead` im Adset ausgewählt; Meta warnt erwartungsgemäß vor fehlender Aktivität in den letzten 14 Tagen | Consent-basiertes, dedupliziertes Pixel/CAPI-Testevent senden und im Events Manager prüfen, bevor der Entwurf veröffentlichbar ist. |
 | EU-Werbetreibender / Zahlender | `Synclaro.de` / `Johannes Jaegers` | Geschäftsführer bestätigt die rechtliche und wirtschaftliche Richtigkeit ausdrücklich. |
-| Anzeigen-Copy im Wizard | Älterer Draft-Text; nicht identisch mit „Anzeigen-Copy V2“ unten | Vor der Endprüfung vollständig durch Primärtext, Headline und Beschreibung aus diesem Dokument ersetzen und in jeder Placement-Vorschau prüfen. |
+| Anzeigen-Copy im Wizard | V2-Primärtext, Überschrift `Wie KI-ready ist Ihr Unternehmen?`, Beschreibung `Kostenloser Score + 90-Tage-Fahrplan.`, CTA `Mehr dazu`, Ziel-URL und vollständige UTM-Vorlage gesetzt | Nach dem Creative-Upload in jeder Placement-Vorschau prüfen. Keine der fünf automatisch vorgeschlagenen KI-Textvarianten ist ausgewählt. |
 | Creative-Upload | Image-Ad-Wizard vorbereitet; der direkte lokale Upload wurde von der Chrome-Erweiterung mit `Not allowed` blockiert | In der ChatGPT-Chrome-Erweiterung „Allow access to file URLs“ bewusst aktivieren, dann V2-Dateien auswählen. Keine globale Dateiberechtigung wurde autonom erweitert. |
 
 ## Kampagnenziel und Funnel-Logik

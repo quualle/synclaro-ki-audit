@@ -1,0 +1,35 @@
+# AI-Readiness-Funnel – finale Production-QA
+
+Stand: 19.07.2026 · Branch `feat/meta-ai-readiness-funnel`
+
+## Ergebnis
+
+- Interner Falsifikations-Critic nach dem finalen SQL-/Outbox-Delta: **PASS**.
+- Externe Vollprüfung über OpenRouter mit dem dokumentierten Fallback-Modell
+  `qwen/qwen3.7-plus`: zunächst **GO-WITH-CHANGES**.
+- Dabei gefundener P2: Ein nach dem Outbox-Claim widerrufener Consent wurde in
+  der Datenbank korrekt neutralisiert, erzeugte anschließend aber einen
+  irreführenden Scheduler-Fehler.
+- Minimalfix: Nur `consent_revoked` gilt nach erfolgreicher Dead-Markierung als
+  normal abgeschlossener Zustellversuch. Fehlende Konfiguration, fehlende
+  Transferfreigabe und Provider-/Netzwerkfehler bleiben weiterhin sichtbar.
+- Regressionstest prüft Autorisierungsentscheidung, Abschluss-RPC,
+  `p_success=false`, Fehlercode `consent_revoked` und den fehlalarmfreien
+  Rückgabewert.
+- Die zusätzlich gemeldete doppelte `v_assessment_id`-Zuweisung wurde ohne
+  Semantikänderung entfernt. Der live angewandte Migrationsstand
+  `20260719050454` und die noch nicht angewandte Endmigration
+  `20260719060000` sind in der Launch-Dokumentation festgehalten.
+- Abschließende externe Delta-QA: **GO**, keine offenen P0/P1/P2/P3.
+
+## Verifikation
+
+- `npm run check`: 34/34 Node-Tests, reale temporäre PostgreSQL-Migration und
+  Lead-Funnel-Integration bestanden, `npm audit` mit 0 Schwachstellen.
+- `netlify build --context deploy-preview`: erfolgreich; alle Functions
+  gebündelt.
+- `git diff --check`: sauber.
+
+Dieses Verdict bewertet den Code. Die in `docs/LAUNCH_READINESS.md`
+dokumentierten externen Freigabe-, Provider-, Kosten- und Production-Gates
+bleiben davon unberührt.

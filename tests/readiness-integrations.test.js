@@ -9,11 +9,49 @@ const meta = require("../netlify/functions/_shared/meta");
 const security = require("../netlify/functions/_shared/security");
 const assessment = require("../netlify/functions/_shared/assessment");
 const consents = require("../netlify/functions/_shared/consents");
+const leadOutbox = require("../netlify/functions/process-lead-outbox");
 
 function restoreEnv(name, value) {
   if (value === undefined) delete process.env[name];
   else process.env[name] = value;
 }
+
+test("ein nach dem Claim widerrufener Consent wird ohne Fehlalarm neutralisiert", async () => {
+  const calls = [];
+  const supabase = {
+    rpc: async (name, params) => {
+      calls.push({ name, params });
+      if (name === "authorize_ai_readiness_delivery_v2") {
+        return { data: { lease_valid: true, authorized: false }, error: null };
+      }
+      if (name === "complete_ai_readiness_delivery_v2") return { data: null, error: null };
+      throw new Error(`unexpected_rpc_${name}`);
+    },
+  };
+
+  const completed = await leadOutbox._test.processDelivery(supabase, {
+    outbox_id: "11111111-1111-4111-8111-111111111111",
+    lease_token: "22222222-2222-4222-8222-222222222222",
+    assessment_id: "33333333-3333-4333-8333-333333333333",
+    submission_id: "44444444-4444-4444-8444-444444444444",
+    contact_id: null,
+    delivery_type: "meta_capi",
+    attribution: {},
+    delivery_payload: {},
+  });
+
+  assert.equal(completed, true);
+  assert.deepEqual(calls.map((call) => call.name), [
+    "authorize_ai_readiness_delivery_v2",
+    "complete_ai_readiness_delivery_v2",
+  ]);
+  assert.deepEqual(calls[1].params, {
+    p_outbox_id: "11111111-1111-4111-8111-111111111111",
+    p_lease_token: "22222222-2222-4222-8222-222222222222",
+    p_success: false,
+    p_error_code: "consent_revoked",
+  });
+});
 
 function signedCalEvent(secret, envelope) {
   const body = JSON.stringify(envelope);

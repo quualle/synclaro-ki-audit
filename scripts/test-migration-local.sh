@@ -19,7 +19,7 @@ initdb -D "$test_root/data" -A trust -U postgres --no-locale >/dev/null
 pg_ctl -D "$test_root/data" -o "-F -p $test_port -k $test_root" -l "$test_root/postgres.log" start >/dev/null
 
 psql -X -h "$test_root" -p "$test_port" -U postgres -d postgres -f "$repo_dir/supabase/tests/fixture_crm_schema.sql" >/dev/null
-psql -X -h "$test_root" -p "$test_port" -U postgres -d postgres -f "$repo_dir/supabase/migrations/202607180001_ai_readiness_lead_funnel.sql" >/dev/null
+psql -X -h "$test_root" -p "$test_port" -U postgres -d postgres -f "$repo_dir/supabase/migrations/20260719060000_ai_readiness_lead_funnel.sql" >/dev/null
 psql -X -h "$test_root" -p "$test_port" -U postgres -d postgres -f "$repo_dir/supabase/tests/lead_funnel_integration.sql" >/dev/null
 
 echo "PASS: Supabase-Migration und Lead-Funnel-Integration"
