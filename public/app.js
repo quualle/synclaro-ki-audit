@@ -1008,7 +1008,7 @@
     let body = `<article class="question-card"><p class="question-index">${esc(item.kicker)}</p><h1 id="questionTitle" tabindex="-1">${esc(item.label)}</h1>${item.help ? `<p class="question-help">${esc(item.help)}</p>` : ""}`;
     if (item.type === "text") {
       const aiNotice = item.id === "branche"
-        ? `<aside class="ai-processing-note"><strong>Ab hier arbeitet die Diagnose adaptiv.</strong><span>Für die Auswahl der nächsten Frage übermitteln wir Branche, Größe, Rolle, Ziel und Testantworten ohne Kontaktdaten an OpenRouter und das Modell GPT‑5.5. Bitte geben Sie keine Personen-, Kunden- oder vertraulichen Daten ein.</span></aside>`
+        ? `<aside class="ai-processing-note"><strong>Ab hier arbeitet die Diagnose adaptiv.</strong><span>Für die Auswahl der nächsten Frage übermitteln wir Branche, Größe, Rolle, Ziel und Testantworten ohne Kontaktdaten an OpenRouter und ein ausgewähltes Frontier-Modell. Bitte geben Sie keine Personen-, Kunden- oder vertraulichen Daten ein.</span></aside>`
         : "";
       body += `<div class="question-field"><input id="profileText" aria-labelledby="questionTitle" maxlength="80" autocomplete="off" placeholder="${esc(item.placeholder)}"></div>${aiNotice}<div class="question-actions"><button class="button button-accent" id="profileNext" type="button">${item.id === "branche" ? "Adaptive Diagnose starten" : "Weiter"}</button></div>`;
     } else {
@@ -1120,7 +1120,7 @@
     $("#questionHost").innerHTML = `<article class="question-card adaptive-loading" role="status" aria-live="polite">
       <p class="question-index">Adaptive Diagnose · Frage ${index + 1} von ${CORE_QUESTION_COUNT}</p>
       <h1 id="questionTitle" tabindex="-1">Ihre Antwort schärft die nächste Frage.</h1>
-      <p class="question-help">GPT‑5.5 prüft, welcher Messanker in Ihrem Branchenkontext jetzt den größten Erkenntnisgewinn liefert.</p>
+      <p class="question-help">Ein Frontier-Modell prüft, welcher Messanker in Ihrem Branchenkontext jetzt den größten Erkenntnisgewinn liefert.</p>
       <div class="adaptive-loading-steps" aria-hidden="true"><span>Profil verstanden</span><span>Antwort eingeordnet</span><span class="active">Folgefrage gewählt</span></div>
     </article>`;
     focusQuestionTitle();
