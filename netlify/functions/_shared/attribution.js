@@ -7,12 +7,17 @@ const KNOWN_PLACEMENTS = new Set([
   "facebook_mobile_feed",
   "facebook_marketplace",
   "facebook_reels",
+  "facebook_right_column",
   "facebook_search",
   "facebook_stories",
+  "facebook_video_feeds",
+  "facebook_instream_video",
   "instagram_explore",
+  "instagram_explore_home",
   "instagram_feed",
   "instagram_profile_feed",
   "instagram_reels",
+  "instagram_search",
   "instagram_stories",
   "messenger_inbox",
   "messenger_stories",
@@ -35,7 +40,7 @@ function sanitizePlacement(value) {
 
 function sanitizeMetaObjectId(value) {
   const candidate = cleanText(value, 32);
-  return /^\d{16,24}$/.test(candidate) ? candidate : "";
+  return /^\d{18}$/.test(candidate) ? candidate : "";
 }
 
 module.exports = { sanitizeMetaObjectId, sanitizePlacement };

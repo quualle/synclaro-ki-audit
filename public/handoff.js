@@ -7,18 +7,23 @@
 
   const REFERENCE = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
   const LABEL = /^[\p{L}\p{N} ._|{}+\-]+$/u;
-  const META_OBJECT_ID = /^\d{16,24}$/;
+  const META_OBJECT_ID = /^\d{18}$/;
   const KNOWN_PLACEMENTS = new Set([
     "facebook_feed",
     "facebook_mobile_feed",
     "facebook_marketplace",
     "facebook_reels",
+    "facebook_right_column",
     "facebook_search",
     "facebook_stories",
+    "facebook_video_feeds",
+    "facebook_instream_video",
     "instagram_explore",
+    "instagram_explore_home",
     "instagram_feed",
     "instagram_profile_feed",
     "instagram_reels",
+    "instagram_search",
     "instagram_stories",
     "messenger_inbox",
     "messenger_stories",

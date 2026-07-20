@@ -1,6 +1,7 @@
 # Finaler Tracking-Delta-Check
 
-Stand: 19.07.2026 · Zielbranch `feat/readiness-contact-handoff` · nicht live
+Stand: 20.07.2026 · Zielbranches `feat/readiness-contact-handoff` und
+`feat/contact-funnel-attribution` · nicht live
 
 ## Prüfgegenstand
 
@@ -10,7 +11,7 @@ sequenziellen Kontakt-Handoff und die ehrliche Launch-Übergabe.
 
 ## Builder-Nachweise
 
-- `npm test`: 61/61 bestanden.
+- Readiness-Repo `npm test`: 62/62 bestanden.
 - `npm run test:migration`: lokale Migration und Lead-Funnel-Integration
   bestanden.
 - `npm audit --audit-level=high`: 0 bekannte Schwachstellen.
@@ -24,6 +25,18 @@ sequenziellen Kontakt-Handoff und die ehrliche Launch-Übergabe.
   Kontakt-Handoff reicht Campaign-, Adset- und Ad-ID nur nach Marketing-
   Consent weiter; freie Identifikatoren werden verworfen und PII-verdächtige
   Placement-Suffixe auf die Plattform reduziert.
+- Website-Repo: vollständige Playwright-Suite mit 60 bestandenen und einem
+  absichtlich gesperrten Live-Cleanup-Test; die 10 Kontaktfunnel-Tests sind
+  vollständig grün. Astro-Check: 0 Fehler und 0 Warnungen, ausschließlich
+  bestehende Hinweise.
+- Website-Repo: frische Netlify-Builds für `deploy-preview` und `production`
+  bestanden. Das gepackte Preview-Artefakt enthält `previewMode = true` und
+  beendet die Kontakt-API vor CRM/E-Mail; das gepackte Production-Artefakt
+  enthält `previewMode = false` und keinen Preview-Frühreturn.
+- Readiness-Referenz sowie Campaign-, Adset- und Anzeigen-ID wurden im Browser
+  über URL-Bereinigung, Reload, zwei sequenzielle Fragen und Cal-Konfiguration
+  verfolgt. Generische Google-UTMs erzeugen nachweislich keine Meta-Metadaten
+  und werden in den Cal-Notizen nicht als Meta-IDs bezeichnet.
 
 ## Interner Critic
 
@@ -43,6 +56,13 @@ gezielten Korrektur:
 - `phase_completed` zählt exakt die acht bewerteten Kernfragen; das zuvor
   wirkungslose Phantom-Event wurde entfernt.
 
+Der abschließende integrierte Critic über beide Repositories urteilte
+**PASS-WITH-CONCERNS**, ohne Code-Blockade. Seine verbleibende P2-Grenze ist
+bewusst dokumentiert: Die Prüfung auf exakt 18 Ziffern ist ein pragmatischer
+Formfilter, aber kein semantischer Beweis, dass jede solche Zahl tatsächlich
+eine Meta-Objekt-ID ist. Eine absolute Garantie erfordert nach finaler Meta-
+Konfiguration eine exakte ID-Allowlist oder serverseitig signierte Attribution.
+
 ## Externe QA
 
 Modell: `openai/gpt-5.6-terra` über OpenRouter, ZDR und
@@ -52,21 +72,23 @@ Verdict: **GO-WITH-CHANGES**.
 
 Tenant-Policy untersagte den Export des privaten Quellcode-Diffs. Deshalb war
 die externe Stufe bewusst quellenfrei und prüfte Sicherheitsvertrag,
-Änderungsbeschreibung und Testergebnisse. Sie bestätigte die konzeptionelle
-Eignung für einen neuen nichtproduktiven Preview, markierte aber zwei bereits
-offengelegte Grenzen:
+Änderungsbeschreibung und Testergebnisse. Sie bestätigte die bedingte Eignung
+für zwei strikt write-freie Deploy Previews und markierte die verbleibenden
+Grenzen korrekt:
 
-1. Die Netlify-Site-UI enthält noch den veralteten Build-Befehl
-   `npm run build` und ein unpassendes Next.js-Plugin; der finale Hosted Preview
-   fehlt.
-2. Eine quellenfreie externe Prüfung ersetzt weder Codeeinsicht noch Hosted-
-   Netzwerkspuren. Diese Evidenz muss vor Production aus internem Critic,
-   Preview-Logs, Browser-Netzwerkprüfung und Events Manager zusammengesetzt
-   werden.
+1. Die tatsächlich wirksame Netlify-Site-Konfiguration muss vor einer
+   aussagekräftigen Hosted-Abnahme den Astro-Build und den Preview-Kontext
+   verwenden; ein alter UI-Override oder ein Next.js-Plugin darf den
+   Repository-Build nicht ersetzen.
+2. Hosted müssen Safe-off, Cross-Origin-Handoff, Header und fehlende Provider-
+   beziehungsweise Datenbankwrites beobachtbar geprüft werden. Ein write-freier
+   Preview beweist absichtlich nicht die spätere Providerkette.
+3. Vor Production bleiben Consent-/Attributions-Negativtests, CAPI-Testevent,
+   Cal-Webhook-Konfiguration und Telegram-Zugang eigenständige Gates.
 
 ## Abschlussurteil
 
-Das lokale Code- und Creative-Delta ist für einen neuen, isolierten Deploy
-Preview freigegeben. Es ist **keine Production- oder Kampagnenfreigabe**. Die
-Netlify-Konfiguration, Preview-Secrets, Hosted-Netzwerkprüfung und externen
-Provider-E2Es bleiben harte Launch-Gates.
+Das lokale, integrierte Code- und Creative-Delta ist für zwei neue, isolierte,
+write-freie Deploy Previews freigegeben. Es ist **keine Production- oder
+Kampagnenfreigabe**. Die Netlify-Site-Konfiguration, Hosted-Netzwerkprüfung,
+exakte Meta-ID-Abnahme, CAPI, Cal und Telegram bleiben harte Launch-Gates.

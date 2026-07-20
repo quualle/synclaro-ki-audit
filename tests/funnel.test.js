@@ -289,6 +289,13 @@ test("Attribution bleibt ohne Marketing-Consent leer und entfernt mit Consent fr
   assert.equal(injected.utm_term, "");
   assert.equal(injected.utm_content, "");
   assert.equal(injected.placement, "instagram");
+  const cardShaped = submit.sanitizeAttribution({
+    ...raw,
+    utm_id: "4111111111111111",
+    placement: "facebook_right_column",
+  }, event, "55555555-5555-4555-8555-555555555555", true);
+  assert.equal(cardShaped.utm_id, "");
+  assert.equal(cardShaped.placement, "facebook_right_column");
 });
 
 test("deterministische Detailanalyse liefert die sichtbare Gesamteinschätzung", () => {
@@ -515,6 +522,29 @@ test("Readiness-Handoff reduziert PII-verdächtige Placement-Suffixe und verwirf
   assert.equal(url.searchParams.get("placement"), "instagram");
   assert.equal(url.toString().includes("ada"), false);
   assert.equal(url.toString().includes("491701234567"), false);
+});
+
+test("Readiness-Handoff erhält konkrete Advantage+-Placements und verwirft 16-stellige Zahlencodes", () => {
+  for (const placement of [
+    "facebook_right_column",
+    "facebook_video_feeds",
+    "facebook_instream_video",
+    "instagram_search",
+    "instagram_explore_home",
+  ]) {
+    const url = new URL(handoff.buildContactHandoff({
+      marketingConsent: true,
+      attribution: {
+        utm_source: "meta",
+        utm_medium: "paid_social",
+        utm_campaign: "ai_readiness_de_prospecting_v1",
+        utm_id: "4111111111111111",
+        placement,
+      },
+    }));
+    assert.equal(url.searchParams.has("utm_id"), false);
+    assert.equal(url.searchParams.get("placement"), placement);
+  }
 });
 
 test("Analytics-Events benötigen eine aktuelle, versionierte Einwilligung", () => {
