@@ -1,6 +1,6 @@
 # Meta-Kampagnenentwurf – Synclaro AI Readiness
 
-Stand: 19.07.2026 · **als Entwurf vorbereitet, nicht veröffentlicht**
+Stand: 20.07.2026 · **als Entwurf vorbereitet, nicht veröffentlicht**
 
 Dieses Dokument ist die Freigabevorlage für den Meta Ads Manager. Der sichtbare
 Draft wurde am 19.07.2026 geprüft und über seine drei exakten Objekt-IDs
@@ -33,7 +33,7 @@ geprüft werden.
 | Zielgruppe | Deutschland · 18–65+ · alle Geschlechter | Beibehalten; nicht künstlich verengen. |
 | Audience-Signale | Interesse „Unternehmertum“, Arbeitgeber „Selbstständig“ und Verhalten „Inhaber von Kleinunternehmen“ | Nur als Advantage+-Vorschläge, 0–20 MA über Creative/Test qualifizieren. |
 | Pixel | Aktiver Datensatz `Website`, ID `1497847851628194`, im Adset ausgewählt | Richtigen Business Manager/Dataset vor Publish nochmals bestätigen. |
-| Optimierungs-Event | Standardevent `Lead` im Adset ausgewählt; Meta warnt erwartungsgemäß vor fehlender Aktivität in den letzten 14 Tagen | Consent-basiertes, dedupliziertes Pixel/CAPI-Testevent senden und im Events Manager prüfen, bevor der Entwurf veröffentlichbar ist. |
+| Optimierungs-Event | Standardevent `Lead` im Adset ausgewählt; Meta warnt erwartungsgemäß vor fehlender Aktivität in den letzten 14 Tagen. Der neue CAPI-Zugang wurde am 20.07.2026 mit einem synthetischen `Lead` geprüft: Graph API `events_received=1`, Events Manager `Verarbeitet · Server · Manuelle Einrichtung`. | Nach Deployment des Readiness-Pfads noch ein consent-basiertes, dedupliziertes Pixel/CAPI-Testevent mit gemeinsamer `event_id` senden. Erst dann ist der Entwurf veröffentlichbar. |
 | EU-Werbetreibender / Zahlender | Aktuell sichtbar: `Synclaro.de` / `Johannes Jaegers` – falsch | Vor Publish auf `Synclaro.de` / `Marco Heer` korrigieren. Marco hat am 19.07.2026 bestätigt, dass er für Synclaro per Kreditkarte zahlt. |
 | Anzeigen-Copy im Wizard | V2-Primärtext, Überschrift `Wie KI-ready ist Ihr Unternehmen?`, Beschreibung `Kostenloser Score + 90-Tage-Fahrplan.`, CTA `Mehr dazu`, Ziel-URL und die ältere namensbasierte UTM-Vorlage gesetzt | Die UTM-Vorlage auf die unten dokumentierten Objekt-ID-Makros umstellen und danach jede Placement-Vorschau prüfen. Keine der fünf automatisch vorgeschlagenen KI-Textvarianten ist ausgewählt. |
 | Creative-Upload | Image-Ad-Wizard vorbereitet; die lokalen 4:5-, 1:1- und 9:16-Dateien sind auf „8 adaptive Fragen“ korrigiert und geprüft. Das 31,53-sekündige 9:16-Video ist wieder vorhanden und geprüft. Der direkte lokale Upload wurde von der Chrome-Erweiterung mit `Not allowed` blockiert. | Browser-Verbindung und lokalen Dateizugriff bewusst freigeben. Static ausschließlich aus den drei V2-PNGs bestücken. Video erst nach Untertiteln, Synclaro-Kennung/Endkarte und konsistenter Zeitangabe hochladen. |

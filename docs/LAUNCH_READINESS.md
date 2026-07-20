@@ -1,6 +1,6 @@
 # KI-Readiness-Funnel – Launch Readiness
 
-Stand: 19.07.2026 · Zielbranch: `feat/readiness-contact-handoff` · **nicht live**
+Stand: 20.07.2026 · Zielbranch: `feat/readiness-contact-handoff` · **nicht live**
 
 ## Status in einem Satz
 
@@ -118,7 +118,7 @@ Send erhoben:
 | Core-Sicherheit | `SESSION_HMAC_SECRET`, `LEAD_SIGNING_SECRET`, `LEAD_RATE_LIMIT_SECRET` und `LEAD_IP_HASH_SALT` sind vorhanden, unterschreiten aber jeweils die geforderte Mindestlänge von 32 Zeichen | Vor Production vier neue, getrennte Werte sicher erzeugen und im Functions-Scope setzen. |
 | Supabase | URL vorhanden, aber weder `SUPABASE_SECRET_KEY` noch `SUPABASE_SERVICE_ROLE_KEY` im Production-Functions-Scope. Der read-only Live-Abgleich nennt `20260719050454` als jüngste angewandte Migration; die neue Endmigration `20260719060000` ist dort noch nicht registriert und liegt eindeutig danach. Eine isolierte Cloud-Testbranch würde im aktuellen Tarif reale Kosten auslösen. | Keine kostenpflichtige Branch wurde autonom erzeugt. Kostenfreigabe oder ausdrücklich gewählte Testalternative ist ein Geschäftsführer-Gate. |
 | Telegram | Lead-Token und Zielchat sind zwar belegt, aber formal ungültig; die Bot-API lehnt den Zugang ab. `TELEGRAM_TRANSFER_APPROVED` bleibt fail-closed. Andere vorhandene Bots sind für andere Zwecke dokumentiert. | Bot-Identität und Zielchat ausdrücklich festlegen; keinen bestehenden Bot stillschweigend umwidmen. Danach PII-freien Test senden. |
-| Meta | Pixel-ID und Graph-Version vorhanden; `META_CAPI_ACCESS_TOKEN` und temporärer Test-Event-Code fehlen | CAPI-Zugang erst nach Freigabe sicher erzeugen/hinterlegen, dann dedupliziertes `Lead`-Testevent prüfen. |
+| Meta | Pixel-ID und Graph-Version vorhanden. Ein neu erzeugter CAPI-Zugang ist als Production-Functions-Secret hinterlegt. Ein synthetisches `Lead`-Serverevent wurde am 20.07.2026 von der Graph API mit `events_received=1` angenommen und im Events Manager für Dataset `1497847851628194` als `Verarbeitet · Server · Manuelle Einrichtung` angezeigt. Der aktuelle Production-Deploy basiert jedoch noch auf `main` `7f936ef` und enthält den neuen Readiness-CAPI-Pfad nicht. | Zugang ist gültig. Nach Freigabe und Deployment des Zielbranches noch den echten Browser-/Server-Deduplizierungstest mit identischer `event_id` durchführen; den temporären Test-Event-Code nicht als Production-Variable hinterlegen. |
 | Cal.com | Sämtliche `CAL_READINESS_*`-Variablen fehlen; die Admin-Sitzung war beim letzten UI-Audit ausgeloggt | Nach Login das öffentliche Event und den event-spezifischen Webhook erst im freigegebenen Aktivierungsfenster ändern. |
 | OpenRouter | Dokumentierter Zugang vorhanden und read-only erfolgreich authentifiziert; adaptiver Laufzeitpfad ist ZDR-gebunden, fail-safe und mit Sessionpflicht sowie Netlify-Limits von 20 Fragen- und 6 Ergebnisaufrufen je 180 Sekunden pro IP/Domain geschützt | Nur im Deploy-Preview-Kontext aktivieren, echten Acht-Fragen-Lauf prüfen und vor Production zusätzlich eine harte Provider-Budgetgrenze sowie die rechtliche Transferfreigabe dokumentieren. |
 
@@ -272,8 +272,10 @@ Keiner dieser Punkte darf stillschweigend als erledigt behandelt werden.
   genau eine generische Telegram-Buchungsmeldung und – nur mit Marketing-
   Consent – genau ein Meta-`Schedule`.
 - [ ] Meta Pixel/CAPI-Deduplizierung für `Lead` ist im Events Manager geprüft;
-  `Schedule` erscheint ausschließlich nach einer verifizierten Buchung. Der
-  Pixel ist konfiguriert, der serverseitige CAPI-Zugang fehlt aktuell.
+  `Schedule` erscheint ausschließlich nach einer verifizierten Buchung. Pixel
+  und gültiger serverseitiger CAPI-Zugang sind konfiguriert; der direkte
+  Serverempfang ist geprüft. Offen bleibt die Deduplizierung über den noch
+  nicht produktiv deployten Readiness-Pfad.
 - [ ] Zuerst wurde mit gültigem Marketing-Consent und einem klar als ICP-Fit
   markierten Testdatensatz ein `Lead`-Testevent an Pixel/CAPI gesendet. Erst nachdem es im Events Manager
   angekommen und als Website-Conversion auswählbar ist, wurde es im Draft als
