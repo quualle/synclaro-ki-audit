@@ -613,6 +613,15 @@ test("manuelle Netlify-Production-Deploys verwenden den expliziten Readiness-Sch
   if (beforeFlag === undefined) delete process.env.AI_READINESS_PRODUCTION; else process.env.AI_READINESS_PRODUCTION = beforeFlag;
 });
 
+test("zeitgesteuerte Functions teilen den gehärteten Production-Kontext", () => {
+  for (const filename of ["process-lead-outbox.js", "purge-ai-readiness-data.js"]) {
+    const source = fs.readFileSync(path.join(__dirname, "..", "netlify", "functions", filename), "utf8");
+    assert.match(source, /const \{ isProduction \} = require\("\.\/_shared\/security"\);/);
+    assert.match(source, /if \(!isProduction\(\)\) return/);
+    assert.doesNotMatch(source, /process\.env\.CONTEXT/);
+  }
+});
+
 test("Netlifys kanonische Client-IP gewinnt und ungültige Header werden verworfen", () => {
   assert.equal(security.clientIp({ headers: {
     "x-nf-client-connection-ip": "203.0.113.10",

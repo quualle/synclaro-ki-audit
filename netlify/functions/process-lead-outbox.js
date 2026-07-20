@@ -9,6 +9,7 @@ const {
   sendTelegramLeadNotification,
 } = require("./_shared/deliveries");
 const { sendMetaEvent, sendMetaLead } = require("./_shared/meta");
+const { isProduction } = require("./_shared/security");
 const { getSupabaseAdmin } = require("./_shared/supabase");
 
 function deliveryInput(row) {
@@ -84,7 +85,7 @@ async function processDelivery(supabase, row) {
 }
 
 exports.handler = async () => {
-  if (process.env.CONTEXT !== "production") return { statusCode: 204, body: "" };
+  if (!isProduction()) return { statusCode: 204, body: "" };
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase.rpc("claim_ai_readiness_deliveries_v2", { p_limit: 4 });
   if (error) throw new Error(`outbox_claim_${error.code || "unknown"}`);
