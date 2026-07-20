@@ -18,7 +18,8 @@ function jsonResponse(statusCode, body, extraHeaders = {}) {
 }
 
 function isProduction() {
-  return process.env.CONTEXT === "production";
+  if (process.env.CONTEXT !== undefined) return process.env.CONTEXT === "production";
+  return process.env.AI_READINESS_PRODUCTION === "true";
 }
 
 function requestHost(event) {
