@@ -8,15 +8,40 @@
 [functions."order-premium"]
   timeout = 60
 
-[functions."analyze"]
-  timeout = 26
-
 [functions."generate-questions"]
-  timeout = 26
+  timeout = 15
+
+[functions."submit-lead"]
+  timeout = 45
+
+[functions."process-lead-outbox"]
+  schedule = "*/2 * * * *"
+
+[functions."purge-ai-readiness-data"]
+  schedule = "17 2 * * *"
 
 [[headers]]
   for = "/*"
   [headers.values]
-    Access-Control-Allow-Origin = "*"
-    Access-Control-Allow-Headers = "Content-Type"
-    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'sha256-IuRfs594gaBG4Oq26+2ZS5oAFgf5BRnw5FKgJmpsx2g=' https://connect.facebook.net; style-src 'self'; img-src 'self' data: https://www.facebook.com; connect-src 'self' https://www.facebook.com https://connect.facebook.net; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+    Cross-Origin-Opener-Policy = "same-origin"
+    Permissions-Policy = "camera=(), geolocation=(), microphone=(), payment=(), usb=()"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/app.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/styles.css"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"

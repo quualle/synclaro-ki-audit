@@ -1,5 +1,10 @@
 # Promotion-Plan: KI-Readiness-Check (ki-check.synclaro.de)
 
+> **Archivierter Altstand:** Dieses Dokument beschreibt den früheren
+> Handwerks-/Premium-Funnel und darf nicht für die aktuelle Meta-Kampagne
+> verwendet werden. Verbindliche Freigabequelle ist
+> [`docs/META_CAMPAIGN_DRAFT.md`](../docs/META_CAMPAIGN_DRAFT.md).
+
 **Erstellt:** 2026-03-31
 **Ziel:** Maximale Reichweite im deutschsprachigen Raum, Fokus Handwerk/KMU
 **Tool:** ki-check.synclaro.de (11 Fragen, 3 Minuten, Score + 3 Quick Wins, Premium-Report 29 EUR)
