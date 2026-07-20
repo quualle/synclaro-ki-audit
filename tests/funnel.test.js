@@ -589,6 +589,30 @@ test("Production-Origin wird auf die KI-Check-Domain begrenzt", () => {
   if (before === undefined) delete process.env.CONTEXT; else process.env.CONTEXT = before;
 });
 
+test("manuelle Netlify-Production-Deploys verwenden den expliziten Readiness-Schalter", () => {
+  const beforeContext = process.env.CONTEXT;
+  const beforeFlag = process.env.AI_READINESS_PRODUCTION;
+  delete process.env.CONTEXT;
+  delete process.env.AI_READINESS_PRODUCTION;
+  assert.equal(security.isProduction(), false);
+  process.env.CONTEXT = "production";
+  assert.equal(security.isProduction(), true);
+  process.env.AI_READINESS_PRODUCTION = "false";
+  assert.equal(security.isProduction(), true);
+  process.env.CONTEXT = "";
+  process.env.AI_READINESS_PRODUCTION = "true";
+  assert.equal(security.isProduction(), false);
+  delete process.env.CONTEXT;
+  process.env.AI_READINESS_PRODUCTION = "true";
+  assert.equal(security.isProduction(), true);
+  assert.equal(security.hasAllowedOrigin({ headers: { host: "ki-check.synclaro.de", origin: "https://ki-check.synclaro.de" } }), true);
+  assert.equal(security.hasAllowedOrigin({ headers: { host: "ki-check.synclaro.de", origin: "https://evil.example" } }), false);
+  process.env.CONTEXT = "deploy-preview";
+  assert.equal(security.isProduction(), false);
+  if (beforeContext === undefined) delete process.env.CONTEXT; else process.env.CONTEXT = beforeContext;
+  if (beforeFlag === undefined) delete process.env.AI_READINESS_PRODUCTION; else process.env.AI_READINESS_PRODUCTION = beforeFlag;
+});
+
 test("Netlifys kanonische Client-IP gewinnt und ungültige Header werden verworfen", () => {
   assert.equal(security.clientIp({ headers: {
     "x-nf-client-connection-ip": "203.0.113.10",
