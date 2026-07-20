@@ -193,7 +193,8 @@ test("Conversion-Gate, Formfelder und Ergebnis-CTAs bleiben transparent und barr
   assert.match(app, /Math\.ceil\(\(total - completed\) \* \.19\)/);
   assert.equal((app.match(/updateProgress\([^;]+TOTAL_JOURNEY_STEPS\);/g) || []).length, 4);
   assert.match(app, /optional, nicht Teil des Scores/);
-  assert.match(app, /GPT‑5\.5/);
+  assert.doesNotMatch(app, /GPT‑5\.5/);
+  assert.match(app, /ausgewähltes Frontier-Modell/);
   assert.match(app, /Kontaktdaten an OpenRouter/);
   assert.match(app, /new AbortController\(\)/);
   assert.match(app, /applyConsentEffects\(\{ allowGrants: false \}\)/);
