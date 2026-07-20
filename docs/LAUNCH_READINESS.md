@@ -115,18 +115,18 @@ Send erhoben:
 |---|---|---|
 | Netlify | CLI authentifiziert und richtige Site-ID dokumentiert. Auch der neueste vorhandene Deploy Preview `6a5d3998654fcbf95ad4f6b1` meldet zwar `production=false`, enthält aber noch den alten Funktionspfad: `/api/readiness-session` liefert dort `404`, während `/.netlify/functions/start-session` antwortet. Der finale V2-Stand ist somit noch nicht gehostet. Zusätzlich zieht die Site-UI derzeit den veralteten Build-Befehl `npm run build` und ein unpassendes Next.js-Plugin; nur der lokale Offline-Build über die Repository-Konfiguration ist grün. | Vor Hosted-QA einen neuen Deploy Preview mit ausschließlich Preview-Secrets erzeugen und die Netlify-Site-Buildkonfiguration korrigieren beziehungsweise ausdrücklich bestätigen. Production bleibt unangetastet. |
 | Resend | Production-Zugang read-only erfolgreich authentifiziert; konfigurierte Absenderdomain verifiziert | Provider ist bereit. Echte DOI-, interne und Newsletter-Sends bleiben bis zur gebündelten Testfreigabe aus. |
-| Core-Sicherheit | `SESSION_HMAC_SECRET`, `LEAD_SIGNING_SECRET`, `LEAD_RATE_LIMIT_SECRET` und `LEAD_IP_HASH_SALT` sind vorhanden, unterschreiten aber jeweils die geforderte Mindestlänge von 32 Zeichen | Vor Production vier neue, getrennte Werte sicher erzeugen und im Functions-Scope setzen. |
-| Supabase | URL vorhanden, aber weder `SUPABASE_SECRET_KEY` noch `SUPABASE_SERVICE_ROLE_KEY` im Production-Functions-Scope. Der read-only Live-Abgleich nennt `20260719050454` als jüngste angewandte Migration; die neue Endmigration `20260719060000` ist dort noch nicht registriert und liegt eindeutig danach. Eine isolierte Cloud-Testbranch würde im aktuellen Tarif reale Kosten auslösen. | Keine kostenpflichtige Branch wurde autonom erzeugt. Kostenfreigabe oder ausdrücklich gewählte Testalternative ist ein Geschäftsführer-Gate. |
+| Core-Sicherheit | `SESSION_HMAC_SECRET`, `LEAD_SIGNING_SECRET`, `LEAD_RATE_LIMIT_SECRET` und `LEAD_IP_HASH_SALT` wurden am 20.07.2026 als vier getrennte Production-Functions-Secrets neu gesetzt. | Für den Launch bereit; Werte bleiben ausschließlich in Netlify. |
+| Supabase | Der moderne `SUPABASE_SECRET_KEY` ist im Production-Functions-Scope gesetzt. Die lokal vollständig getestete Endmigration ist im Zielprojekt als `20260720180116_ai_readiness_lead_funnel` registriert. Neue Readiness-Tabellen haben RLS, `anon` und `authenticated` besitzen keine Leserechte. | Für den Launch bereit; die allgemeinen, separat vertagten RLS-Befunde anderer Tabellen bleiben außerhalb dieses Funnels. |
 | Telegram | Lead-Token und Zielchat sind zwar belegt, aber formal ungültig; die Bot-API lehnt den Zugang ab. `TELEGRAM_TRANSFER_APPROVED` bleibt fail-closed. Andere vorhandene Bots sind für andere Zwecke dokumentiert. | Bot-Identität und Zielchat ausdrücklich festlegen; keinen bestehenden Bot stillschweigend umwidmen. Danach PII-freien Test senden. |
 | Meta | Pixel-ID und Graph-Version vorhanden. Ein neu erzeugter CAPI-Zugang ist als Production-Functions-Secret hinterlegt. Ein synthetisches `Lead`-Serverevent wurde am 20.07.2026 von der Graph API mit `events_received=1` angenommen und im Events Manager für Dataset `1497847851628194` als `Verarbeitet · Server · Manuelle Einrichtung` angezeigt. Der aktuelle Production-Deploy basiert jedoch noch auf `main` `7f936ef` und enthält den neuen Readiness-CAPI-Pfad nicht. | Zugang ist gültig. Nach Freigabe und Deployment des Zielbranches noch den echten Browser-/Server-Deduplizierungstest mit identischer `event_id` durchführen; den temporären Test-Event-Code nicht als Production-Variable hinterlegen. |
 | Cal.com | Sämtliche `CAL_READINESS_*`-Variablen fehlen; die Admin-Sitzung war beim letzten UI-Audit ausgeloggt | Nach Login das öffentliche Event und den event-spezifischen Webhook erst im freigegebenen Aktivierungsfenster ändern. |
-| OpenRouter | Dokumentierter Zugang vorhanden und read-only erfolgreich authentifiziert; adaptiver Laufzeitpfad ist ZDR-gebunden, fail-safe und mit Sessionpflicht sowie Netlify-Limits von 20 Fragen- und 6 Ergebnisaufrufen je 180 Sekunden pro IP/Domain geschützt | Nur im Deploy-Preview-Kontext aktivieren, echten Acht-Fragen-Lauf prüfen und vor Production zusätzlich eine harte Provider-Budgetgrenze sowie die rechtliche Transferfreigabe dokumentieren. |
+| OpenRouter | Production ist ZDR-gebunden und fail-safe mit `openai/gpt-5.6-terra`, Reasoning `low`, Sessionpflicht sowie Netlify-Limits von 20 Fragen- und 6 Ergebnisaufrufen je 180 Sekunden pro IP/Domain konfiguriert. Ein echter strukturierter Testaufruf war am 20.07.2026 in 2,1 Sekunden erfolgreich. | Nach Production-Deploy im vollständigen Acht-Fragen-Lauf erneut prüfen. |
 
 ## Verbindliches Zielbild
 
 - Vier kurze Unternehmensfragen: Größe, Rolle, Hauptziel und Branche.
 - Acht adaptive Kernfragen aus einem festen Katalog sowie eine optionale offene
-  Hebelfrage. GPT-5.5 wählt die nächste Frage und ergänzt einen Branchenkontext;
+  Hebelfrage. GPT-5.6 Terra wählt die nächste Frage und ergänzt einen Branchenkontext;
   Frage, Hilfe, Antworttexte, Reihenfolge und Werte bleiben kanonisch. Der
   Server erzwingt genau zwei Messanker je Dimension. Der Test ist
   branchenoffen und formuliert Solo-Selbstständige ohne Team-Unterstellung.
@@ -136,7 +136,7 @@ Send erhoben:
   automatische Kontaktaufgabe.** Ein CRM-Eintrag ist keine Werbe- oder
   Kontaktierlaubnis.
 - Score, vier Teilwerte und Reifegrad entstehen deterministisch aus der
-  versionierten Bewertungslogik. GPT-5.5 vertieft anschließend die
+  versionierten Bewertungslogik. GPT-5.6 Terra vertieft anschließend die
   sprachliche Einordnung und den priorisierten ersten von drei bereits kuratierten Anwendungsfällen, darf aber
   weder Score noch Status, Messgröße, Voraussetzung oder menschliche Freigabe
   verändern. An OpenRouter/OpenAI gehen nur bereinigtes Unternehmensprofil und
@@ -228,16 +228,11 @@ Keiner dieser Punkte darf stillschweigend als erledigt behandelt werden.
   sind die separat offenen Netlify-/Hosted-Gates, keine verdeckten Codefehler.
 - [ ] Die Datenschutzergänzung ist technisch und rechtlich geprüft und auf
   `https://synclaro.de/datenschutz#ki-readiness-test` veröffentlicht.
-- [ ] Auf einer Supabase-Testbranch wurde die atomare Endmigration
-  `20260719060000_ai_readiness_lead_funnel.sql` angewandt und der SQL-
-  Integrationstest ausgeführt. Der frühere v1→v2-Zwischenstand wurde vor jeder
-  Production-Anwendung in diese einzelne Transaktion zusammengeführt. Da eine
-  Cloud-Testbranch im aktuellen Tarif reale Kosten auslöst, wurde sie nicht
-  autonom angelegt; Kostenfreigabe oder Testalternative sind noch offen.
-- [ ] Backup/PITR-Stand und Wartungsfenster für die Production-Migration sind
-  dokumentiert. Die atomare Endmigration ist derzeit **nicht in Production
-  angewandt**.
-- [ ] Das tatsächliche RLS-/Grant-Verhalten der betroffenen CRM-Tabellen wurde
+- [x] Die atomare Endmigration
+  `20260720180116_ai_readiness_lead_funnel.sql` wurde lokal in einer frischen
+  PostgreSQL-Instanz samt Integrationstest geprüft und anschließend im
+  Production-Zielprojekt angewandt.
+- [x] Das tatsächliche RLS-/Grant-Verhalten der betroffenen Readiness-Tabellen wurde
   im Zielprojekt mit `anon`, `authenticated` und `service_role` falsifiziert.
   Die neuen Readiness-/Private-Tabellen dürfen nur serverseitig zugänglich sein.
 - [ ] Der geplante Purge-Job ist eingerichtet und nachweislich erfolgreich:
@@ -323,9 +318,9 @@ Meta- oder Supabase-Writes.
 | `CAL_READINESS_EVENT_TYPE_ID` | Für Booking-Tracking | Numerische ID ausschließlich des Readiness-Events. |
 | `CAL_READINESS_EVENT_TYPE_SLUG` | Für Booking-Tracking | Explizit `ki-erstgespraech` setzen, auch wenn dies der Code-Default ist. |
 | `CAL_READINESS_ORGANIZER_EMAIL` | Für Booking-Tracking | Exakte, normalisierte Organizer-E-Mail des freigegebenen Events. |
-| `OPENROUTER_API_KEY` | Für adaptive Fragen/Auswertung | Nur serverseitig und zunächst ausschließlich im Deploy-Preview-Kontext. Vor Production rotieren beziehungsweise mit Budgetgrenze absichern. |
+| `OPENROUTER_API_KEY` | Für adaptive Fragen/Auswertung | Nur serverseitig; als Production-Functions-Secret gesetzt. |
 | `AI_ADAPTIVE_ENABLED` | Für adaptive Fragen/Auswertung | Muss im freigegebenen Kontext exakt `true` sein; andernfalls nutzt der Test die sichere Basisauswertung. |
-| `OPENROUTER_ADAPTIVE_MODEL` | Empfohlen | Explizit `openai/gpt-5.5`; im anonymen Preview-Test war es deutlich latenzstabiler als Sol. Terra wird derzeit von OpenRouter unter der verpflichtenden ZDR-Richtlinie nicht geroutet. |
+| `OPENROUTER_ADAPTIVE_MODEL` | Empfohlen | Explizit `openai/gpt-5.6-terra`; strukturierter ZDR-Test am 20.07.2026 erfolgreich in 2,1 Sekunden. |
 
 `CONTEXT` wird von Netlify gesetzt. `OPENAI_API_KEY` und `SUPABASE_ANON_KEY`
 werden von anderen, älteren Premium-/Kampagnenfunktionen im Repository genutzt,

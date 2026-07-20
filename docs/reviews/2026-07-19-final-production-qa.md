@@ -21,9 +21,9 @@ Stand: 19.07.2026 · Branch `feat/meta-ai-readiness-funnel`
   `p_success=false`, Fehlercode `consent_revoked` und den fehlalarmfreien
   Rückgabewert.
 - Die zusätzlich gemeldete doppelte `v_assessment_id`-Zuweisung wurde ohne
-  Semantikänderung entfernt. Der live angewandte Migrationsstand
-  `20260719050454` und die noch nicht angewandte Endmigration
-  `20260719060000` sind in der Launch-Dokumentation festgehalten.
+  Semantikänderung entfernt. Die Endmigration wurde nach der QA im Zielprojekt
+  unter `20260720180116` registriert; Dateiname und Launch-Dokumentation wurden
+  daran angeglichen.
 - Abschließende externe Delta-QA: **GO**, keine offenen P0/P1/P2/P3.
 
 ## Verifikation
