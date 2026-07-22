@@ -8,6 +8,7 @@
     session: "/api/readiness-session",
     question: "/api/readiness-question",
     result: "/api/readiness-result",
+    metaPageView: "/api/readiness-meta-pageview",
   };
   const CONSENT_STATE = window.SynclaroConsentState;
   const HANDOFF = window.SynclaroReadinessHandoff;
@@ -95,6 +96,7 @@
   const AI_PROCESSING_VERSION = "ai-processing-v1-2026-07-19";
   const CORE_QUESTION_COUNT = 8;
   const OPTIONAL_CONTEXT_COUNT = 1;
+  const META_PAGEVIEW_RETRY_DELAYS_MS = [2000, 8000];
   const TOTAL_JOURNEY_STEPS = PROFILE_STEPS.length + CORE_QUESTION_COUNT + OPTIONAL_CONTEXT_COUNT + CONTACT_STEPS.length;
   const OPTIONAL_CONTEXT_QUESTION = {
     id: "haupthebel",
@@ -108,11 +110,16 @@
   let config = { ...DEFAULT_CONFIG };
   let consent = { necessary: true, analytics: false, marketing: false, version: DEFAULT_CONFIG.cookieConsentVersion, grantedAt: null, globalDecisionId: null };
   let trackingSubjectId = readOrCreateTrackingSubjectId();
-  let attribution = captureAttribution();
+  let firstPartyAttribution = captureAttribution();
+  let attribution = { ...firstPartyAttribution };
   cleanBrowserUrlForTracking();
   let state = freshState();
   let formOpenedAt = 0;
   let metaLoaded = false;
+  let metaPageViewEventId = uuid();
+  let metaPageViewServerAccepted = false;
+  let metaPageViewRequestPromise = null;
+  let metaPageViewRetryTimer = null;
   let sessionReady = false;
   let sessionIssuedAt = null;
   let sessionPromise = null;
@@ -131,6 +138,7 @@
   let consentReturnFocus = null;
   let testReturnFocus = null;
   let currentInteractionLayer = null;
+  let activeStepView = null;
   const scrollMilestones = new Set();
   const sessionStartedAt = Date.now();
 
@@ -364,8 +372,15 @@
     if (hasCurrentCampaign) return;
     try {
       const stored = JSON.parse(sessionStorage.getItem(ATTRIBUTION_KEY) || "null");
-      if (stored && typeof stored === "object" && !Array.isArray(stored)) attribution = stored;
+      if (stored && typeof stored === "object" && !Array.isArray(stored)) {
+        attribution = stored;
+        firstPartyAttribution = { ...stored };
+        return;
+      }
     } catch {}
+    const hasCapturedCampaign = ["utm_source", "utm_medium", "utm_campaign", "utm_id", "utm_content", "utm_term", "placement", "fbclid"]
+      .some((key) => Boolean(firstPartyAttribution[key]));
+    if (hasCapturedCampaign) attribution = { ...firstPartyAttribution };
   }
 
   function cleanBrowserUrlForTracking() {
@@ -374,9 +389,47 @@
   }
 
   function analyticsCampaignKey() {
-    const campaign = String(attribution.utm_campaign || "").trim().toLowerCase();
+    const campaign = String(firstPartyAttribution.utm_campaign || "").trim().toLowerCase();
     if (campaign === "ai_readiness_de_prospecting_v1" || campaign === "meta_ai_readiness_de_prospecting_v1") return "ai_readiness_de_prospecting_v1";
-    return String(attribution.utm_source || "").toLowerCase() === "meta" ? "meta_other" : "other";
+    return String(firstPartyAttribution.utm_source || "").toLowerCase() === "meta" ? "meta_other" : "other";
+  }
+
+  function analyticsAttributionProperties() {
+    const properties = { utm_campaign: analyticsCampaignKey() };
+    if (!consent.marketing) return properties;
+    properties.campaign_id = firstPartyAttribution.utm_id || "";
+    properties.adset_id = firstPartyAttribution.utm_term || "";
+    properties.ad_id = firstPartyAttribution.utm_content || "";
+    properties.placement = firstPartyAttribution.placement || "";
+    return properties;
+  }
+
+  function generationLatencyBucket(milliseconds) {
+    if (milliseconds < 2000) return "under_2s";
+    if (milliseconds < 5000) return "2_5s";
+    if (milliseconds < 10000) return "5_10s";
+    return "over_10s";
+  }
+
+  function startStepTiming(kind, key) {
+    activeStepView = { kind, key, startedAt: performance.now() };
+  }
+
+  function responseTimeBucket(kind, key) {
+    const milliseconds = activeStepView?.kind === kind && activeStepView?.key === key
+      ? Math.max(0, performance.now() - activeStepView.startedAt)
+      : 60001;
+    if (milliseconds < 5000) return "under_5s";
+    if (milliseconds < 15000) return "5_15s";
+    if (milliseconds < 30000) return "15_30s";
+    if (milliseconds < 60000) return "30_60s";
+    return "over_60s";
+  }
+
+  function questionFailureReason(error) {
+    if (["server", "invalid_response", "other"].includes(error?.reasonBucket)) return error.reasonBucket;
+    if (error?.name === "TypeError") return "network";
+    return "other";
   }
 
   function saveState() {
@@ -755,7 +808,7 @@
       const pendingLandingTrack = (async () => {
         const ready = await ensureTrackingDecisionForCurrentRun();
         if (!ready || !consent.analytics || landingTracked) return false;
-        const accepted = await track("landing_viewed", { utm_campaign: analyticsCampaignKey() });
+        const accepted = await track("landing_viewed", analyticsAttributionProperties());
         if (accepted) landingTracked = true;
         return accepted;
       })();
@@ -769,6 +822,8 @@
       try { sessionStorage.setItem(ATTRIBUTION_KEY, JSON.stringify(attribution)); } catch {}
       loadMeta();
     } else if (!consent.marketing) {
+      if (metaPageViewRetryTimer) clearTimeout(metaPageViewRetryTimer);
+      metaPageViewRetryTimer = null;
       if (typeof window.fbq === "function") window.fbq("consent", "revoke");
       try { sessionStorage.removeItem(ATTRIBUTION_KEY); } catch {}
       ["_fbp", "_fbc"].forEach((name) => { document.cookie = `${name}=; Max-Age=0; Path=/; SameSite=Lax` });
@@ -797,6 +852,7 @@
     if (!config.production || location.hostname !== "ki-check.synclaro.de" || !consent.marketing) return;
     if (metaLoaded && typeof window.fbq === "function") {
       window.fbq("consent", "grant");
+      if (!metaPageViewServerAccepted && !metaPageViewRequestPromise) setTimeout(() => { void sendMetaPageView(); }, 800);
       return;
     }
     metaLoaded = true;
@@ -812,7 +868,9 @@
     window.fbq("set", "autoConfig", "false", config.metaPixelId);
     window.fbq("init", config.metaPixelId);
     window.fbq("consent", "grant");
-    window.fbq("track", "PageView");
+    ensureFbcCookie();
+    window.fbq("track", "PageView", {}, { eventID: metaPageViewEventId });
+    setTimeout(() => { void sendMetaPageView(); }, 800);
   }
 
   function metaEvent(name, params = {}, options) {
@@ -824,6 +882,13 @@
   function readCookie(name) {
     const match = document.cookie.split(";").map((part) => part.trim()).find((part) => part.startsWith(`${name}=`));
     return match ? decodeURIComponent(match.slice(name.length + 1)) : "";
+  }
+
+  function ensureFbcCookie() {
+    if (!consent.marketing || readCookie("_fbc") || !attribution.fbclid) return;
+    const timestamp = Math.floor(new Date(attribution.capturedAt || Date.now()).getTime());
+    const fbc = `fb.1.${timestamp}.${attribution.fbclid}`;
+    document.cookie = `_fbc=${encodeURIComponent(fbc)}; Path=/; Max-Age=7776000; SameSite=Lax; Secure`;
   }
 
   function metaAttribution() {
@@ -851,6 +916,49 @@
     return { ...attribution, fbp: readCookie("_fbp"), fbc };
   }
 
+  async function sendMetaPageView(retryIndex = 0) {
+    if (!consent.marketing || !config.production || metaPageViewServerAccepted) return false;
+    if (metaPageViewRequestPromise) return metaPageViewRequestPromise;
+    const pending = (async () => {
+      try {
+        const meta = metaAttribution();
+        const response = await fetch(READINESS_API.metaPageView, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          keepalive: true,
+          body: JSON.stringify({
+            eventId: metaPageViewEventId,
+            runId: state.runId,
+            attribution: { fbp: meta.fbp, fbc: meta.fbc },
+            marketingConsent: { granted: true, version: consent.version, grantedAt: consent.grantedAt },
+          }),
+        });
+        const result = await response.json().catch(() => ({}));
+        metaPageViewServerAccepted = response.ok && result.accepted === true;
+        return metaPageViewServerAccepted;
+      } catch {
+        return false;
+      }
+    })();
+    metaPageViewRequestPromise = pending;
+    let accepted = false;
+    try {
+      accepted = await pending;
+    } finally {
+      if (metaPageViewRequestPromise === pending) metaPageViewRequestPromise = null;
+    }
+    if (accepted && metaPageViewRetryTimer) {
+      clearTimeout(metaPageViewRetryTimer);
+      metaPageViewRetryTimer = null;
+    } else if (!accepted && consent.marketing && retryIndex < META_PAGEVIEW_RETRY_DELAYS_MS.length && !metaPageViewRetryTimer) {
+      metaPageViewRetryTimer = setTimeout(() => {
+        metaPageViewRetryTimer = null;
+        void sendMetaPageView(retryIndex + 1);
+      }, META_PAGEVIEW_RETRY_DELAYS_MS[retryIndex]);
+    }
+    return accepted;
+  }
+
   async function track(eventName, properties = {}, step = null) {
     if (!consent.analytics) return false;
     try {
@@ -862,6 +970,7 @@
           eventId: uuid(), eventName, step, occurredAt: new Date().toISOString(), properties,
           runId: state.runId,
           analyticsConsent: { granted: true, version: consent.version, grantedAt: consent.grantedAt },
+          marketingConsent: { granted: consent.marketing, version: consent.version, grantedAt: consent.marketing ? consent.grantedAt : null },
         }),
       });
       const result = await response.json().catch(() => ({}));
@@ -976,7 +1085,7 @@
     $("#assessmentApp").hidden = false;
     document.body.classList.add("modal-open");
     renderProfile();
-    track("test_started", { assessment_version: config.assessmentVersion, utm_campaign: analyticsCampaignKey() });
+    track("test_started", { assessment_version: config.assessmentVersion, ...analyticsAttributionProperties() });
     metaEvent("StartAIReadinessTest", { assessment_version: config.assessmentVersion });
   }
 
@@ -1016,6 +1125,8 @@
     }
     body += "</article>";
     $("#questionHost").innerHTML = body;
+    startStepTiming("profile", item.id);
+    track("profile_step_viewed", { profile_step: item.id, position: state.profileIndex + 1 }, state.profileIndex + 1);
     if (item.type === "text") {
       const input = $("#profileText");
       input.value = current;
@@ -1023,6 +1134,11 @@
       const submit = () => {
         const value = input.value.trim();
         if (value.length < 2) return toast("Bitte tragen Sie Ihre Branche kurz ein.");
+        track("profile_step_completed", {
+          profile_step: item.id,
+          position: state.profileIndex + 1,
+          response_time_bucket: responseTimeBucket("profile", item.id),
+        }, state.profileIndex + 1);
         state.profile[item.id] = value.slice(0, 80);
         advanceProfile();
       };
@@ -1036,6 +1152,11 @@
         const generation = answerAdvanceGeneration;
         const profileIndex = state.profileIndex;
         const itemId = item.id;
+        track("profile_step_completed", {
+          profile_step: item.id,
+          position: state.profileIndex + 1,
+          response_time_bucket: responseTimeBucket("profile", item.id),
+        }, state.profileIndex + 1);
         state.profile[item.id] = button.dataset.value;
         $$(".option", $("#questionHost")).forEach((other) => {
           const selected = other === button;
@@ -1106,9 +1227,17 @@
       }),
     });
     const payload = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(payload.error || `HTTP ${response.status}`);
-    if (payload.totalQuestions !== CORE_QUESTION_COUNT || !validAdaptiveQuestion(payload.question, index)) throw new Error("schema");
-    return { ...payload.question, selectionMode: payload.selectionMode || "fallback", modelLabel: payload.modelLabel || null };
+    if (!response.ok) {
+      const requestError = new Error(payload.error || `HTTP ${response.status}`);
+      requestError.reasonBucket = response.status >= 500 ? "server" : "other";
+      throw requestError;
+    }
+    if (payload.totalQuestions !== CORE_QUESTION_COUNT || !validAdaptiveQuestion(payload.question, index)) {
+      const schemaError = new Error("schema");
+      schemaError.reasonBucket = "invalid_response";
+      throw schemaError;
+    }
+    return { ...payload.question, selectionMode: payload.selectionMode || "deterministic_fallback", modelLabel: payload.modelLabel || null };
   }
 
   function renderAdaptiveLoading(index) {
@@ -1136,21 +1265,35 @@
     const generation = adaptiveRequestGeneration;
     const controller = new AbortController();
     adaptiveRequestController = controller;
+    const generationStartedAt = performance.now();
     state.questionIndex = index;
     saveState();
     renderAdaptiveLoading(index);
     try {
       const question = await fetchAdaptiveQuestion(index, controller.signal);
       if (generation !== adaptiveRequestGeneration || controller.signal.aborted || state.stage !== "assessment" || state.questionIndex !== index) return;
-      state.questions[index] = question;
+      state.questions[index] = { ...question, generationLatencyBucket: generationLatencyBucket(performance.now() - generationStartedAt) };
       state.questionIndex = index;
       saveState();
       renderQuestion();
     } catch (error) {
       if (generation !== adaptiveRequestGeneration || controller.signal.aborted || error?.name === "AbortError") return;
+      const reasonBucket = questionFailureReason(error);
+      track("question_load_failed", {
+        question_id: "adaptive_pending",
+        position: index + 1,
+        reason_bucket: reasonBucket,
+      }, PROFILE_STEPS.length + index);
       $("#questionHost").innerHTML = `<article class="question-card"><p class="question-index">Verbindung unterbrochen</p><h1 id="questionTitle" tabindex="-1">Die nächste Frage konnte nicht sicher geladen werden.</h1><p class="question-help">Ihre bisherigen Antworten bleiben in dieser Browsersitzung erhalten. Bei einem Modellfehler liefert der Server automatisch eine geprüfte Ersatzfrage; hier ist die Verbindung selbst abgebrochen.</p><div class="question-actions"><button class="button button-accent" id="retryQuestion" type="button">Erneut versuchen</button></div></article>`;
       focusQuestionTitle();
-      $("#retryQuestion").addEventListener("click", () => loadAdaptiveQuestion(index));
+      $("#retryQuestion").addEventListener("click", () => {
+        track("question_retry", {
+          question_id: "adaptive_pending",
+          position: index + 1,
+          reason_bucket: reasonBucket,
+        }, PROFILE_STEPS.length + index);
+        void loadAdaptiveQuestion(index);
+      });
     } finally {
       if (generation === adaptiveRequestGeneration) adaptiveRequestController = null;
     }
@@ -1195,6 +1338,20 @@
     }
     body += "</article>";
     $("#questionHost").innerHTML = body;
+    const telemetryDimension = optionalContext ? "optional_context" : question.dimension;
+    const telemetrySelectionMode = optionalContext ? "static_optional" : question.selectionMode;
+    const telemetryGenerationBucket = question.telemetryViewed
+      ? "cached"
+      : (question.generationLatencyBucket || "cached");
+    question.telemetryViewed = true;
+    startStepTiming("question", question.id);
+    track("question_viewed", {
+      question_id: question.id,
+      position: state.questionIndex + 1,
+      dimension: telemetryDimension,
+      selection_mode: telemetrySelectionMode,
+      generation_latency_bucket: telemetryGenerationBucket,
+    }, PROFILE_STEPS.length + state.questionIndex);
     if (question.type === "textarea") {
       const textarea = $("#answerText");
       textarea.value = existing?.answer || "";
@@ -1234,6 +1391,15 @@
   function recordAnswer(question, answer, answerLabel) {
     const previous = existingAnswer(question.id);
     const pathChanged = previous && previous.answer !== answer;
+    const optionalContext = question.required === false;
+    track("question_answered", {
+      question_id: question.id,
+      position: state.questionIndex + 1,
+      dimension: optionalContext ? "optional_context" : question.dimension,
+      selection_mode: optionalContext ? "static_optional" : question.selectionMode,
+      response_time_bucket: responseTimeBucket("question", question.id),
+      changed_after_back: Boolean(pathChanged),
+    }, PROFILE_STEPS.length + state.questionIndex);
     if (pathChanged && state.questionIndex < state.questions.length - 1) {
       const retainedIds = new Set(state.questions.slice(0, state.questionIndex + 1).map((item) => item.id));
       state.answers = state.answers.filter((item) => retainedIds.has(item.questionId));
@@ -1421,6 +1587,7 @@
       <div class="question-actions"><button class="button button-accent${isFinal ? " button-large" : ""}" id="contactNext" type="submit">${isFinal ? "Meine Auswertung erstellen" : "Weiter"}</button></div>
       ${isFinal && !config.production ? '<p class="preview-notice">Preview-Modus: Es werden keine Lead-, E-Mail-, Meta- oder Telegram-Daten übertragen.</p>' : ""}
     </form>`;
+    track("contact_step_viewed", { field: step.id, position: state.contactIndex + 1 }, PROFILE_STEPS.length + CORE_QUESTION_COUNT + OPTIONAL_CONTEXT_COUNT + state.contactIndex);
     const form = $("#contactStepForm");
     const input = $("#contactValue");
     setTimeout(() => input.focus(), 50);

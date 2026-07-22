@@ -18,8 +18,10 @@ trap cleanup EXIT
 initdb -D "$test_root/data" -A trust -U postgres --no-locale >/dev/null
 pg_ctl -D "$test_root/data" -o "-F -p $test_port -k $test_root" -l "$test_root/postgres.log" start >/dev/null
 
-psql -X -h "$test_root" -p "$test_port" -U postgres -d postgres -f "$repo_dir/supabase/tests/fixture_crm_schema.sql" >/dev/null
-psql -X -h "$test_root" -p "$test_port" -U postgres -d postgres -f "$repo_dir/supabase/migrations/20260720180116_ai_readiness_lead_funnel.sql" >/dev/null
-psql -X -h "$test_root" -p "$test_port" -U postgres -d postgres -f "$repo_dir/supabase/tests/lead_funnel_integration.sql" >/dev/null
+psql -X -v ON_ERROR_STOP=1 -h "$test_root" -p "$test_port" -U postgres -d postgres -f "$repo_dir/supabase/tests/fixture_crm_schema.sql" >/dev/null
+while IFS= read -r migration; do
+  psql -X -v ON_ERROR_STOP=1 -h "$test_root" -p "$test_port" -U postgres -d postgres -f "$migration" >/dev/null
+done < <(find "$repo_dir/supabase/migrations" -maxdepth 1 -type f -name '*.sql' -print | sort)
+psql -X -v ON_ERROR_STOP=1 -h "$test_root" -p "$test_port" -U postgres -d postgres -f "$repo_dir/supabase/tests/lead_funnel_integration.sql" >/dev/null
 
 echo "PASS: Supabase-Migration und Lead-Funnel-Integration"

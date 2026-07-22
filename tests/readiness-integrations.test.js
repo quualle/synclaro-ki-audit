@@ -16,6 +16,68 @@ function restoreEnv(name, value) {
   else process.env[name] = value;
 }
 
+test("Meta-PageView wird nur nach serverseitig erneut bestätigtem Marketing-Consent gesendet", async () => {
+  const previousContext = process.env.CONTEXT;
+  const supabasePath = require.resolve("../netlify/functions/_shared/supabase");
+  const sessionPath = require.resolve("../netlify/functions/_shared/session");
+  const metaPath = require.resolve("../netlify/functions/_shared/meta");
+  const handlerPath = require.resolve("../netlify/functions/_shared/meta-pageview-handler");
+  const supabaseModule = require(supabasePath);
+  const sessionModule = require(sessionPath);
+  const metaModule = require(metaPath);
+  const originalGetSupabaseAdmin = supabaseModule.getSupabaseAdmin;
+  const originalReadSession = sessionModule.readSession;
+  const originalSendMetaEvent = metaModule.sendMetaEvent;
+  let authorized = false;
+  const sent = [];
+  const rpcCalls = [];
+  process.env.CONTEXT = "production";
+  sessionModule.readSession = () => ({ sessionHash: "a".repeat(64), ageSeconds: 5 });
+  supabaseModule.getSupabaseAdmin = () => ({
+    rpc: async (name, params) => {
+      rpcCalls.push({ name, params });
+      return { data: { authorized }, error: null };
+    },
+  });
+  metaModule.sendMetaEvent = async (input) => {
+    sent.push(input);
+    return { sent: true, eventsReceived: 1 };
+  };
+  delete require.cache[handlerPath];
+  const handler = require(handlerPath).handler;
+  const event = {
+    httpMethod: "POST",
+    headers: { host: "ki-check.synclaro.de", origin: "https://ki-check.synclaro.de", "user-agent": "Integration Test" },
+    body: JSON.stringify({
+      eventId: "11111111-1111-4111-8111-111111111111",
+      runId: "22222222-2222-4222-8222-222222222222",
+      attribution: { fbp: "fb.1.1721563200123.1234567890", fbc: "fb.1.1721563200123.Abc_def-123" },
+      marketingConsent: { granted: true, version: consents.COOKIE_CONSENT_VERSION, grantedAt: new Date().toISOString() },
+    }),
+  };
+  try {
+    const denied = await handler(event);
+    assert.equal(denied.statusCode, 202);
+    assert.equal(JSON.parse(denied.body).accepted, false);
+    assert.equal(sent.length, 0);
+
+    authorized = true;
+    const accepted = await handler(event);
+    assert.equal(accepted.statusCode, 202);
+    assert.equal(JSON.parse(accepted.body).accepted, true);
+    assert.equal(sent.length, 1);
+    assert.equal(sent[0].eventName, "PageView");
+    assert.equal(sent[0].attribution.eventId, "11111111-1111-4111-8111-111111111111");
+    assert.equal(rpcCalls[0].name, "authorize_ai_readiness_marketing_event_v1");
+  } finally {
+    supabaseModule.getSupabaseAdmin = originalGetSupabaseAdmin;
+    sessionModule.readSession = originalReadSession;
+    metaModule.sendMetaEvent = originalSendMetaEvent;
+    restoreEnv("CONTEXT", previousContext);
+    delete require.cache[handlerPath];
+  }
+});
+
 test("ein nach dem Claim widerrufener Consent wird ohne Fehlalarm neutralisiert", async () => {
   const calls = [];
   const supabase = {

@@ -18,6 +18,7 @@ const submit = submitModule._test;
 const analyze = require("../netlify/functions/analyze")._test;
 const resultBuilder = require("../netlify/functions/_shared/result");
 const tracking = require("../netlify/functions/track-event")._test;
+const metaPageView = require("../netlify/functions/_shared/meta-pageview-handler")._test;
 const consentState = require("../public/consent-state");
 const handoff = require("../public/handoff");
 
@@ -200,11 +201,22 @@ test("Conversion-Gate, Formfelder und Ergebnis-CTAs bleiben transparent und barr
   assert.match(app, /applyConsentEffects\(\{ allowGrants: false \}\)/);
   assert.match(app, /function applyConsentEffects\(\{ allowGrants = true \} = \{\}\)/);
   assert.match(app, /allowGrants && consent\.marketing/);
+  assert.match(app, /if \(hasCapturedCampaign\) attribution = \{ \.\.\.firstPartyAttribution \};/);
+  assert.match(app, /const META_PAGEVIEW_RETRY_DELAYS_MS = \[2000, 8000\]/);
+  assert.match(app, /void sendMetaPageView\(retryIndex \+ 1\)/);
+  assert.match(app, /if \(metaPageViewRetryTimer\) clearTimeout\(metaPageViewRetryTimer\)/);
   assert.match(app, /const incomingWasServerConfirmed = Boolean\(/);
   assert.match(app, /const synced = await syncTrackingConsent\(\)/);
   assert.match(app, /storageGeneration !== storageConsentGeneration/);
   assert.match(app, /question_count: CORE_QUESTION_COUNT/);
-  assert.doesNotMatch(app, /adaptive_question_started/);
+  for (const eventName of [
+    "profile_step_viewed", "profile_step_completed", "question_viewed", "question_answered",
+    "question_load_failed", "question_retry", "contact_step_viewed",
+  ]) assert.match(app, new RegExp(`track\\(\\"${eventName}\\"`));
+  assert.match(app, /response_time_bucket: responseTimeBucket/);
+  assert.match(app, /generation_latency_bucket: telemetryGenerationBucket/);
+  assert.match(app, /changed_after_back: Boolean\(pathChanged\)/);
+  assert.doesNotMatch(app, /question_answered[^;]+answer(?:Label)?:/s);
   assert.match(app, /session: "\/api\/readiness-session"/);
   assert.match(app, /question: "\/api\/readiness-question"/);
   assert.match(app, /result: "\/api\/readiness-result"/);
@@ -420,7 +432,7 @@ test("Tracking-Properties verwerfen Antworten, Kontaktdaten und freie Kampagnenw
     utm_campaign: "ada@example.com",
     placement: "instagram_stories",
     preview: false,
-  });
+  }, { eventName: "landing_viewed", allowMarketingAttribution: true });
   assert.deepEqual(result, {
     assessment_version: "2026-07-19.v5",
     question_count: 8,
@@ -445,10 +457,64 @@ test("Tracking-Properties verwerfen Antworten, Kontaktdaten und freie Kampagnenw
   const encodedPlacement = tracking.sanitizeProperties({
     placement: "instagram_ada_example_com",
     utm_campaign: "facebook_491701234567",
-  });
+  }, { eventName: "landing_viewed", allowMarketingAttribution: true });
   assert.deepEqual(encodedPlacement, { placement: "instagram", utm_campaign: "other" });
   assert.equal(JSON.stringify(encodedPlacement).includes("ada"), false);
   assert.equal(JSON.stringify(encodedPlacement).includes("491701234567"), false);
+});
+
+test("Schritt-Tracking akzeptiert nur kanonische, datensparsame Eigenschaften", () => {
+  const safe = tracking.sanitizeProperties({
+    question_id: "prozess_standardisierung",
+    position: 1,
+    dimension: "prozesse_daten",
+    selection_mode: "frontier_adaptive",
+    generation_latency_bucket: "2_5s",
+    response_time_bucket: "15_30s",
+    changed_after_back: false,
+    answer: "4",
+    answerLabel: "Durchgängig geregelt",
+    questionLabel: "E-Mail ada@example.com",
+    whyNow: "+491701234567",
+    industry: "Geheime Branche",
+  }, { eventName: "question_viewed" });
+  assert.deepEqual(safe, {
+    question_id: "prozess_standardisierung",
+    position: 1,
+    dimension: "prozesse_daten",
+    selection_mode: "frontier_adaptive",
+    generation_latency_bucket: "2_5s",
+  });
+  assert.equal(JSON.stringify(safe).includes("ada@example.com"), false);
+  assert.equal(JSON.stringify(safe).includes("491701234567"), false);
+  assert.deepEqual(tracking.sanitizeProperties({
+    campaign_id: "120251380526880206",
+    adset_id: "120251380526890206",
+    ad_id: "120251380526870206",
+    placement: "instagram_stories",
+  }, { eventName: "landing_viewed", allowMarketingAttribution: false }), {});
+});
+
+test("Meta-PageView akzeptiert nur aktuelle Einwilligung und valide Browserkennungen", () => {
+  const grantedAt = new Date().toISOString();
+  assert.equal(metaPageView.validateMarketingConsent({
+    granted: true,
+    version: consents.COOKIE_CONSENT_VERSION,
+    grantedAt,
+  }), grantedAt);
+  assert.equal(metaPageView.validateMarketingConsent({ granted: false, version: consents.COOKIE_CONSENT_VERSION, grantedAt }), null);
+  assert.deepEqual(metaPageView.sanitizeBrowserIdentifiers({
+    fbp: "fb.1.1721563200123.1234567890",
+    fbc: "fb.1.1721563200123.Abc_def-123",
+    email: "ada@example.com",
+  }), {
+    fbp: "fb.1.1721563200123.1234567890",
+    fbc: "fb.1.1721563200123.Abc_def-123",
+  });
+  assert.deepEqual(metaPageView.sanitizeBrowserIdentifiers({
+    fbp: "ada@example.com",
+    fbc: "+491701234567",
+  }), { fbp: "", fbc: "" });
 });
 
 test("Readiness-Handoff trägt nur signierte Zuordnung und freigegebene Meta-Kampagnenwerte", () => {

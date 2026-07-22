@@ -9,6 +9,7 @@ const EXPECTED = {
   "start-session": { path: "/api/readiness-session", windowLimit: 12 },
   "generate-questions": { path: "/api/readiness-question", windowLimit: 20 },
   "submit-lead": { path: "/api/readiness-result", windowLimit: 6 },
+  "meta-pageview": { path: "/api/readiness-meta-pageview", windowLimit: 8 },
 };
 
 const manifest = JSON.parse(await readFile(new URL("../.netlify/functions/manifest.json", import.meta.url), "utf8"));
@@ -65,4 +66,4 @@ try {
   await rm(isolatedDirectory, { recursive: true, force: true });
 }
 
-console.log("Netlify-Manifest: Functions API v2, drei Traffic Rules und isoliertes submit-lead-ZIP bestätigt.");
+console.log("Netlify-Manifest: Functions API v2, vier Traffic Rules und isoliertes submit-lead-ZIP bestätigt.");

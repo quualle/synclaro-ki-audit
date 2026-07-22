@@ -620,6 +620,127 @@ $$;
 do $$
 declare
   v_consent_decided_at timestamptz;
+  v_revoked_decided_at timestamptz;
+  v_event_result jsonb;
+  v_authorization jsonb;
+  v_assessment_id uuid;
+  v_invalid_rejected boolean := false;
+begin
+  perform public.record_ai_readiness_tracking_consent_v1(
+    '91919191-9191-4191-8191-919191919191', null,
+    '92929292-9292-4292-8292-929292929292', pg_catalog.repeat('9', 64), pg_catalog.repeat('8', 64),
+    'cookie-v1-2026-07-18', true, true, pg_catalog.repeat('7', 64), 'Telemetry Integration Test'
+  );
+  select decided_at into v_consent_decided_at
+  from private.ai_readiness_tracking_consents
+  where decision_id = '91919191-9191-4191-8191-919191919191';
+
+  v_event_result := public.record_ai_readiness_event_v2(
+    '93939393-9393-4393-8393-939393939393', '92929292-9292-4292-8292-929292929292', pg_catalog.repeat('9', 64),
+    'question_viewed', 5::smallint, pg_catalog.jsonb_build_object(
+      'question_id', 'prozess_standardisierung', 'position', 1, 'dimension', 'prozesse_daten',
+      'selection_mode', 'frontier_adaptive', 'generation_latency_bucket', '2_5s'
+    ), pg_catalog.now(), 'cookie-v1-2026-07-18', v_consent_decided_at, v_consent_decided_at
+  );
+  if v_event_result ->> 'status' <> 'accepted' then raise exception 'question view was not accepted: %', v_event_result; end if;
+  v_event_result := public.record_ai_readiness_event_v2(
+    '93939393-9393-4393-8393-939393939393', '92929292-9292-4292-8292-929292929292', pg_catalog.repeat('9', 64),
+    'question_viewed', 5::smallint, pg_catalog.jsonb_build_object(
+      'question_id', 'prozess_standardisierung', 'position', 1, 'dimension', 'prozesse_daten',
+      'selection_mode', 'frontier_adaptive', 'generation_latency_bucket', '2_5s'
+    ), pg_catalog.now(), 'cookie-v1-2026-07-18', v_consent_decided_at, v_consent_decided_at
+  );
+  if v_event_result ->> 'status' <> 'idempotent' then raise exception 'question event was not idempotent: %', v_event_result; end if;
+
+  perform public.record_ai_readiness_event_v2(
+    '98989898-9898-4898-8898-989898989898', '92929292-9292-4292-8292-929292929292', pg_catalog.repeat('9', 64),
+    'question_answered', 5::smallint, pg_catalog.jsonb_build_object(
+      'question_id', 'prozess_standardisierung', 'position', 1, 'dimension', 'prozesse_daten',
+      'selection_mode', 'frontier_adaptive', 'response_time_bucket', '5_15s', 'changed_after_back', true
+    ), pg_catalog.now(), 'cookie-v1-2026-07-18', v_consent_decided_at, v_consent_decided_at
+  );
+
+  begin
+    perform public.record_ai_readiness_event_v2(
+      '97979797-9797-4797-8797-979797979797', '92929292-9292-4292-8292-929292929292', pg_catalog.repeat('9', 64),
+      'question_answered', 5::smallint, '{}'::jsonb, pg_catalog.now(),
+      'cookie-v1-2026-07-18', v_consent_decided_at, v_consent_decided_at
+    );
+  exception when others then
+    v_invalid_rejected := sqlerrm like '%invalid_question_event%';
+  end;
+  if not v_invalid_rejected then raise exception 'incomplete question event was not rejected'; end if;
+
+  perform public.record_ai_readiness_event_v2(
+    '94949494-9494-4494-8494-949494949494', '92929292-9292-4292-8292-929292929292', pg_catalog.repeat('9', 64),
+    'landing_viewed', 0::smallint, '{"utm_campaign":"ai_readiness_de_prospecting_v1","campaign_id":"120251380526880206","adset_id":"120251380526890206","ad_id":"120251380526870206","placement":"instagram_stories"}'::jsonb,
+    pg_catalog.now(), 'cookie-v1-2026-07-18', v_consent_decided_at, v_consent_decided_at
+  );
+  if not exists (
+    select 1 from public.ai_readiness_events
+    where event_id = '94949494-9494-4494-8494-949494949494'
+      and properties ->> 'campaign_id' = '120251380526880206'
+  ) then raise exception 'consented campaign attribution was not retained'; end if;
+
+  perform public.record_ai_readiness_tracking_consent_v1(
+    '95959595-9595-4595-8595-959595959595', '91919191-9191-4191-8191-919191919191',
+    '92929292-9292-4292-8292-929292929292', pg_catalog.repeat('9', 64), pg_catalog.repeat('8', 64),
+    'cookie-v1-2026-07-18', true, false, pg_catalog.repeat('7', 64), 'Telemetry Integration Test'
+  );
+  select decided_at into v_revoked_decided_at
+  from private.ai_readiness_tracking_consents
+  where decision_id = '95959595-9595-4595-8595-959595959595';
+  perform public.record_ai_readiness_event_v2(
+    '96969696-9696-4696-8696-969696969696', '92929292-9292-4292-8292-929292929292', pg_catalog.repeat('9', 64),
+    'test_started', 1::smallint, '{"assessment_version":"2026-07-19.v5","utm_campaign":"ai_readiness_de_prospecting_v1","campaign_id":"120251380526880206","placement":"instagram_feed"}'::jsonb,
+    pg_catalog.now(), 'cookie-v1-2026-07-18', v_revoked_decided_at, v_revoked_decided_at
+  );
+  if exists (
+    select 1 from public.ai_readiness_events
+    where event_id = '96969696-9696-4696-8696-969696969696'
+      and properties ?| array['campaign_id', 'adset_id', 'ad_id', 'placement']
+  ) then raise exception 'marketing attribution survived a current marketing opt-out'; end if;
+  v_authorization := public.authorize_ai_readiness_marketing_event_v1(
+    '92929292-9292-4292-8292-929292929292', pg_catalog.repeat('9', 64),
+    'cookie-v1-2026-07-18', v_revoked_decided_at
+  );
+  if coalesce((v_authorization ->> 'authorized')::boolean, false) then raise exception 'marketing event remained authorized after opt-out'; end if;
+
+  if not exists (
+    select 1 from private.ai_readiness_step_funnel_daily_v1
+    where event_name = 'question_viewed' and step_key = 'prozess_standardisierung' and runs = 1
+      and utm_campaign = 'ai_readiness_de_prospecting_v1'
+      and campaign_id is null and adset_id is null and ad_id is null and placement is null
+  ) then raise exception 'protected question funnel view did not count distinct runs'; end if;
+  if not exists (
+    select 1 from private.ai_readiness_step_funnel_daily_v1
+    where event_name = 'question_answered' and step_key = 'prozess_standardisierung'
+      and response_time_bucket = '5_15s' and changed_after_back is true and runs = 1
+  ) then raise exception 'protected question funnel view omitted the answer-change signal'; end if;
+  if exists (
+    select 1 from private.ai_readiness_step_funnel_daily_v1
+    where event_name = 'question_viewed' and step_key = 'prozess_standardisierung'
+      and campaign_id is not null
+  ) or exists (
+    select 1 from private.ai_readiness_run_last_event_v1
+    where run_id = '92929292-9292-4292-8292-929292929292'
+      and (campaign_id is not null or adset_id is not null or ad_id is not null or placement is not null)
+  ) then raise exception 'protected reporting exposed historical Meta attribution after current opt-out'; end if;
+
+  select id into v_assessment_id from public.ai_readiness_assessments order by created_at limit 1;
+  insert into private.ai_readiness_outbox(assessment_id, delivery_type, dedupe_key, expires_at)
+  values (v_assessment_id, 'meta_capi', 'ttl-integration-probe', pg_catalog.now() + interval '7 days');
+  if exists (
+    select 1 from private.ai_readiness_outbox
+    where assessment_id = v_assessment_id and delivery_type = 'meta_capi' and dedupe_key = 'ttl-integration-probe'
+      and expires_at > created_at + interval '24 hours 1 second'
+  ) then raise exception 'Meta outbox TTL exceeded 24 hours'; end if;
+end;
+$$;
+
+do $$
+declare
+  v_consent_decided_at timestamptz;
   v_event_result jsonb;
   v_purge jsonb;
 begin
@@ -679,6 +800,12 @@ begin
     or has_function_privilege('authenticated', 'public.confirm_ai_readiness_newsletter_v1(uuid,uuid,text,text)', 'execute')
     or has_function_privilege('anon', 'public.revoke_ai_readiness_newsletter_v1(uuid,uuid)', 'execute')
     or has_function_privilege('authenticated', 'public.revoke_ai_readiness_newsletter_v1(uuid,uuid)', 'execute')
+    or has_function_privilege('anon', 'public.record_ai_readiness_event_v2(uuid,uuid,text,text,smallint,jsonb,timestamptz,text,timestamptz,timestamptz)', 'execute')
+    or has_function_privilege('authenticated', 'public.record_ai_readiness_event_v2(uuid,uuid,text,text,smallint,jsonb,timestamptz,text,timestamptz,timestamptz)', 'execute')
+    or has_function_privilege('anon', 'public.authorize_ai_readiness_marketing_event_v1(uuid,text,text,timestamptz)', 'execute')
+    or has_function_privilege('authenticated', 'public.authorize_ai_readiness_marketing_event_v1(uuid,text,text,timestamptz)', 'execute')
+    or has_table_privilege('anon', 'private.ai_readiness_step_funnel_daily_v1', 'select')
+    or has_table_privilege('authenticated', 'private.ai_readiness_run_last_event_v1', 'select')
   then raise exception 'anon/authenticated retained Readiness privileges'; end if;
   if not has_table_privilege('service_role', 'public.ai_readiness_assessments', 'select,insert,update,delete')
     or not has_table_privilege('service_role', 'public.ai_readiness_events', 'select,insert,update,delete')
@@ -686,6 +813,10 @@ begin
     or not has_function_privilege('service_role', 'public.claim_ai_readiness_deliveries_v2(integer)', 'execute')
     or not has_function_privilege('service_role', 'public.confirm_ai_readiness_newsletter_v1(uuid,uuid,text,text)', 'execute')
     or not has_function_privilege('service_role', 'public.revoke_ai_readiness_newsletter_v1(uuid,uuid)', 'execute')
+    or not has_function_privilege('service_role', 'public.record_ai_readiness_event_v2(uuid,uuid,text,text,smallint,jsonb,timestamptz,text,timestamptz,timestamptz)', 'execute')
+    or not has_function_privilege('service_role', 'public.authorize_ai_readiness_marketing_event_v1(uuid,text,text,timestamptz)', 'execute')
+    or not has_table_privilege('service_role', 'private.ai_readiness_step_funnel_daily_v1', 'select')
+    or not has_table_privilege('service_role', 'private.ai_readiness_run_last_event_v1', 'select')
     or not exists (
       select 1 from pg_catalog.pg_class
       where oid = 'public.ai_readiness_assessments'::regclass and relrowsecurity

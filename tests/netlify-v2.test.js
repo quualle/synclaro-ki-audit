@@ -9,6 +9,7 @@ const EXPECTED = {
   "start-session": { path: "/api/readiness-session", windowLimit: 12 },
   "generate-questions": { path: "/api/readiness-question", windowLimit: 20 },
   "submit-lead": { path: "/api/readiness-result", windowLimit: 6 },
+  "meta-pageview": { path: "/api/readiness-meta-pageview", windowLimit: 8 },
 };
 
 function importFunctionEntry(name) {
