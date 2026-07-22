@@ -177,6 +177,20 @@ test("vollständige Consent-Texte bleiben auch ohne Runtime-Config sichtbar", ()
   assert.match(app, /addEventListener\("storage", handleConsentStorage\)/);
 });
 
+test("Meta OpenBridge bleibt auf die aktuell konfigurierten Pixel-Endpunkte begrenzt", () => {
+  const config = fs.readFileSync(path.join(__dirname, "../netlify.toml"), "utf8");
+  const csp = config.match(/Content-Security-Policy = "([^"]+)"/)?.[1] || "";
+  const connectDirective = csp.split(";").map((directive) => directive.trim())
+    .find((directive) => directive.startsWith("connect-src ")) || "";
+  assert.deepEqual(connectDirective.split(/\s+/).slice(1), [
+    "'self'",
+    "https://www.facebook.com",
+    "https://connect.facebook.net",
+    "https://mpc2-prod-27-is5qnl632q-uk.a.run.app",
+    "https://5z-2b6b7616f94640c2840d1841e1ac24c3.ecs.us-east-1.on.aws",
+  ]);
+});
+
 test("Conversion-Gate, Formfelder und Ergebnis-CTAs bleiben transparent und barrierefrei benannt", () => {
   const html = fs.readFileSync(path.join(__dirname, "../public/index.html"), "utf8");
   const app = fs.readFileSync(path.join(__dirname, "../public/app.js"), "utf8");

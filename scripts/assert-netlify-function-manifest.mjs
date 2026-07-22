@@ -66,4 +66,28 @@ try {
   await rm(isolatedDirectory, { recursive: true, force: true });
 }
 
-console.log("Netlify-Manifest: Functions API v2, vier Traffic Rules und isoliertes submit-lead-ZIP bestätigt.");
+const metaPageViewZip = path.join(projectRoot, ".netlify/functions/meta-pageview.zip");
+const isolatedMetaDirectory = await mkdtemp(path.join(tmpdir(), "synclaro-meta-pageview-package-"));
+try {
+  execFileSync("unzip", ["-q", metaPageViewZip, "-d", isolatedMetaDirectory]);
+  const packagedSupabase = path.join(isolatedMetaDirectory, "node_modules/@supabase/supabase-js/package.json");
+  assert.equal(JSON.parse(await readFile(packagedSupabase, "utf8")).name, "@supabase/supabase-js", "meta-pageview: Supabase fehlt im ZIP");
+
+  const packagedEntry = path.join(isolatedMetaDirectory, "netlify/functions/meta-pageview.mjs");
+  const metaPageView = await import(pathToFileURL(packagedEntry).href);
+  const response = await metaPageView.default(new Request("https://ki-check.synclaro.de/api/readiness-meta-pageview", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      host: "ki-check.synclaro.de",
+      origin: "https://ki-check.synclaro.de",
+    },
+    body: "{}",
+  }), {});
+  assert.equal(response.status, 400, "meta-pageview: isolierter ZIP-Handler konnte keinen Validierungsfehler liefern");
+  assert.equal(typeof (await response.json()).error, "string", "meta-pageview: isolierter ZIP-Handler lieferte keinen JSON-Fehler");
+} finally {
+  await rm(isolatedMetaDirectory, { recursive: true, force: true });
+}
+
+console.log("Netlify-Manifest: Functions API v2, vier Traffic Rules und isolierte Supabase-ZIPs bestätigt.");
