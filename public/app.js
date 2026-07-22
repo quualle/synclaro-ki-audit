@@ -884,10 +884,19 @@
     return match ? decodeURIComponent(match.slice(name.length + 1)) : "";
   }
 
-  function ensureFbcCookie() {
-    if (!consent.marketing || readCookie("_fbc") || !attribution.fbclid) return;
+  function currentFbc() {
+    const existing = readCookie("_fbc");
+    if (!attribution.fbclid) return existing;
+    const existingClickId = existing.split(".").slice(3).join(".");
+    if (existingClickId === attribution.fbclid) return existing;
     const timestamp = Math.floor(new Date(attribution.capturedAt || Date.now()).getTime());
-    const fbc = `fb.1.${timestamp}.${attribution.fbclid}`;
+    return `fb.1.${timestamp}.${attribution.fbclid}`;
+  }
+
+  function ensureFbcCookie() {
+    if (!consent.marketing || !attribution.fbclid) return;
+    const fbc = currentFbc();
+    if (!fbc || readCookie("_fbc") === fbc) return;
     document.cookie = `_fbc=${encodeURIComponent(fbc)}; Path=/; Max-Age=7776000; SameSite=Lax; Secure`;
   }
 
@@ -908,12 +917,7 @@
         fbc: "",
       };
     }
-    let fbc = readCookie("_fbc");
-    if (!fbc && attribution.fbclid) {
-      const timestamp = Math.floor(new Date(attribution.capturedAt || Date.now()).getTime());
-      fbc = `fb.1.${timestamp}.${attribution.fbclid}`;
-    }
-    return { ...attribution, fbp: readCookie("_fbp"), fbc };
+    return { ...attribution, fbp: readCookie("_fbp"), fbc: currentFbc() };
   }
 
   async function sendMetaPageView(retryIndex = 0) {
