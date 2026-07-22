@@ -219,9 +219,12 @@ test("Conversion-Gate, Formfelder und Ergebnis-CTAs bleiben transparent und barr
   assert.match(app, /const META_PAGEVIEW_RETRY_DELAYS_MS = \[2000, 8000\]/);
   assert.match(app, /void sendMetaPageView\(retryIndex \+ 1\)/);
   assert.match(app, /if \(metaPageViewRetryTimer\) clearTimeout\(metaPageViewRetryTimer\)/);
-  assert.match(app, /const existingClickId = existing\.split\("\."\)\.slice\(3\)\.join\("\."\)/);
-  assert.match(app, /if \(existingClickId === attribution\.fbclid\) return existing/);
-  assert.match(app, /if \(!fbc \|\| readCookie\("_fbc"\) === fbc\) return/);
+  assert.match(app, /const matchingValue = existingValues\.find\(\(value\) => value\.split\("\."\)\.slice\(3\)\.join\("\."\) === attribution\.fbclid\)/);
+  assert.match(app, /if \(matchingValue\) return matchingValue/);
+  assert.match(app, /Domain=synclaro\.de; Max-Age=7776000/);
+  assert.match(app, /function clearMetaCookie\(name\)/);
+  assert.match(app, /Domain=synclaro\.de; SameSite=Lax; Secure/);
+  assert.equal((app.match(/\["_fbp", "_fbc"\]\.forEach\(clearMetaCookie\)/g) || []).length, 2);
   assert.match(app, /const incomingWasServerConfirmed = Boolean\(/);
   assert.match(app, /const synced = await syncTrackingConsent\(\)/);
   assert.match(app, /storageGeneration !== storageConsentGeneration/);

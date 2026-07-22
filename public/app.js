@@ -495,7 +495,7 @@
       localStorage.removeItem(CONSENT_KEY);
       sessionStorage.removeItem(ATTRIBUTION_KEY);
     } catch {}
-    ["_fbp", "_fbc"].forEach((name) => { document.cookie = `${name}=; Max-Age=0; Path=/; SameSite=Lax`; });
+    ["_fbp", "_fbc"].forEach(clearMetaCookie);
     $("#consentLayer").hidden = false;
     document.body.classList.add("modal-open");
   }
@@ -826,7 +826,7 @@
       metaPageViewRetryTimer = null;
       if (typeof window.fbq === "function") window.fbq("consent", "revoke");
       try { sessionStorage.removeItem(ATTRIBUTION_KEY); } catch {}
-      ["_fbp", "_fbc"].forEach((name) => { document.cookie = `${name}=; Max-Age=0; Path=/; SameSite=Lax` });
+      ["_fbp", "_fbc"].forEach(clearMetaCookie);
       attribution = {
         landingUrl: `${location.origin}${location.pathname}`.slice(0, 600),
         referrer: "",
@@ -880,15 +880,25 @@
   }
 
   function readCookie(name) {
-    const match = document.cookie.split(";").map((part) => part.trim()).find((part) => part.startsWith(`${name}=`));
-    return match ? decodeURIComponent(match.slice(name.length + 1)) : "";
+    return readCookies(name)[0] || "";
+  }
+
+  function readCookies(name) {
+    return document.cookie.split(";").map((part) => part.trim())
+      .filter((part) => part.startsWith(`${name}=`))
+      .map((part) => decodeURIComponent(part.slice(name.length + 1)));
+  }
+
+  function clearMetaCookie(name) {
+    document.cookie = `${name}=; Max-Age=0; Path=/; SameSite=Lax; Secure`;
+    document.cookie = `${name}=; Max-Age=0; Path=/; Domain=synclaro.de; SameSite=Lax; Secure`;
   }
 
   function currentFbc() {
-    const existing = readCookie("_fbc");
-    if (!attribution.fbclid) return existing;
-    const existingClickId = existing.split(".").slice(3).join(".");
-    if (existingClickId === attribution.fbclid) return existing;
+    const existingValues = readCookies("_fbc");
+    if (!attribution.fbclid) return existingValues[0] || "";
+    const matchingValue = existingValues.find((value) => value.split(".").slice(3).join(".") === attribution.fbclid);
+    if (matchingValue) return matchingValue;
     const timestamp = Math.floor(new Date(attribution.capturedAt || Date.now()).getTime());
     return `fb.1.${timestamp}.${attribution.fbclid}`;
   }
@@ -896,8 +906,9 @@
   function ensureFbcCookie() {
     if (!consent.marketing || !attribution.fbclid) return;
     const fbc = currentFbc();
-    if (!fbc || readCookie("_fbc") === fbc) return;
-    document.cookie = `_fbc=${encodeURIComponent(fbc)}; Path=/; Max-Age=7776000; SameSite=Lax; Secure`;
+    if (!fbc) return;
+    document.cookie = `_fbc=; Max-Age=0; Path=/; SameSite=Lax; Secure`;
+    document.cookie = `_fbc=${encodeURIComponent(fbc)}; Path=/; Domain=synclaro.de; Max-Age=7776000; SameSite=Lax; Secure`;
   }
 
   function metaAttribution() {
